@@ -3,3 +3,5 @@ export 'tile_color.dart';
 export 'carpet_tile.dart';
 export 'player.dart';
 export 'board_position.dart';
+export 'game_mode.dart';
+export 'score_system.dart';

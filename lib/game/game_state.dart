@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 
-/// Represents the state of a Color Dominoes game.
+/// Represents the state of a carpet tile game supporting multiple modes.
 class GameState extends ChangeNotifier {
+  final GameMode mode;
   final List<Player> players;
   final Map<BoardPosition, CarpetTile> board;
+  final ScoreSystem score;
+  final List<ScoreSystem> playerScores;
 
   int _currentPlayerIndex;
   CarpetTile? _selectedTile;
@@ -12,6 +15,10 @@ class GameState extends ChangeNotifier {
   bool _gameOver;
   String? _message;
   List<BoardPosition> _validPositions;
+  List<BoardPosition> _allAdjacentPositions;
+  PlacementResult? _lastPlacementResult;
+  List<CarpetTile> _tilePool; // For free play mode
+  int _nextTileId;
 
   // Board boundaries (dynamic, expands as tiles are placed)
   int _minRow = 0;
@@ -19,13 +26,22 @@ class GameState extends ChangeNotifier {
   int _minCol = 0;
   int _maxCol = 0;
 
+  // Undo support
+  final List<_GameAction> _history = [];
+
   GameState({
+    required this.mode,
     required this.players,
     Map<BoardPosition, CarpetTile>? initialBoard,
   })  : board = initialBoard ?? {},
+        score = ScoreSystem(),
+        playerScores = players.map((_) => ScoreSystem()).toList(),
         _currentPlayerIndex = 0,
         _gameOver = false,
-        _validPositions = [];
+        _validPositions = [],
+        _allAdjacentPositions = [],
+        _tilePool = [],
+        _nextTileId = 0;
 
   // Getters
   Player get currentPlayer => players[_currentPlayerIndex];
@@ -35,14 +51,25 @@ class GameState extends ChangeNotifier {
   bool get gameOver => _gameOver;
   String? get message => _message;
   List<BoardPosition> get validPositions => _validPositions;
+  List<BoardPosition> get allAdjacentPositions => _allAdjacentPositions;
+  PlacementResult? get lastPlacementResult => _lastPlacementResult;
+  bool get canUndo => _history.isNotEmpty;
 
   int get minRow => _minRow;
   int get maxRow => _maxRow;
   int get minCol => _minCol;
   int get maxCol => _maxCol;
 
-  /// Initialize a new game with the given number of players.
-  static GameState newGame(int playerCount) {
+  /// Get the current player's score (or team score for cooperative).
+  ScoreSystem get currentScore {
+    if (mode == GameMode.cooperative) {
+      return score;
+    }
+    return playerScores[_currentPlayerIndex];
+  }
+
+  /// Initialize a new competitive Color Dominoes game.
+  static GameState newColorDominoes(int playerCount) {
     if (playerCount < 2 || playerCount > 4) {
       throw ArgumentError('Player count must be between 2 and 4');
     }
@@ -52,24 +79,112 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Player ${i + 1}'),
     );
 
+    final state = GameState(mode: GameMode.colorDominoes, players: players);
+
     // Deal 6 tiles to each player
-    int tileId = 0;
     for (final player in players) {
       for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${tileId++}'));
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
       }
     }
 
-    final state = GameState(players: players);
-    state._updateValidPositions();
+    state._updatePositions();
     return state;
+  }
+
+  /// Initialize a new Free Play sandbox game.
+  static GameState newFreePlay({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.freePlay, players: players);
+
+    // Give initial tiles
+    for (final player in players) {
+      for (int i = 0; i < 8; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    // Create tile pool for drawing
+    state._refillTilePool();
+    state._updatePositions();
+    return state;
+  }
+
+  /// Initialize a new Guided Learning game.
+  static GameState newGuidedLearning({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Learner' : 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.guidedLearning, players: players);
+
+    // Give initial tiles
+    for (final player in players) {
+      for (int i = 0; i < 8; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    state._refillTilePool();
+    state._updatePositions();
+    return state;
+  }
+
+  /// Initialize a new Cooperative game.
+  static GameState newCooperative(int playerCount) {
+    if (playerCount < 1 || playerCount > 4) {
+      throw ArgumentError('Player count must be between 1 and 4');
+    }
+
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.cooperative, players: players);
+
+    // Deal tiles to each player
+    for (final player in players) {
+      for (int i = 0; i < 6; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = "Let's build together!";
+    return state;
+  }
+
+  void _refillTilePool() {
+    // Keep a pool of tiles to draw from
+    while (_tilePool.length < 20) {
+      _tilePool.add(CarpetTile.generateRandom('tile_${_nextTileId++}'));
+    }
+  }
+
+  /// Draw a new tile from the pool (for non-competitive modes).
+  void drawTile() {
+    if (mode == GameMode.colorDominoes) return;
+
+    _refillTilePool();
+    if (_tilePool.isNotEmpty) {
+      currentPlayer.addTile(_tilePool.removeAt(0));
+      notifyListeners();
+    }
   }
 
   /// Select a tile from the current player's hand.
   void selectTile(CarpetTile? tile) {
     _selectedTile = tile;
     _message = null;
-    _updateValidPositions();
+    _lastPlacementResult = null;
+    _updatePositions();
     notifyListeners();
   }
 
@@ -82,77 +197,117 @@ class GameState extends ChangeNotifier {
       final rotated = _selectedTile!.rotateClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
-      _updateValidPositions();
+      _updatePositions();
       notifyListeners();
     }
   }
 
-  /// Check if a tile can be placed at a position.
-  bool canPlaceTile(CarpetTile tile, BoardPosition position) {
-    // If board is empty, can place anywhere
-    if (board.isEmpty) {
-      return true;
-    }
+  /// Check edge match status for a tile at a position.
+  Map<int, EdgeMatchStatus> getEdgeMatchStatus(CarpetTile tile, BoardPosition position) {
+    final status = <int, EdgeMatchStatus>{};
 
-    // Position must be empty
-    if (board.containsKey(position)) {
-      return false;
-    }
-
-    // Position must be adjacent to at least one existing tile
-    bool hasAdjacentTile = false;
-    bool allEdgesMatch = true;
-
-    // Check each direction
     final neighbors = [
-      (position.up, 2, 0),    // Neighbor above: their bottom edge matches our top
-      (position.right, 3, 1), // Neighbor right: their left edge matches our right
-      (position.down, 0, 2),  // Neighbor below: their top edge matches our bottom
-      (position.left, 1, 3),  // Neighbor left: their right edge matches our left
+      (position.up, 2, 0),    // top edge
+      (position.right, 3, 1), // right edge
+      (position.down, 0, 2),  // bottom edge
+      (position.left, 1, 3),  // left edge
+    ];
+
+    for (final (neighborPos, neighborEdge, ourEdge) in neighbors) {
+      final neighbor = board[neighborPos];
+      if (neighbor == null) {
+        status[ourEdge] = EdgeMatchStatus.noAdjacent;
+      } else if (neighbor.getEdgeColor(neighborEdge) == tile.getEdgeColor(ourEdge)) {
+        status[ourEdge] = EdgeMatchStatus.matching;
+      } else {
+        status[ourEdge] = EdgeMatchStatus.mismatched;
+      }
+    }
+
+    return status;
+  }
+
+  /// Count matching edges for a tile at a position.
+  (int matching, int total) countMatchingEdges(CarpetTile tile, BoardPosition position) {
+    int matching = 0;
+    int total = 0;
+
+    final neighbors = [
+      (position.up, 2, 0),
+      (position.right, 3, 1),
+      (position.down, 0, 2),
+      (position.left, 1, 3),
     ];
 
     for (final (neighborPos, neighborEdge, ourEdge) in neighbors) {
       final neighbor = board[neighborPos];
       if (neighbor != null) {
-        hasAdjacentTile = true;
-        if (neighbor.getEdgeColor(neighborEdge) != tile.getEdgeColor(ourEdge)) {
-          allEdgesMatch = false;
-          break;
+        total++;
+        if (neighbor.getEdgeColor(neighborEdge) == tile.getEdgeColor(ourEdge)) {
+          matching++;
         }
       }
     }
 
-    return hasAdjacentTile && allEdgesMatch;
+    return (matching, total);
   }
 
-  /// Get all valid positions for the selected tile.
+  /// Check if a tile can be placed at a position (strict rules).
+  bool canPlaceTileStrict(CarpetTile tile, BoardPosition position) {
+    if (board.isEmpty) return true;
+    if (board.containsKey(position)) return false;
+
+    final (matching, total) = countMatchingEdges(tile, position);
+    return total > 0 && matching == total;
+  }
+
+  /// Check if a tile can be placed (mode-aware).
+  bool canPlaceTile(CarpetTile tile, BoardPosition position) {
+    if (board.containsKey(position)) return false;
+
+    // Free play and guided learning allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
+      if (board.isEmpty) return true;
+      return position.neighbors.any((n) => board.containsKey(n));
+    }
+
+    // Competitive and cooperative require matching
+    return canPlaceTileStrict(tile, position);
+  }
+
+  /// Get all valid positions for a tile.
   List<BoardPosition> getValidPositions(CarpetTile tile) {
     if (board.isEmpty) {
       return [const BoardPosition(0, 0)];
     }
 
-    final validPositions = <BoardPosition>[];
-
-    // Check all positions adjacent to existing tiles
-    final positionsToCheck = <BoardPosition>{};
-    for (final pos in board.keys) {
-      for (final neighbor in pos.neighbors) {
-        if (!board.containsKey(neighbor)) {
-          positionsToCheck.add(neighbor);
-        }
-      }
-    }
+    final positions = <BoardPosition>[];
+    final positionsToCheck = _getAdjacentEmptyPositions();
 
     for (final pos in positionsToCheck) {
       if (canPlaceTile(tile, pos)) {
-        validPositions.add(pos);
+        positions.add(pos);
       }
     }
 
-    return validPositions;
+    return positions;
   }
 
-  void _updateValidPositions() {
+  Set<BoardPosition> _getAdjacentEmptyPositions() {
+    final positions = <BoardPosition>{};
+    for (final pos in board.keys) {
+      for (final neighbor in pos.neighbors) {
+        if (!board.containsKey(neighbor)) {
+          positions.add(neighbor);
+        }
+      }
+    }
+    return positions;
+  }
+
+  void _updatePositions() {
+    _allAdjacentPositions = _getAdjacentEmptyPositions().toList();
+
     if (_selectedTile != null) {
       _validPositions = getValidPositions(_selectedTile!);
     } else {
@@ -163,16 +318,30 @@ class GameState extends ChangeNotifier {
   /// Place the selected tile at a position.
   bool placeTile(BoardPosition position) {
     if (_selectedTile == null) {
-      _message = 'No tile selected';
+      _message = 'Select a tile first!';
       notifyListeners();
       return false;
     }
 
     if (!canPlaceTile(_selectedTile!, position)) {
-      _message = 'Invalid placement';
+      _message = 'Try another spot!';
       notifyListeners();
       return false;
     }
+
+    // Save for undo
+    _history.add(_GameAction(
+      tile: _selectedTile!,
+      position: position,
+      playerIndex: _currentPlayerIndex,
+    ));
+
+    // Calculate score
+    final (matching, total) = countMatchingEdges(_selectedTile!, position);
+    _lastPlacementResult = currentScore.addTilePlacement(
+      matchingEdges: matching,
+      totalAdjacentTiles: total,
+    );
 
     // Place the tile
     board[position] = _selectedTile!;
@@ -184,42 +353,118 @@ class GameState extends ChangeNotifier {
     if (position.col < _minCol) _minCol = position.col;
     if (position.col > _maxCol) _maxCol = position.col;
 
-    // Check for win condition
-    if (currentPlayer.hasWon) {
-      _winner = currentPlayer.name;
-      _gameOver = true;
-      _message = '${currentPlayer.name} wins!';
-      _selectedTile = null;
-      _validPositions = [];
-      notifyListeners();
-      return true;
-    }
+    // Generate feedback message
+    _generatePlacementMessage();
 
-    // Check for extra turn (solid colored tile)
-    final placedSolid = _selectedTile!.isSolid;
+    // Handle mode-specific logic
+    switch (mode) {
+      case GameMode.colorDominoes:
+        _handleColorDominoesPlacement();
+        break;
+      case GameMode.freePlay:
+        _handleFreePlayPlacement();
+        break;
+      case GameMode.guidedLearning:
+        _handleGuidedLearningPlacement();
+        break;
+      case GameMode.cooperative:
+        _handleCooperativePlacement();
+        break;
+    }
 
     _selectedTile = null;
-
-    if (placedSolid) {
-      _message = '${currentPlayer.name} placed a solid tile - Extra turn!';
-    } else {
-      // Next player's turn
-      _nextTurn();
-    }
-
-    _updateValidPositions();
+    _updatePositions();
     notifyListeners();
     return true;
   }
 
+  void _generatePlacementMessage() {
+    if (_lastPlacementResult == null) return;
+
+    final result = _lastPlacementResult!;
+    if (result.hasAchievements) {
+      _message = result.newAchievements.join(' ');
+    } else if (result.isPerfectMatch) {
+      _message = 'Perfect match! +${result.pointsEarned} points';
+    } else if (result.matchingEdges > 0) {
+      _message = 'Nice! +${result.pointsEarned} points';
+    } else {
+      _message = '+${result.pointsEarned} points';
+    }
+  }
+
+  void _handleColorDominoesPlacement() {
+    // Check for win
+    if (currentPlayer.hasWon) {
+      _winner = currentPlayer.name;
+      _gameOver = true;
+      _message = '🎉 ${currentPlayer.name} wins!';
+      return;
+    }
+
+    // Extra turn for solid tiles
+    if (_history.last.tile.isSolid) {
+      _message = '${_message ?? ''} Extra turn!';
+    } else {
+      _nextTurn();
+    }
+  }
+
+  void _handleFreePlayPlacement() {
+    // Auto-draw a new tile if hand is getting low
+    if (currentPlayer.hand.length < 3) {
+      drawTile();
+      drawTile();
+    }
+
+    // Rotate players if multiplayer
+    if (players.length > 1) {
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    }
+  }
+
+  void _handleGuidedLearningPlacement() {
+    // Similar to free play but with encouragement
+    if (currentPlayer.hand.length < 3) {
+      drawTile();
+      drawTile();
+    }
+
+    final result = _lastPlacementResult!;
+    if (result.matchingEdges == 0 && board.length > 1) {
+      _message = '${_message ?? ''}\nTry matching the colors next time!';
+    }
+
+    if (players.length > 1) {
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    }
+  }
+
+  void _handleCooperativePlacement() {
+    // Check cooperative goal (e.g., build a certain size carpet)
+    if (board.length >= 20) {
+      _gameOver = true;
+      _message = '🎉 Amazing! You built a beautiful carpet together!';
+      return;
+    }
+
+    // Refill hand
+    if (currentPlayer.hand.length < 3) {
+      drawTile();
+      drawTile();
+    }
+
+    // Next player
+    _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    _message = '${_message ?? ""}\n${currentPlayer.name}'s turn!';
+  }
+
   void _nextTurn() {
     _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    _message = "${currentPlayer.name}'s turn";
 
     // Check if current player can make any move
     bool canMakeMove = false;
     for (final tile in currentPlayer.hand) {
-      // Check all 4 rotations
       CarpetTile rotatedTile = tile;
       for (int r = 0; r < 4; r++) {
         if (getValidPositions(rotatedTile).isNotEmpty) {
@@ -233,12 +478,40 @@ class GameState extends ChangeNotifier {
 
     if (!canMakeMove) {
       _message = "${currentPlayer.name} cannot play - skipping turn";
-      // Skip to next player
       _nextTurn();
     }
   }
 
-  /// Restart the game with same players.
+  /// Undo the last placement.
+  void undo() {
+    if (_history.isEmpty) return;
+
+    final action = _history.removeLast();
+    board.remove(action.position);
+    players[action.playerIndex].addTile(action.tile);
+    _currentPlayerIndex = action.playerIndex;
+
+    // Recalculate boundaries
+    _recalculateBoundaries();
+    _updatePositions();
+    _message = 'Undone!';
+    _lastPlacementResult = null;
+    notifyListeners();
+  }
+
+  void _recalculateBoundaries() {
+    if (board.isEmpty) {
+      _minRow = _maxRow = _minCol = _maxCol = 0;
+      return;
+    }
+
+    _minRow = board.keys.map((p) => p.row).reduce((a, b) => a < b ? a : b);
+    _maxRow = board.keys.map((p) => p.row).reduce((a, b) => a > b ? a : b);
+    _minCol = board.keys.map((p) => p.col).reduce((a, b) => a < b ? a : b);
+    _maxCol = board.keys.map((p) => p.col).reduce((a, b) => a > b ? a : b);
+  }
+
+  /// Restart the game.
   void restart() {
     board.clear();
     _currentPlayerIndex = 0;
@@ -247,21 +520,46 @@ class GameState extends ChangeNotifier {
     _gameOver = false;
     _message = null;
     _validPositions = [];
-    _minRow = 0;
-    _maxRow = 0;
-    _minCol = 0;
-    _maxCol = 0;
+    _allAdjacentPositions = [];
+    _lastPlacementResult = null;
+    _history.clear();
+    _minRow = _maxRow = _minCol = _maxCol = 0;
 
-    // Deal new tiles
-    int tileId = 0;
+    score.reset();
+    for (final ps in playerScores) {
+      ps.reset();
+    }
+
+    _nextTileId = 0;
+    _tilePool.clear();
+
+    // Deal new tiles based on mode
+    final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
     for (final player in players) {
       player.hand.clear();
-      for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${tileId++}'));
+      for (int i = 0; i < tilesPerPlayer; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${_nextTileId++}'));
       }
     }
 
-    _updateValidPositions();
+    if (mode != GameMode.colorDominoes) {
+      _refillTilePool();
+    }
+
+    _updatePositions();
     notifyListeners();
   }
+}
+
+/// Represents an action for undo support.
+class _GameAction {
+  final CarpetTile tile;
+  final BoardPosition position;
+  final int playerIndex;
+
+  _GameAction({
+    required this.tile,
+    required this.position,
+    required this.playerIndex,
+  });
 }
