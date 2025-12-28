@@ -456,7 +456,7 @@ class GameState extends ChangeNotifier {
 
     // Next player
     _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    _message = '${_message ?? ""}\n${currentPlayer.name}'s turn!';
+    _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
   }
 
   void _nextTurn() {
