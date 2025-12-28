@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../game/game_state.dart';
 import 'tile_widget.dart';
+import 'tile_painter.dart';
 
 /// Widget that displays the game board with placed tiles.
 class GameBoard extends StatelessWidget {
   final GameState gameState;
   final double tileSize;
   final Function(BoardPosition)? onPositionTap;
+  final bool showMatchFeedback;
 
   const GameBoard({
     super.key,
     required this.gameState,
     this.tileSize = 70,
     this.onPositionTap,
+    this.showMatchFeedback = false,
   });
 
   @override
@@ -51,6 +54,7 @@ class GameBoard extends StatelessWidget {
                     final position = BoardPosition(row, col);
                     final tile = gameState.board[position];
                     final isValidDrop = gameState.validPositions.contains(position);
+                    final isAdjacent = gameState.allAdjacentPositions.contains(position);
 
                     if (tile != null) {
                       return Padding(
@@ -63,26 +67,7 @@ class GameBoard extends StatelessWidget {
                     } else {
                       return Padding(
                         padding: const EdgeInsets.all(1),
-                        child: DragTarget<CarpetTile>(
-                          onWillAcceptWithDetails: (details) {
-                            return gameState.canPlaceTile(details.data, position);
-                          },
-                          onAcceptWithDetails: (details) {
-                            onPositionTap?.call(position);
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            final isHovering = candidateData.isNotEmpty;
-                            return GestureDetector(
-                              onTap: isValidDrop
-                                  ? () => onPositionTap?.call(position)
-                                  : null,
-                              child: EmptyTileSlot(
-                                size: tileSize,
-                                isValidDrop: isValidDrop || isHovering,
-                              ),
-                            );
-                          },
-                        ),
+                        child: _buildDropTarget(context, position, isValidDrop, isAdjacent),
                       );
                     }
                   }),
@@ -92,6 +77,55 @@ class GameBoard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDropTarget(
+    BuildContext context,
+    BoardPosition position,
+    bool isValidDrop,
+    bool isAdjacent,
+  ) {
+    return DragTarget<CarpetTile>(
+      onWillAcceptWithDetails: (details) {
+        return gameState.canPlaceTile(details.data, position);
+      },
+      onAcceptWithDetails: (details) {
+        onPositionTap?.call(position);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        final showPreview = isHovering && showMatchFeedback && candidateData.first != null;
+
+        if (showPreview) {
+          // Show preview with edge match feedback
+          final tile = candidateData.first!;
+          final edgeStatus = gameState.getEdgeMatchStatus(tile, position);
+
+          return GestureDetector(
+            onTap: isValidDrop ? () => onPositionTap?.call(position) : null,
+            child: Opacity(
+              opacity: 0.7,
+              child: CustomPaint(
+                size: Size(tileSize, tileSize),
+                painter: TilePainter(
+                  tile: tile,
+                  edgeStatus: edgeStatus,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return GestureDetector(
+          onTap: isValidDrop ? () => onPositionTap?.call(position) : null,
+          child: EmptyTileSlot(
+            size: tileSize,
+            isValidDrop: isValidDrop || isHovering,
+            showHint: isAdjacent && !isValidDrop && gameState.selectedTile != null,
+          ),
+        );
+      },
     );
   }
 }

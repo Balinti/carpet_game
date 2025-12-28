@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import '../models/carpet_tile.dart';
+import '../models/score_system.dart';
 
 /// Custom painter that draws a carpet tile with 4 triangular sections.
 class TilePainter extends CustomPainter {
   final CarpetTile tile;
   final bool isSelected;
   final bool isHighlighted;
+  final Map<int, EdgeMatchStatus>? edgeStatus;
 
   TilePainter({
     required this.tile,
     this.isSelected = false,
     this.isHighlighted = false,
+    this.edgeStatus,
   });
 
   @override
@@ -35,6 +38,11 @@ class TilePainter extends CustomPainter {
 
     canvas.drawLine(topLeft, bottomRight, borderPaint);
     canvas.drawLine(topRight, bottomLeft, borderPaint);
+
+    // Draw edge match feedback if provided
+    if (edgeStatus != null) {
+      _drawEdgeFeedback(canvas, size, edgeStatus!);
+    }
 
     // Draw outer border
     final outerBorderPaint = Paint()
@@ -73,6 +81,66 @@ class TilePainter extends CustomPainter {
     }
   }
 
+  void _drawEdgeFeedback(Canvas canvas, Size size, Map<int, EdgeMatchStatus> status) {
+    const edgeWidth = 6.0;
+
+    // Top edge (0)
+    if (status[0] != EdgeMatchStatus.noAdjacent) {
+      final paint = Paint()
+        ..color = status[0]!.borderColor
+        ..strokeWidth = edgeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(edgeWidth / 2, edgeWidth / 2),
+        Offset(size.width - edgeWidth / 2, edgeWidth / 2),
+        paint,
+      );
+    }
+
+    // Right edge (1)
+    if (status[1] != EdgeMatchStatus.noAdjacent) {
+      final paint = Paint()
+        ..color = status[1]!.borderColor
+        ..strokeWidth = edgeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(size.width - edgeWidth / 2, edgeWidth / 2),
+        Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2),
+        paint,
+      );
+    }
+
+    // Bottom edge (2)
+    if (status[2] != EdgeMatchStatus.noAdjacent) {
+      final paint = Paint()
+        ..color = status[2]!.borderColor
+        ..strokeWidth = edgeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(edgeWidth / 2, size.height - edgeWidth / 2),
+        Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2),
+        paint,
+      );
+    }
+
+    // Left edge (3)
+    if (status[3] != EdgeMatchStatus.noAdjacent) {
+      final paint = Paint()
+        ..color = status[3]!.borderColor
+        ..strokeWidth = edgeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(edgeWidth / 2, edgeWidth / 2),
+        Offset(edgeWidth / 2, size.height - edgeWidth / 2),
+        paint,
+      );
+    }
+  }
+
   void _drawTriangle(Canvas canvas, List<Offset> points, Color color) {
     final paint = Paint()
       ..color = color
@@ -91,6 +159,7 @@ class TilePainter extends CustomPainter {
   bool shouldRepaint(covariant TilePainter oldDelegate) {
     return oldDelegate.tile != tile ||
         oldDelegate.isSelected != isSelected ||
-        oldDelegate.isHighlighted != isHighlighted;
+        oldDelegate.isHighlighted != isHighlighted ||
+        oldDelegate.edgeStatus != edgeStatus;
   }
 }

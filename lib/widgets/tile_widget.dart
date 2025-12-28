@@ -71,35 +71,56 @@ class TileWidget extends StatelessWidget {
 class EmptyTileSlot extends StatelessWidget {
   final double size;
   final bool isValidDrop;
+  final bool showHint;
   final VoidCallback? onTap;
 
   const EmptyTileSlot({
     super.key,
     this.size = 80,
     this.isValidDrop = false,
+    this.showHint = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    Color backgroundColor;
+    Color borderColor;
+    double borderWidth;
+    Widget? child;
+
+    if (isValidDrop) {
+      backgroundColor = Colors.green.withOpacity(0.3);
+      borderColor = Colors.green;
+      borderWidth = 2;
+      child = const Icon(Icons.add, color: Colors.green, size: 24);
+    } else if (showHint) {
+      // Show a gentle hint that this position exists but doesn't match
+      backgroundColor = Colors.orange.withOpacity(0.15);
+      borderColor = Colors.orange.shade300;
+      borderWidth = 1.5;
+      child = Icon(Icons.help_outline, color: Colors.orange.shade300, size: 18);
+    } else {
+      backgroundColor = Colors.grey.withOpacity(0.1);
+      borderColor = Colors.grey.shade400;
+      borderWidth = 1;
+      child = null;
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isValidDrop
-              ? Colors.green.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.1),
+          color: backgroundColor,
           border: Border.all(
-            color: isValidDrop ? Colors.green : Colors.grey.shade400,
-            width: isValidDrop ? 2 : 1,
+            color: borderColor,
+            width: borderWidth,
             style: BorderStyle.solid,
           ),
         ),
-        child: isValidDrop
-            ? const Icon(Icons.add, color: Colors.green, size: 24)
-            : null,
+        child: child,
       ),
     );
   }
