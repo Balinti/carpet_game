@@ -142,7 +142,7 @@ class AppLocalizations {
   String tilesCount(int count) => _t('$count tiles', '$count azulejos', 'אריחים $count');
 
   // Language selector
-  String get language => _t('Language', 'Idioma', 'שפה');
+  String get languageLabel => _t('Language', 'Idioma', 'שפה');
   String get selectLanguage => _t('Select Language', 'Seleccionar Idioma', 'בחר שפה');
 
   // Helper method for translations
