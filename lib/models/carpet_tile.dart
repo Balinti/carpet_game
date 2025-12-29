@@ -190,4 +190,30 @@ class CarpetTile {
       return generateFourColor(id); // 20% chance
     }
   }
+
+  /// Generates all possible tile combinations (4^4 = 256 tiles).
+  /// Each tile gets a unique ID based on its color combination.
+  static List<CarpetTile> generateAllCombinations() {
+    final tiles = <CarpetTile>[];
+    int index = 0;
+
+    for (final top in TileColor.values) {
+      for (final right in TileColor.values) {
+        for (final bottom in TileColor.values) {
+          for (final left in TileColor.values) {
+            tiles.add(CarpetTile(
+              id: 'tile_$index',
+              top: top,
+              right: right,
+              bottom: bottom,
+              left: left,
+            ));
+            index++;
+          }
+        }
+      }
+    }
+
+    return tiles;
+  }
 }

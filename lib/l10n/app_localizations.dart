@@ -158,7 +158,7 @@ class AppLocalizations {
   String get dragToPlace => _t('Drag tiles to the grid', 'Arrastra azulejos a la cuadrícula', 'גרור אריחים לרשת');
   String get matchingColors => _t('Match colors on touching edges!', '¡Combina colores en bordes que se tocan!', '!התאם צבעים בקצוות הנוגעים');
   String get starterPuzzleRules => _t('Starter Puzzle Rules', 'Reglas del Rompecabezas', 'חוקי הפאזל');
-  String get rule1Place9 => _t('1. Place all 9 tiles on the 3x3 grid.', '1. Coloca los 9 azulejos en la cuadrícula 3x3.', '.הנח את כל 9 האריחים על הרשת 3x3 .1');
+  String get rule1Place9 => _t('1. Fill the 3x3 grid by choosing 9 tiles from 256 options.', '1. Llena la cuadrícula 3x3 eligiendo 9 azulejos de 256 opciones.', '.מלא את הרשת 3x3 על ידי בחירת 9 אריחים מתוך 256 אפשרויות .1');
   String get rule2MatchColors => _t('2. Adjacent tiles must have matching colors.', '2. Los azulejos adyacentes deben tener colores coincidentes.', '.אריחים סמוכים חייבים להיות עם צבעים תואמים .2');
   String get rule3Rotate => _t('3. Tap tiles to rotate them before placing.', '3. Toca los azulejos para rotarlos antes de colocar.', '.הקש על אריחים לסיבוב לפני ההנחה .3');
   String get rule4Timer => _t('4. Complete as fast as you can!', '4. ¡Completa lo más rápido que puedas!', '!השלם כמה שיותר מהר .4');
@@ -166,6 +166,9 @@ class AppLocalizations {
   // Unsuccessful attempts
   String get misses => _t('Misses', 'Fallos', 'פספוסים');
   String get totalMisses => _t('Total Misses', 'Total de Fallos', 'סה"כ פספוסים');
+
+  // Tile count
+  String get tilesAvailable => _t('tiles available', 'azulejos disponibles', 'אריחים זמינים');
 
   // Helper method for translations
   String _t(String en, String es, String he) {

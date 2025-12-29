@@ -49,11 +49,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   void _initializePuzzle() {
-    // Generate 9 random tiles - always visible at bottom
-    _allTiles = List.generate(
-      9,
-      (i) => CarpetTile.generateRandom('tile_$i'),
-    );
+    // Generate ALL 256 possible tile combinations (4 colors ^ 4 positions)
+    _allTiles = CarpetTile.generateAllCombinations();
     _grid.fillRange(0, 9, null);
     _selectedTile = null;
     _rotationCount = 0;
@@ -466,6 +463,14 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
                   Row(
                     children: [
                       Text(
+                        '${_allTiles.length} ${l10n.tilesAvailable}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
                         l10n.tapToRotate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
@@ -684,106 +689,109 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   Widget _buildAvailableTiles() {
-    const tileSize = 70.0;
+    // Smaller tiles for 256 options - use GridView for scrolling
+    const tileSize = 50.0;
 
-    return Center(
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.center,
-        children: _allTiles.asMap().entries.map((entry) {
-          final index = entry.key;
-          final tile = entry.value;
-          final isPlaced = _isTilePlaced(tile);
-          final isSelected = _selectedTile?.id == tile.id;
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: tileSize + 8,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        childAspectRatio: 1,
+      ),
+      itemCount: _allTiles.length,
+      itemBuilder: (context, index) {
+        final tile = _allTiles[index];
+        final isPlaced = _isTilePlaced(tile);
+        final isSelected = _selectedTile?.id == tile.id;
 
-          // If tile is placed, show it grayed out
-          if (isPlaced) {
-            return Opacity(
-              opacity: 0.3,
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: const Size(tileSize, tileSize),
-                    painter: TilePainter(tile: tile),
-                  ),
-                  // Checkmark overlay for placed tiles
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.green,
-                        size: 32,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return GestureDetector(
-            onTap: () => _selectTile(tile),
-            onDoubleTap: () => _rotateTile(index),
-            child: Draggable<CarpetTile>(
-              data: tile,
-              feedback: Material(
-                color: Colors.transparent,
-                elevation: 8,
-                child: Opacity(
-                  opacity: 0.9,
-                  child: CustomPaint(
-                    size: const Size(tileSize, tileSize),
-                    painter: TilePainter(
-                      tile: tile,
-                      isSelected: true,
-                    ),
-                  ),
-                ),
-              ),
-              childWhenDragging: Opacity(
-                opacity: 0.3,
-                child: CustomPaint(
+        // If tile is placed, show it grayed out
+        if (isPlaced) {
+          return Opacity(
+            opacity: 0.3,
+            child: Stack(
+              children: [
+                CustomPaint(
                   size: const Size(tileSize, tileSize),
                   painter: TilePainter(tile: tile),
                 ),
-              ),
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: const Size(tileSize, tileSize),
-                    painter: TilePainter(
-                      tile: tile,
-                      isSelected: isSelected,
+                // Checkmark overlay for placed tiles
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.green,
+                      size: 20,
                     ),
                   ),
-                  // Rotate indicator
-                  Positioned(
-                    right: 2,
-                    bottom: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.rotate_right,
-                        size: 14,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
-        }).toList(),
-      ),
+        }
+
+        return GestureDetector(
+          onTap: () => _selectTile(tile),
+          onDoubleTap: () => _rotateTile(index),
+          child: Draggable<CarpetTile>(
+            data: tile,
+            feedback: Material(
+              color: Colors.transparent,
+              elevation: 8,
+              child: Opacity(
+                opacity: 0.9,
+                child: CustomPaint(
+                  size: const Size(tileSize, tileSize),
+                  painter: TilePainter(
+                    tile: tile,
+                    isSelected: true,
+                  ),
+                ),
+              ),
+            ),
+            childWhenDragging: Opacity(
+              opacity: 0.3,
+              child: CustomPaint(
+                size: const Size(tileSize, tileSize),
+                painter: TilePainter(tile: tile),
+              ),
+            ),
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: const Size(tileSize, tileSize),
+                  painter: TilePainter(
+                    tile: tile,
+                    isSelected: isSelected,
+                  ),
+                ),
+                // Rotate indicator (smaller for compact tiles)
+                Positioned(
+                  right: 1,
+                  bottom: 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(1),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.rotate_right,
+                      size: 10,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
