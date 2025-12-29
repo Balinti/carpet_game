@@ -163,6 +163,10 @@ class AppLocalizations {
   String get rule3Rotate => _t('3. Tap tiles to rotate them before placing.', '3. Toca los azulejos para rotarlos antes de colocar.', '.הקש על אריחים לסיבוב לפני ההנחה .3');
   String get rule4Timer => _t('4. Complete as fast as you can!', '4. ¡Completa lo más rápido que puedas!', '!השלם כמה שיותר מהר .4');
 
+  // Unsuccessful attempts
+  String get misses => _t('Misses', 'Fallos', 'פספוסים');
+  String get totalMisses => _t('Total Misses', 'Total de Fallos', 'סה"כ פספוסים');
+
   // Helper method for translations
   String _t(String en, String es, String he) {
     switch (language) {

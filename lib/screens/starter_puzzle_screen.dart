@@ -33,6 +33,9 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   // Game state
   bool _puzzleComplete = false;
 
+  // Unsuccessful attempt counter (when trying to place in invalid position)
+  int _unsuccessfulAttempts = 0;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +60,7 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
     _elapsedSeconds = 0;
     _timerStarted = false;
     _puzzleComplete = false;
+    _unsuccessfulAttempts = 0;
     _timer?.cancel();
     _timer = null;
   }
@@ -116,6 +120,9 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
 
     // Check if placement is valid (matching colors with adjacent tiles)
     if (!_canPlaceTile(_selectedTile!, gridIndex)) {
+      setState(() {
+        _unsuccessfulAttempts++;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).tryAnotherSpot),
@@ -305,6 +312,13 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
               label: l10n.totalRotations,
               value: '$_rotationCount',
             ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              icon: Icons.warning_amber,
+              label: l10n.totalMisses,
+              value: '$_unsuccessfulAttempts',
+              color: Colors.orange,
+            ),
           ],
         ),
         actions: [
@@ -334,13 +348,15 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
     required IconData icon,
     required String label,
     required String value,
+    Color? color,
   }) {
+    final displayColor = color ?? Theme.of(context).colorScheme.primary;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+            Icon(icon, size: 24, color: displayColor),
             const SizedBox(width: 8),
             Text(label, style: Theme.of(context).textTheme.titleMedium),
           ],
@@ -349,7 +365,7 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
+            color: displayColor,
           ),
         ),
       ],
@@ -520,6 +536,26 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+
+          // Unsuccessful attempts counter
+          Row(
+            children: [
+              Icon(Icons.warning_amber, size: 24, color: Colors.orange.shade700),
+              const SizedBox(width: 8),
+              Text(
+                l10n.misses,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$_unsuccessfulAttempts',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade700,
                 ),
               ),
             ],
