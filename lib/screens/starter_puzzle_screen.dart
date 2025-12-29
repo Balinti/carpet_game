@@ -70,6 +70,28 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   // Get the number of tiles still available (not placed)
   int get _availableTileCount => _allTiles.where((t) => !_isTilePlaced(t)).length;
 
+  // Get number of tiles placed on the grid
+  int get _tilesPlaced => _grid.where((t) => t != null).length;
+
+  // Get number of tiles remaining to place
+  int get _tilesRemaining => 9 - _tilesPlaced;
+
+  // Calculate final score
+  // Base: 10000, Time: -10/sec, Rotations: -50 each, Misses: -200 each
+  int get _calculateScore {
+    const baseScore = 10000;
+    const timePenalty = 10;      // per second
+    const rotationPenalty = 50;  // per rotation
+    const missPenalty = 200;     // per miss
+
+    final score = baseScore
+        - (_elapsedSeconds * timePenalty)
+        - (_rotationCount * rotationPenalty)
+        - (_unsuccessfulAttempts * missPenalty);
+
+    return score < 0 ? 0 : score;
+  }
+
   void _startTimer() {
     if (!_timerStarted) {
       _timerStarted = true;
@@ -316,6 +338,15 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
               value: '$_unsuccessfulAttempts',
               color: Colors.orange,
             ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              icon: Icons.star,
+              label: l10n.finalScore,
+              value: '$_calculateScore',
+              color: Colors.amber.shade700,
+            ),
           ],
         ),
         actions: [
@@ -541,6 +572,26 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+
+          // Parts left counter
+          Row(
+            children: [
+              Icon(Icons.grid_3x3, size: 24, color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              Text(
+                l10n.partsLeft,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$_tilesRemaining/9',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade700,
                 ),
               ),
             ],

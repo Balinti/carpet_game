@@ -169,6 +169,8 @@ class AppLocalizations {
 
   // Tile count
   String get tilesAvailable => _t('tiles available', 'azulejos disponibles', 'אריחים זמינים');
+  String get partsLeft => _t('Left', 'Faltan', 'נותרו');
+  String get finalScore => _t('Final Score', 'Puntuación Final', 'ניקוד סופי');
 
   // Helper method for translations
   String _t(String en, String es, String he) {

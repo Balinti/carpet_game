@@ -39,7 +39,7 @@ class HomeScreen extends StatelessWidget {
                 bottom: 8,
                 left: 8,
                 child: Text(
-                  'v2.2.0',
+                  'v2.3.0',
                   style: TextStyle(
                     fontSize: 10,
                     color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.5),
