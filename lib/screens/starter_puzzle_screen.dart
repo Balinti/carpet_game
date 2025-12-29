@@ -740,6 +740,20 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
           onDoubleTap: () => _rotateTile(index),
           child: Draggable<CarpetTile>(
             data: tile,
+            onDraggableCanceled: (velocity, offset) {
+              // Increment misses when drag is dropped on invalid position
+              _startTimer();
+              setState(() {
+                _unsuccessfulAttempts++;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(AppLocalizations.of(context).tryAnotherSpot),
+                  duration: const Duration(milliseconds: 800),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
             feedback: Material(
               color: Colors.transparent,
               elevation: 8,
