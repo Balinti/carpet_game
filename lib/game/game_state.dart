@@ -370,6 +370,10 @@ class GameState extends ChangeNotifier {
       case GameMode.cooperative:
         _handleCooperativePlacement();
         break;
+      case GameMode.starterPuzzle:
+        // Starter Puzzle uses its own screen, fallback to free play behavior
+        _handleFreePlayPlacement();
+        break;
     }
 
     _selectedTile = null;

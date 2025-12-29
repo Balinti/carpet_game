@@ -50,6 +50,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       case GameMode.cooperative:
         _gameState = GameState.newCooperative(widget.playerCount);
         break;
+      case GameMode.starterPuzzle:
+        // Starter Puzzle uses its own screen, but fallback to free play if reached
+        _gameState = GameState.newFreePlay(playerCount: 1);
+        break;
     }
   }
 
@@ -112,6 +116,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.learningMode;
       case GameMode.cooperative:
         return l10n.buildTogether;
+      case GameMode.starterPuzzle:
+        return l10n.starterPuzzle;
     }
   }
 
@@ -198,6 +204,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           Text(l10n.goalBuild20),
           const SizedBox(height: 4),
           Text(l10n.everyoneShares),
+        ];
+      case GameMode.starterPuzzle:
+        return [
+          Text(l10n.starterPuzzleRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.rule1Place9),
+          const SizedBox(height: 4),
+          Text(l10n.rule2MatchColors),
+          const SizedBox(height: 4),
+          Text(l10n.rule3Rotate),
+          const SizedBox(height: 4),
+          Text(l10n.rule4Timer),
         ];
     }
   }
