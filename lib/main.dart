@@ -1,0 +1,105 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/l10n.dart';
+import 'screens/home_screen.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const CarpetGameApp());
+}
+
+class CarpetGameApp extends StatefulWidget {
+  const CarpetGameApp({super.key});
+
+  @override
+  State<CarpetGameApp> createState() => _CarpetGameAppState();
+}
+
+class _CarpetGameAppState extends State<CarpetGameApp> {
+  final LocaleProvider _localeProvider = LocaleProvider();
+
+  @override
+  void initState() {
+    super.initState();
+    _localeProvider.addListener(_onLocaleChanged);
+  }
+
+  @override
+  void dispose() {
+    _localeProvider.removeListener(_onLocaleChanged);
+    super.dispose();
+  }
+
+  void _onLocaleChanged() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LocaleProviderScope(
+      provider: _localeProvider,
+      child: MaterialApp(
+        title: 'Carpet Game',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF6750A4),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF6750A4),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        themeMode: ThemeMode.system,
+        locale: _localeProvider.locale,
+        supportedLocales: AppLanguage.values.map((l) => l.locale).toList(),
+        localizationsDelegates: const [
+          AppLocalizationsDelegate(),
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        localeResolutionCallback: (locale, supportedLocales) {
+          // Return the selected language locale, with fallback to English
+          if (supportedLocales.contains(_localeProvider.locale)) {
+            return _localeProvider.locale;
+          }
+          return const Locale('en');
+        },
+        builder: (context, child) {
+          return Directionality(
+            textDirection: _localeProvider.textDirection,
+            child: child!,
+          );
+        },
+        home: const HomeScreen(),
+      ),
+    );
+  }
+}
+
+/// InheritedWidget to provide LocaleProvider to descendants.
+class LocaleProviderScope extends InheritedWidget {
+  final LocaleProvider provider;
+
+  const LocaleProviderScope({
+    super.key,
+    required this.provider,
+    required super.child,
+  });
+
+  static LocaleProvider of(BuildContext context) {
+    final scope = context.dependOnInheritedWidgetOfExactType<LocaleProviderScope>();
+    return scope!.provider;
+  }
+
+  @override
+  bool updateShouldNotify(LocaleProviderScope oldWidget) {
+    return provider.language != oldWidget.provider.language;
+  }
+}
