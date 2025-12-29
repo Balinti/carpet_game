@@ -28,25 +28,7 @@ class HomeScreen extends StatelessWidget {
         child: SafeArea(
           child: Stack(
             children: [
-              // Language selector button
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _LanguageButton(),
-              ),
-              // Version indicator (to verify deployment)
-              Positioned(
-                bottom: 8,
-                left: 8,
-                child: Text(
-                  'v2.3.0',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.5),
-                  ),
-                ),
-              ),
-              // Main content
+              // Main content (FIRST so it's behind the buttons)
               SingleChildScrollView(
                 child: Center(
                   child: Padding(
@@ -162,6 +144,24 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+              // Language selector button (on TOP of content)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _LanguageButton(),
+              ),
+              // Version indicator
+              Positioned(
+                bottom: 8,
+                left: 8,
+                child: Text(
+                  'v2.4.0',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.5),
                   ),
                 ),
               ),
