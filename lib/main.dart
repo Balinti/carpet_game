@@ -69,7 +69,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
             child: child!,
           );
         },
-        home: const HomeScreen(),
+        home: HomeScreen(key: ValueKey(_localeProvider.language)),
       ),
     );
   }

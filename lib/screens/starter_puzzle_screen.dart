@@ -16,8 +16,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   // Grid state: 3x3 = 9 positions, null means empty
   final List<CarpetTile?> _grid = List.filled(9, null);
 
-  // Available tiles (9 tiles to fill the grid)
-  late List<CarpetTile> _availableTiles;
+  // All 9 tiles - always visible at bottom (never removed from this list)
+  late List<CarpetTile> _allTiles;
 
   // Selected tile for placement
   CarpetTile? _selectedTile;
@@ -46,8 +46,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   void _initializePuzzle() {
-    // Generate 9 random tiles
-    _availableTiles = List.generate(
+    // Generate 9 random tiles - always visible at bottom
+    _allTiles = List.generate(
       9,
       (i) => CarpetTile.generateRandom('tile_$i'),
     );
@@ -60,6 +60,14 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
     _timer?.cancel();
     _timer = null;
   }
+
+  // Check if a tile is already placed on the grid
+  bool _isTilePlaced(CarpetTile tile) {
+    return _grid.any((t) => t?.id == tile.id);
+  }
+
+  // Get the number of tiles still available (not placed)
+  int get _availableTileCount => _allTiles.where((t) => !_isTilePlaced(t)).length;
 
   void _startTimer() {
     if (!_timerStarted) {
@@ -75,14 +83,20 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   void _rotateTile(int index) {
+    // Don't rotate if tile is already placed
+    if (_isTilePlaced(_allTiles[index])) return;
+
     _startTimer();
     setState(() {
-      _availableTiles[index] = _availableTiles[index].rotateClockwise();
+      _allTiles[index] = _allTiles[index].rotateClockwise();
       _rotationCount++;
     });
   }
 
   void _selectTile(CarpetTile tile) {
+    // Don't select if tile is already placed
+    if (_isTilePlaced(tile)) return;
+
     _startTimer();
     setState(() {
       if (_selectedTile?.id == tile.id) {
@@ -96,6 +110,7 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   void _placeTileOnGrid(int gridIndex) {
     if (_selectedTile == null) return;
     if (_grid[gridIndex] != null) return;
+    if (_isTilePlaced(_selectedTile!)) return;
 
     _startTimer();
 
@@ -113,11 +128,10 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
 
     setState(() {
       _grid[gridIndex] = _selectedTile;
-      _availableTiles.removeWhere((t) => t.id == _selectedTile!.id);
       _selectedTile = null;
 
-      // Check if puzzle is complete
-      if (_availableTiles.isEmpty && !_grid.contains(null)) {
+      // Check if puzzle is complete (all 9 tiles placed)
+      if (!_grid.contains(null)) {
         _puzzleComplete = true;
         _timer?.cancel();
         _showCompletionDialog();
@@ -129,7 +143,6 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
     if (_grid[gridIndex] == null) return;
 
     setState(() {
-      _availableTiles.add(_grid[gridIndex]!);
       _grid[gridIndex] = null;
     });
   }
@@ -556,18 +569,20 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
 
     return DragTarget<CarpetTile>(
       onWillAcceptWithDetails: (details) {
-        return _grid[index] == null && _canPlaceTile(details.data, index);
+        // Don't accept if cell is occupied or tile is already placed elsewhere
+        if (_grid[index] != null) return false;
+        if (_isTilePlaced(details.data)) return false;
+        return _canPlaceTile(details.data, index);
       },
       onAcceptWithDetails: (details) {
         final tile = details.data;
         _startTimer();
         setState(() {
           _grid[index] = tile;
-          _availableTiles.removeWhere((t) => t.id == tile.id);
           _selectedTile = null;
 
-          // Check if puzzle is complete
-          if (_availableTiles.isEmpty && !_grid.contains(null)) {
+          // Check if puzzle is complete (all 9 tiles placed)
+          if (!_grid.contains(null)) {
             _puzzleComplete = true;
             _timer?.cancel();
             _showCompletionDialog();
@@ -640,10 +655,40 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
         spacing: 12,
         runSpacing: 12,
         alignment: WrapAlignment.center,
-        children: _availableTiles.asMap().entries.map((entry) {
+        children: _allTiles.asMap().entries.map((entry) {
           final index = entry.key;
           final tile = entry.value;
+          final isPlaced = _isTilePlaced(tile);
           final isSelected = _selectedTile?.id == tile.id;
+
+          // If tile is placed, show it grayed out
+          if (isPlaced) {
+            return Opacity(
+              opacity: 0.3,
+              child: Stack(
+                children: [
+                  CustomPaint(
+                    size: const Size(tileSize, tileSize),
+                    painter: TilePainter(tile: tile),
+                  ),
+                  // Checkmark overlay for placed tiles
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.green,
+                        size: 32,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
           return GestureDetector(
             onTap: () => _selectTile(tile),
