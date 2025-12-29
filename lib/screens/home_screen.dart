@@ -34,6 +34,18 @@ class HomeScreen extends StatelessWidget {
                 right: 8,
                 child: _LanguageButton(),
               ),
+              // Version indicator (to verify deployment)
+              Positioned(
+                bottom: 8,
+                left: 8,
+                child: Text(
+                  'v2.1.0',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.5),
+                  ),
+                ),
+              ),
               // Main content
               SingleChildScrollView(
                 child: Center(
