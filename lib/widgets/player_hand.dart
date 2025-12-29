@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../models/models.dart';
 import 'tile_widget.dart';
 
@@ -23,6 +24,8 @@ class PlayerHand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -66,7 +69,7 @@ class PlayerHand extends StatelessWidget {
                 ],
               ),
               Text(
-                '${player.tileCount} tiles',
+                l10n.tilesCount(player.tileCount),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -122,11 +125,11 @@ class PlayerHand extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: onRotate,
                   icon: const Icon(Icons.rotate_right),
-                  label: const Text('Rotate'),
+                  label: Text(l10n.rotate),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Double-tap tile to rotate',
+                  l10n.doubleTapRotate,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       ),

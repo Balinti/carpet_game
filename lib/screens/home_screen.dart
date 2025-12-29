@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+import '../main.dart';
 import '../models/game_mode.dart';
 import 'game_screen.dart';
 
@@ -8,6 +10,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -21,115 +25,126 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo/Title
-                    const Icon(
-                      Icons.grid_view_rounded,
-                      size: 80,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Carpet Game',
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tile Matching Fun!',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer
-                                .withOpacity(0.8),
-                          ),
-                    ),
-                    const SizedBox(height: 40),
+          child: Stack(
+            children: [
+              // Language selector button
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _LanguageButton(),
+              ),
+              // Main content
+              SingleChildScrollView(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo/Title
+                        const Icon(
+                          Icons.grid_view_rounded,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.appTitle,
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.appSubtitle,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer
+                                    .withOpacity(0.8),
+                              ),
+                        ),
+                        const SizedBox(height: 40),
 
-                    // Kid-friendly modes section
-                    _SectionHeader(
-                      title: 'For Kids',
-                      icon: Icons.child_care,
-                      color: Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.freePlay,
-                      subtitle: 'Solo Creative Play',
-                      icon: Icons.brush,
-                      iconColor: Colors.orange,
-                      onTap: () => _startGame(context, GameMode.freePlay, 1),
-                    ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.guidedLearning,
-                      subtitle: 'Learn at Your Own Pace',
-                      icon: Icons.lightbulb_outline,
-                      iconColor: Colors.amber,
-                      onTap: () => _startGame(context, GameMode.guidedLearning, 1),
-                    ),
+                        // Kid-friendly modes section
+                        _SectionHeader(
+                          title: l10n.forKids,
+                          icon: Icons.child_care,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.freePlay,
+                          subtitle: l10n.soloCreativePlay,
+                          icon: Icons.brush,
+                          iconColor: Colors.orange,
+                          onTap: () => _startGame(context, GameMode.freePlay, 1),
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.learningMode,
+                          subtitle: l10n.learnAtYourPace,
+                          icon: Icons.lightbulb_outline,
+                          iconColor: Colors.amber,
+                          onTap: () => _startGame(context, GameMode.guidedLearning, 1),
+                        ),
 
-                    const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                    // Cooperative modes section
-                    _SectionHeader(
-                      title: 'Play Together',
-                      icon: Icons.groups,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.cooperative,
-                      subtitle: '2 Players - Team Up!',
-                      icon: Icons.favorite,
-                      iconColor: Colors.pink,
-                      onTap: () => _startGame(context, GameMode.cooperative, 2),
-                    ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.cooperative,
-                      subtitle: '3-4 Players - Family Fun!',
-                      icon: Icons.family_restroom,
-                      iconColor: Colors.green,
-                      onTap: () => _showPlayerCountDialog(context, GameMode.cooperative),
-                    ),
+                        // Cooperative modes section
+                        _SectionHeader(
+                          title: l10n.playTogether,
+                          icon: Icons.groups,
+                          color: Colors.green,
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.buildTogether,
+                          subtitle: l10n.twoPlayersTeamUp,
+                          icon: Icons.favorite,
+                          iconColor: Colors.pink,
+                          onTap: () => _startGame(context, GameMode.cooperative, 2),
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.buildTogether,
+                          subtitle: l10n.familyFun,
+                          icon: Icons.family_restroom,
+                          iconColor: Colors.green,
+                          onTap: () => _showPlayerCountDialog(context, GameMode.cooperative),
+                        ),
 
-                    const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                    // Competitive modes section
-                    _SectionHeader(
-                      title: 'Challenge Mode',
-                      icon: Icons.emoji_events,
-                      color: Colors.blue,
+                        // Competitive modes section
+                        _SectionHeader(
+                          title: l10n.challengeMode,
+                          icon: Icons.emoji_events,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.colorDominoes,
+                          subtitle: l10n.twoPlayersPassPlay,
+                          icon: Icons.people,
+                          iconColor: Colors.blue,
+                          onTap: () => _startGame(context, GameMode.colorDominoes, 2),
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.colorDominoes,
+                          subtitle: l10n.threeFourPlayers,
+                          icon: Icons.group_add,
+                          iconColor: Colors.indigo,
+                          onTap: () => _showPlayerCountDialog(context, GameMode.colorDominoes),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.colorDominoes,
-                      subtitle: '2 Players - Pass and Play',
-                      icon: Icons.people,
-                      iconColor: Colors.blue,
-                      onTap: () => _startGame(context, GameMode.colorDominoes, 2),
-                    ),
-                    const SizedBox(height: 12),
-                    _GameModeCard(
-                      mode: GameMode.colorDominoes,
-                      subtitle: '3-4 Players',
-                      icon: Icons.group_add,
-                      iconColor: Colors.indigo,
-                      onTap: () => _showPlayerCountDialog(context, GameMode.colorDominoes),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -149,26 +164,28 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showPlayerCountDialog(BuildContext context, GameMode mode) {
+    final l10n = AppLocalizations.of(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('How many players?'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.howManyPlayers),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const CircleAvatar(child: Text('3')),
-              title: const Text('3 Players'),
+              title: Text(l10n.threePlayers),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _startGame(context, mode, 3);
               },
             ),
             ListTile(
               leading: const CircleAvatar(child: Text('4')),
-              title: const Text('4 Players'),
+              title: Text(l10n.fourPlayers),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _startGame(context, mode, 4);
               },
             ),
@@ -176,11 +193,65 @@ class HomeScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.cancel),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LanguageButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final localeProvider = LocaleProviderScope.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return PopupMenuButton<AppLanguage>(
+      icon: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.language, size: 20),
+            const SizedBox(width: 4),
+            Text(
+              localeProvider.language.displayName,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+      tooltip: l10n.selectLanguage,
+      onSelected: (language) {
+        localeProvider.setLanguage(language);
+      },
+      itemBuilder: (context) => AppLanguage.values.map((language) {
+        final isSelected = language == localeProvider.language;
+        return PopupMenuItem<AppLanguage>(
+          value: language,
+          child: Row(
+            children: [
+              if (isSelected)
+                const Icon(Icons.check, size: 20)
+              else
+                const SizedBox(width: 20),
+              const SizedBox(width: 8),
+              Text(
+                language.displayName,
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -216,14 +287,14 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _GameModeCard extends StatelessWidget {
-  final GameMode mode;
+  final String title;
   final String subtitle;
   final IconData icon;
   final Color iconColor;
   final VoidCallback onTap;
 
   const _GameModeCard({
-    required this.mode,
+    required this.title,
     required this.subtitle,
     required this.icon,
     required this.iconColor,
@@ -260,7 +331,7 @@ class _GameModeCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      mode.displayName,
+                      title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
