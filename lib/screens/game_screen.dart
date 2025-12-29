@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../game/game_state.dart';
+import '../l10n/l10n.dart';
 import '../models/models.dart';
 import '../widgets/game_board.dart';
 import '../widgets/player_hand.dart';
@@ -101,96 +102,113 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.drawTile();
   }
 
+  String _getModeTitle(AppLocalizations l10n) {
+    switch (widget.mode) {
+      case GameMode.colorDominoes:
+        return l10n.colorDominoes;
+      case GameMode.freePlay:
+        return l10n.freePlay;
+      case GameMode.guidedLearning:
+        return l10n.learningMode;
+      case GameMode.cooperative:
+        return l10n.buildTogether;
+    }
+  }
+
   void _showRulesDialog() {
+    final l10n = AppLocalizations.of(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('${widget.mode.displayName} Rules'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text('${_getModeTitle(l10n)} - ${l10n.rules}'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: _getRulesContent(),
+            children: _getRulesContent(l10n),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it!'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.gotIt),
           ),
         ],
       ),
     );
   }
 
-  List<Widget> _getRulesContent() {
+  List<Widget> _getRulesContent(AppLocalizations l10n) {
     switch (widget.mode) {
       case GameMode.colorDominoes:
-        return const [
-          Text('How to Play:', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('1. Each player starts with 6 tiles.'),
-          SizedBox(height: 4),
-          Text('2. Take turns placing tiles on the board.'),
-          SizedBox(height: 4),
-          Text('3. Tiles must match colors on touching edges.'),
-          SizedBox(height: 4),
-          Text('4. First player to place all tiles wins!'),
-          SizedBox(height: 16),
-          Text('Special Rules:', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('• Solid-colored tiles grant an extra turn.'),
+        return [
+          Text(l10n.howToPlay, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.rule1Tiles),
+          const SizedBox(height: 4),
+          Text(l10n.rule2Turns),
+          const SizedBox(height: 4),
+          Text(l10n.rule3Match),
+          const SizedBox(height: 4),
+          Text(l10n.rule4Win),
+          const SizedBox(height: 16),
+          Text(l10n.specialRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.solidTileExtra),
         ];
       case GameMode.freePlay:
-        return const [
-          Text('Free Play Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('• No rules - place tiles anywhere you like!'),
-          SizedBox(height: 4),
-          Text('• Create any pattern you can imagine.'),
-          SizedBox(height: 4),
-          Text('• Earn points for matching colors.'),
-          SizedBox(height: 4),
-          Text('• Draw more tiles whenever you need them.'),
-          SizedBox(height: 4),
-          Text('• Use Undo to experiment freely!'),
+        return [
+          Text(l10n.freePlayMode, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.noRulesPlace),
+          const SizedBox(height: 4),
+          Text(l10n.createPatterns),
+          const SizedBox(height: 4),
+          Text(l10n.earnPointsMatching),
+          const SizedBox(height: 4),
+          Text(l10n.drawMoreTiles),
+          const SizedBox(height: 4),
+          Text(l10n.useUndoExperiment),
         ];
       case GameMode.guidedLearning:
-        return const [
-          Text('Learning Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('• Place tiles anywhere next to existing tiles.'),
-          SizedBox(height: 4),
-          Text('• Green edges = colors match!'),
-          SizedBox(height: 4),
-          Text('• Orange edges = colors don\'t match yet.'),
-          SizedBox(height: 4),
-          Text('• Earn more points for matching colors.'),
-          SizedBox(height: 4),
-          Text('• Learn at your own pace - no pressure!'),
+        return [
+          Text(l10n.learningModeTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.placeAnywhere),
+          const SizedBox(height: 4),
+          Text(l10n.greenEdgesMatch),
+          const SizedBox(height: 4),
+          Text(l10n.orangeEdgesDont),
+          const SizedBox(height: 4),
+          Text(l10n.earnMoreMatching),
+          const SizedBox(height: 4),
+          Text(l10n.learnNoPressure),
         ];
       case GameMode.cooperative:
-        return const [
-          Text('Build Together!', style: TextStyle(fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text('• Work as a team to build a beautiful carpet!'),
-          SizedBox(height: 4),
-          Text('• Take turns placing tiles.'),
-          SizedBox(height: 4),
-          Text('• Tiles must match colors on touching edges.'),
-          SizedBox(height: 4),
-          Text('• Goal: Build a carpet with 20 tiles!'),
-          SizedBox(height: 4),
-          Text('• Everyone shares the same score.'),
+        return [
+          Text(l10n.buildTogetherTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.workAsTeam),
+          const SizedBox(height: 4),
+          Text(l10n.takeTurnsPlacing),
+          const SizedBox(height: 4),
+          Text(l10n.tilesMustMatch),
+          const SizedBox(height: 4),
+          Text(l10n.goalBuild20),
+          const SizedBox(height: 4),
+          Text(l10n.everyoneShares),
         ];
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.mode.displayName),
+        title: Text(_getModeTitle(l10n)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           // Undo button (non-competitive modes)
@@ -198,24 +216,24 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
             IconButton(
               icon: const Icon(Icons.undo),
               onPressed: _undo,
-              tooltip: 'Undo',
+              tooltip: l10n.undo,
             ),
           // Draw tile button (non-competitive modes)
           if (widget.mode != GameMode.colorDominoes)
             IconButton(
               icon: const Icon(Icons.add_box_outlined),
               onPressed: _drawTile,
-              tooltip: 'Draw Tile',
+              tooltip: l10n.drawTile,
             ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: _showRulesDialog,
-            tooltip: 'Rules',
+            tooltip: l10n.rules,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _restartGame,
-            tooltip: 'New Game',
+            tooltip: l10n.newGame,
           ),
         ],
       ),
@@ -224,7 +242,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           Column(
             children: [
               // Score bar
-              _buildScoreBar(),
+              _buildScoreBar(l10n),
 
               // Message bar
               if (_gameState.message != null) _buildMessageBar(),
@@ -295,13 +313,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           ? FloatingActionButton.extended(
               onPressed: _restartGame,
               icon: const Icon(Icons.replay),
-              label: const Text('Play Again'),
+              label: Text(l10n.playAgain),
             )
           : null,
     );
   }
 
-  Widget _buildScoreBar() {
+  Widget _buildScoreBar(AppLocalizations l10n) {
     final score = _gameState.currentScore;
 
     return Container(
@@ -337,7 +355,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               ),
               const SizedBox(width: 4),
               Text(
-                'points',
+                l10n.points,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
