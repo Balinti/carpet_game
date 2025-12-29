@@ -216,4 +216,52 @@ class CarpetTile {
 
     return tiles;
   }
+
+  /// Generates the specific 36 tile combinations for the Starter Puzzle.
+  /// Each code is 4 letters: top, right, bottom, left (y=yellow, b=blue, r=red, g=green)
+  static List<CarpetTile> generateStarterPuzzleTiles() {
+    const tileCodes = [
+      // Row 1
+      'yybe', 'ybbr', 'rbgy', 'gybr', 'byry', 'rbyg',
+      // Row 2
+      'rrby', 'bbbb', 'bbrb', 'yyry', 'yyyy', 'yggb',
+      // Row 3
+      'brby', 'rgbb', 'gygb', 'gbby', 'byyy', 'ygyr',
+      // Row 4
+      'yggy', 'ggbr', 'bgry', 'rggb', 'grgy', 'grbr',
+      // Row 5
+      'bbgg', 'yggg', 'gggg', 'yrgy', 'rrrr', 'rybr',
+      // Row 6
+      'gyyb', 'yrgg', 'grbg', 'brgy', 'gryr', 'ybry',
+    ];
+
+    TileColor letterToColor(String letter) {
+      switch (letter) {
+        case 'y':
+          return TileColor.yellow;
+        case 'b':
+          return TileColor.blue;
+        case 'r':
+          return TileColor.red;
+        case 'g':
+          return TileColor.green;
+        default:
+          return TileColor.red;
+      }
+    }
+
+    final tiles = <CarpetTile>[];
+    for (int i = 0; i < tileCodes.length; i++) {
+      final code = tileCodes[i];
+      tiles.add(CarpetTile(
+        id: 'tile_$i',
+        top: letterToColor(code[0]),
+        right: letterToColor(code[1]),
+        bottom: letterToColor(code[2]),
+        left: letterToColor(code[3]),
+      ));
+    }
+
+    return tiles;
+  }
 }

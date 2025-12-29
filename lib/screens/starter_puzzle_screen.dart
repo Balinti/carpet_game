@@ -49,8 +49,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   void _initializePuzzle() {
-    // Generate ALL 256 possible tile combinations (4 colors ^ 4 positions)
-    _allTiles = CarpetTile.generateAllCombinations();
+    // Generate the specific 36 tile combinations for Starter Puzzle
+    _allTiles = CarpetTile.generateStarterPuzzleTiles();
     _grid.fillRange(0, 9, null);
     _selectedTile = null;
     _rotationCount = 0;
@@ -689,8 +689,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   Widget _buildAvailableTiles() {
-    // Smaller tiles for 256 options - use GridView for scrolling
-    const tileSize = 50.0;
+    // 36 tiles - larger size for better visibility
+    const tileSize = 60.0;
 
     return GridView.builder(
       padding: const EdgeInsets.all(8),
