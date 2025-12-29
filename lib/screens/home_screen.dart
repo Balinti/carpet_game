@@ -62,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onPrimaryContainer
-                                    .withOpacity(0.8),
+                                    .withAlpha(204), // 0.8 opacity
                               ),
                         ),
                         const SizedBox(height: 40),
@@ -212,7 +212,7 @@ class _LanguageButton extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+          color: Theme.of(context).colorScheme.surface.withAlpha(230), // 0.9 opacity
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -316,7 +316,7 @@ class _GameModeCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.15),
+                  color: iconColor.withAlpha(38), // 0.15 opacity
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(

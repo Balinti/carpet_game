@@ -160,9 +160,7 @@ class AppLocalizations {
 
 /// Localization delegate for AppLocalizations.
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
-  final AppLanguage language;
-
-  const AppLocalizationsDelegate(this.language);
+  const AppLocalizationsDelegate();
 
   @override
   bool isSupported(Locale locale) {
@@ -171,9 +169,10 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
 
   @override
   Future<AppLocalizations> load(Locale locale) async {
+    final language = AppLanguage.fromCode(locale.languageCode);
     return AppLocalizations(language);
   }
 
   @override
-  bool shouldReload(AppLocalizationsDelegate old) => old.language != language;
+  bool shouldReload(AppLocalizationsDelegate old) => false;
 }

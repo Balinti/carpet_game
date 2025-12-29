@@ -4,6 +4,7 @@ import 'l10n/l10n.dart';
 import 'screens/home_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const CarpetGameApp());
 }
 
@@ -56,13 +57,20 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
         ),
         themeMode: ThemeMode.system,
         locale: _localeProvider.locale,
-        supportedLocales: AppLanguage.values.map((l) => l.locale),
-        localizationsDelegates: [
-          AppLocalizationsDelegate(_localeProvider.language),
+        supportedLocales: AppLanguage.values.map((l) => l.locale).toList(),
+        localizationsDelegates: const [
+          AppLocalizationsDelegate(),
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        localeResolutionCallback: (locale, supportedLocales) {
+          // Return the selected language locale, with fallback to English
+          if (supportedLocales.contains(_localeProvider.locale)) {
+            return _localeProvider.locale;
+          }
+          return const Locale('en');
+        },
         builder: (context, child) {
           return Directionality(
             textDirection: _localeProvider.textDirection,

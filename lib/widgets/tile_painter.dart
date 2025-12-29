@@ -58,7 +58,7 @@ class TilePainter extends CustomPainter {
     // Draw highlight if needed
     if (isHighlighted) {
       final highlightPaint = Paint()
-        ..color = Colors.white.withOpacity(0.3)
+        ..color = const Color.fromRGBO(255, 255, 255, 0.3) // White with 0.3 opacity
         ..style = PaintingStyle.fill;
 
       canvas.drawRect(
@@ -84,61 +84,30 @@ class TilePainter extends CustomPainter {
   void _drawEdgeFeedback(Canvas canvas, Size size, Map<int, EdgeMatchStatus> status) {
     const edgeWidth = 6.0;
 
-    // Top edge (0)
-    if (status[0] != EdgeMatchStatus.noAdjacent) {
-      final paint = Paint()
-        ..color = status[0]!.borderColor
-        ..strokeWidth = edgeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(edgeWidth / 2, edgeWidth / 2),
-        Offset(size.width - edgeWidth / 2, edgeWidth / 2),
-        paint,
-      );
+    // Helper to draw edge line
+    void drawEdge(int edgeIndex, Offset start, Offset end) {
+      final edgeStatus = status[edgeIndex];
+      if (edgeStatus != null && edgeStatus != EdgeMatchStatus.noAdjacent) {
+        final paint = Paint()
+          ..color = edgeStatus.borderColor
+          ..strokeWidth = edgeWidth
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(start, end, paint);
+      }
     }
+
+    // Top edge (0)
+    drawEdge(0, Offset(edgeWidth / 2, edgeWidth / 2), Offset(size.width - edgeWidth / 2, edgeWidth / 2));
 
     // Right edge (1)
-    if (status[1] != EdgeMatchStatus.noAdjacent) {
-      final paint = Paint()
-        ..color = status[1]!.borderColor
-        ..strokeWidth = edgeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(size.width - edgeWidth / 2, edgeWidth / 2),
-        Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2),
-        paint,
-      );
-    }
+    drawEdge(1, Offset(size.width - edgeWidth / 2, edgeWidth / 2), Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2));
 
     // Bottom edge (2)
-    if (status[2] != EdgeMatchStatus.noAdjacent) {
-      final paint = Paint()
-        ..color = status[2]!.borderColor
-        ..strokeWidth = edgeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(edgeWidth / 2, size.height - edgeWidth / 2),
-        Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2),
-        paint,
-      );
-    }
+    drawEdge(2, Offset(edgeWidth / 2, size.height - edgeWidth / 2), Offset(size.width - edgeWidth / 2, size.height - edgeWidth / 2));
 
     // Left edge (3)
-    if (status[3] != EdgeMatchStatus.noAdjacent) {
-      final paint = Paint()
-        ..color = status[3]!.borderColor
-        ..strokeWidth = edgeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(
-        Offset(edgeWidth / 2, edgeWidth / 2),
-        Offset(edgeWidth / 2, size.height - edgeWidth / 2),
-        paint,
-      );
-    }
+    drawEdge(3, Offset(edgeWidth / 2, edgeWidth / 2), Offset(edgeWidth / 2, size.height - edgeWidth / 2));
   }
 
   void _drawTriangle(Canvas canvas, List<Offset> points, Color color) {

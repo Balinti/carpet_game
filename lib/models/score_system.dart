@@ -136,9 +136,9 @@ enum EdgeMatchStatus {
       case EdgeMatchStatus.noAdjacent:
         return Colors.transparent;
       case EdgeMatchStatus.matching:
-        return Colors.green.withOpacity(0.6);
+        return const Color.fromRGBO(76, 175, 80, 0.6); // Green with 0.6 opacity
       case EdgeMatchStatus.mismatched:
-        return Colors.orange.withOpacity(0.4);
+        return const Color.fromRGBO(255, 152, 0, 0.4); // Orange with 0.4 opacity
     }
   }
 

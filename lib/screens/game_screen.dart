@@ -385,7 +385,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       color: _gameState.gameOver
           ? Theme.of(context).colorScheme.primaryContainer
           : (_gameState.lastPlacementResult?.isPerfectMatch == true
-              ? Colors.green.withOpacity(0.2)
+              ? const Color.fromRGBO(76, 175, 80, 0.2) // Green with 0.2 opacity
               : Theme.of(context).colorScheme.surfaceContainerHighest),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -429,9 +429,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                   decoration: BoxDecoration(
                     color: Colors.amber.shade100,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: const [
                       BoxShadow(
-                        color: Colors.amber.withOpacity(0.4),
+                        color: Color.fromRGBO(255, 193, 7, 0.4), // Amber with 0.4 opacity
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),

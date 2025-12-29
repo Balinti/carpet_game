@@ -90,18 +90,18 @@ class EmptyTileSlot extends StatelessWidget {
     Widget? child;
 
     if (isValidDrop) {
-      backgroundColor = Colors.green.withOpacity(0.3);
+      backgroundColor = const Color.fromRGBO(76, 175, 80, 0.3); // Green with 0.3 opacity
       borderColor = Colors.green;
       borderWidth = 2;
       child = const Icon(Icons.add, color: Colors.green, size: 24);
     } else if (showHint) {
       // Show a gentle hint that this position exists but doesn't match
-      backgroundColor = Colors.orange.withOpacity(0.15);
+      backgroundColor = const Color.fromRGBO(255, 152, 0, 0.15); // Orange with 0.15 opacity
       borderColor = Colors.orange.shade300;
       borderWidth = 1.5;
       child = Icon(Icons.help_outline, color: Colors.orange.shade300, size: 18);
     } else {
-      backgroundColor = Colors.grey.withOpacity(0.1);
+      backgroundColor = const Color.fromRGBO(158, 158, 158, 0.1); // Grey with 0.1 opacity
       borderColor = Colors.grey.shade400;
       borderWidth = 1;
       child = null;
