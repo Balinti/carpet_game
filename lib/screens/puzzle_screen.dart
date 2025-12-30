@@ -802,12 +802,13 @@ class _PuzzleScreenState extends State<PuzzleScreen>
           final isSelected = _selectedTile?.id == tile.id;
 
           return GestureDetector(
-            onTap: () => _selectTile(tile, index),
+            // Key on outer widget ensures entire tree rebuilds after rotation
+            key: ValueKey('${tile.id}_${tile.rotationKey}'),
+            onTap: () => _selectTile(_availableTiles[index], index),
             onDoubleTap: () => _rotateTile(index),
             child: Draggable<CarpetTile>(
-              // Key includes rotation state to ensure widget rebuilds after rotation
-              key: ValueKey('${tile.id}_${tile.rotationKey}'),
-              data: tile,
+              // Use current tile from list, not captured variable
+              data: _availableTiles[index],
               feedback: Material(
                 color: Colors.transparent,
                 elevation: 8,
@@ -816,7 +817,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
                   child: CustomPaint(
                     size: Size(tileSize, tileSize),
                     painter: TilePainter(
-                      tile: tile,
+                      tile: _availableTiles[index],
                       isSelected: true,
                     ),
                   ),
@@ -826,7 +827,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
                 opacity: 0.3,
                 child: CustomPaint(
                   size: Size(tileSize, tileSize),
-                  painter: TilePainter(tile: tile),
+                  painter: TilePainter(tile: _availableTiles[index]),
                 ),
               ),
               child: AnimatedBuilder(
@@ -859,7 +860,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
                   child: CustomPaint(
                     size: Size(tileSize, tileSize),
                     painter: TilePainter(
-                      tile: tile,
+                      tile: _availableTiles[index],
                       isSelected: isSelected,
                     ),
                   ),
