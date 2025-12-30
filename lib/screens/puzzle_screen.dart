@@ -55,6 +55,9 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   int get _gridSize => widget.gridSize.size;
   int get _tileCount => widget.gridSize.tileCount;
 
+  // Track rotation direction for animation
+  bool _lastRotationClockwise = true;
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +65,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _rotationAnimation = Tween<double>(begin: 0, end: 0.25).animate(
+    _rotationAnimation = Tween<double>(begin: -0.25, end: 0).animate(
       CurvedAnimation(parent: _rotationController, curve: Curves.easeOut),
     );
     _initializePuzzle();
@@ -106,22 +109,26 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   void _rotateTile(int index, {bool counterClockwise = false}) {
     _startTimer();
 
-    // Animate rotation
-    _rotationController.forward(from: 0).then((_) {
-      setState(() {
-        if (counterClockwise) {
-          _availableTiles[index] =
-              _availableTiles[index].rotateCounterClockwise();
-        } else {
-          _availableTiles[index] = _availableTiles[index].rotateClockwise();
-        }
-        _rotationCount++;
-        // Update selected tile if it was the one rotated
-        if (_selectedIndex == index) {
-          _selectedTile = _availableTiles[index];
-        }
-      });
+    // Update tile data IMMEDIATELY (not after animation)
+    // This ensures dragging always gets the rotated tile
+    setState(() {
+      _lastRotationClockwise = !counterClockwise;
+      if (counterClockwise) {
+        _availableTiles[index] =
+            _availableTiles[index].rotateCounterClockwise();
+      } else {
+        _availableTiles[index] = _availableTiles[index].rotateClockwise();
+      }
+      _rotationCount++;
+      // Update selected tile if it was the one rotated
+      if (_selectedIndex == index) {
+        _selectedTile = _availableTiles[index];
+      }
     });
+
+    // Animate from "old" position to "new" position
+    // The tile data is already rotated, animation is just visual smoothing
+    _rotationController.forward(from: 0);
   }
 
   void _selectTile(CarpetTile tile, int index) {
@@ -833,8 +840,11 @@ class _PuzzleScreenState extends State<PuzzleScreen>
               child: AnimatedBuilder(
                 animation: _rotationController,
                 builder: (context, child) {
+                  // Apply rotation animation only to selected tile
+                  // Direction multiplier: clockwise = 1, counter-clockwise = -1
+                  final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
                   final rotationValue = _selectedIndex == index
-                      ? _rotationAnimation.value
+                      ? _rotationAnimation.value * directionMultiplier
                       : 0.0;
                   return Transform.rotate(
                     angle: rotationValue * 2 * 3.14159,
