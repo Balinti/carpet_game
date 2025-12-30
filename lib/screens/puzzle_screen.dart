@@ -798,12 +798,13 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         break;
     }
 
-    return Center(
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.center,
-        children: List.generate(_availableTiles.length, (index) {
+    return SingleChildScrollView(
+      child: Center(
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: List.generate(_availableTiles.length, (index) {
           // Get fresh reference to tile at this index
           final tile = _availableTiles[index];
           final isSelected = _selectedTile?.id == tile.id;
@@ -892,6 +893,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
             ),
           );
         }).toList(),
+        ),
       ),
     );
   }
