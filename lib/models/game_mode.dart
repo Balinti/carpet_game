@@ -16,7 +16,10 @@ enum GameMode {
   starterPuzzle,
 
   /// Shape Builder - build shapes based on colors with deferred validation.
-  shapeBuilder;
+  shapeBuilder,
+
+  /// Geometric Shapes - build geometric patterns like squares, rectangles, etc.
+  geometricShapes;
 
   String get displayName {
     switch (this) {
@@ -32,6 +35,8 @@ enum GameMode {
         return 'Starter Puzzle';
       case GameMode.shapeBuilder:
         return 'Shape Builder';
+      case GameMode.geometricShapes:
+        return 'Geometric Shapes';
     }
   }
 
@@ -49,16 +54,18 @@ enum GameMode {
         return 'Fill the 3x3 grid with matching colors!';
       case GameMode.shapeBuilder:
         return 'Build shapes by color - see results when done!';
+      case GameMode.geometricShapes:
+        return 'Build squares, rectangles, and more!';
     }
   }
 
   bool get isCompetitive => this == GameMode.colorDominoes;
-  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle;
-  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle;
+  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
+  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
 
   /// Whether this mode uses deferred validation (results shown only when board is complete).
   bool get hasDeferredValidation => this == GameMode.shapeBuilder;
 
   /// Whether this mode allows free placement without matching requirements.
-  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.shapeBuilder;
+  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.shapeBuilder || this == GameMode.geometricShapes;
 }

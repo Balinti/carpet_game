@@ -153,7 +153,7 @@ class HomeScreen extends StatelessWidget {
 
                         // Creative modes section
                         _SectionHeader(
-                          title: l10n.shapeBuilder,
+                          title: l10n.creativeModes,
                           icon: Icons.category,
                           color: Colors.teal,
                         ),
@@ -164,6 +164,14 @@ class HomeScreen extends StatelessWidget {
                           icon: Icons.architecture,
                           iconColor: Colors.teal,
                           onTap: () => _startGame(context, GameMode.shapeBuilder, 1),
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.geometricShapes,
+                          subtitle: l10n.geometricShapesDesc,
+                          icon: Icons.square_outlined,
+                          iconColor: Colors.deepPurple,
+                          onTap: () => _startGame(context, GameMode.geometricShapes, 1),
                         ),
                       ],
                     ),
