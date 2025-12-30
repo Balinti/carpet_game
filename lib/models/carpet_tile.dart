@@ -107,10 +107,14 @@ class CarpetTile {
       identical(this, other) ||
       other is CarpetTile &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          top == other.top &&
+          right == other.right &&
+          bottom == other.bottom &&
+          left == other.left;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(id, top, right, bottom, left);
 
   // Static factory methods for generating different tile types
 
