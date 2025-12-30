@@ -803,75 +803,88 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         spacing: 12,
         runSpacing: 12,
         alignment: WrapAlignment.center,
-        children: _availableTiles.asMap().entries.map((entry) {
-          final index = entry.key;
-          final tile = entry.value;
+        children: List.generate(_availableTiles.length, (index) {
+          // Get fresh reference to tile at this index
+          final tile = _availableTiles[index];
           final isSelected = _selectedTile?.id == tile.id;
+          // Create a unique key that changes with rotation
+          final tileKey = '${tile.id}_${tile.top.index}${tile.right.index}${tile.bottom.index}${tile.left.index}';
 
-          return GestureDetector(
-            // Key on outer widget ensures entire tree rebuilds after rotation
-            key: ValueKey('${tile.id}_${tile.rotationKey}'),
-            onTap: () => _selectTile(_availableTiles[index], index),
-            onDoubleTap: () => _rotateTile(index),
-            child: Draggable<CarpetTile>(
-              // Use current tile from list, not captured variable
-              data: _availableTiles[index],
-              feedback: Material(
-                color: Colors.transparent,
-                elevation: 8,
-                child: Opacity(
-                  opacity: 0.9,
-                  child: CustomPaint(
-                    size: Size(tileSize, tileSize),
-                    painter: TilePainter(
-                      tile: _availableTiles[index],
-                      isSelected: true,
+          return RepaintBoundary(
+            key: ValueKey('boundary_$tileKey'),
+            child: GestureDetector(
+              key: ValueKey('gesture_$tileKey'),
+              onTap: () => _selectTile(tile, index),
+              onDoubleTap: () => _rotateTile(index),
+              child: Draggable<CarpetTile>(
+                key: ValueKey('drag_$tileKey'),
+                // Pass the tile directly - this is what gets dropped
+                data: tile,
+                feedback: RepaintBoundary(
+                  child: Material(
+                    color: Colors.transparent,
+                    elevation: 8,
+                    child: Opacity(
+                      opacity: 0.9,
+                      child: SizedBox(
+                        width: tileSize,
+                        height: tileSize,
+                        child: CustomPaint(
+                          key: ValueKey('feedback_$tileKey'),
+                          size: Size(tileSize, tileSize),
+                          painter: TilePainter(
+                            tile: tile,
+                            isSelected: true,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              childWhenDragging: Opacity(
-                opacity: 0.3,
-                child: CustomPaint(
-                  size: Size(tileSize, tileSize),
-                  painter: TilePainter(tile: _availableTiles[index]),
-                ),
-              ),
-              child: AnimatedBuilder(
-                animation: _rotationController,
-                builder: (context, child) {
-                  // Apply rotation animation only to selected tile
-                  // Direction multiplier: clockwise = 1, counter-clockwise = -1
-                  final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
-                  final rotationValue = _selectedIndex == index
-                      ? _rotationAnimation.value * directionMultiplier
-                      : 0.0;
-                  return Transform.rotate(
-                    angle: rotationValue * 2 * 3.14159,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  decoration: isSelected
-                      ? BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        )
-                      : null,
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
                   child: CustomPaint(
                     size: Size(tileSize, tileSize),
-                    painter: TilePainter(
-                      tile: _availableTiles[index],
-                      isSelected: isSelected,
+                    painter: TilePainter(tile: tile),
+                  ),
+                ),
+                child: AnimatedBuilder(
+                  animation: _rotationController,
+                  builder: (context, child) {
+                    // Apply rotation animation only to selected tile
+                    // Direction multiplier: clockwise = 1, counter-clockwise = -1
+                    final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
+                    final rotationValue = _selectedIndex == index
+                        ? _rotationAnimation.value * directionMultiplier
+                        : 0.0;
+                    return Transform.rotate(
+                      angle: rotationValue * 2 * 3.14159,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          )
+                        : null,
+                    child: CustomPaint(
+                      key: ValueKey('paint_$tileKey'),
+                      size: Size(tileSize, tileSize),
+                      painter: TilePainter(
+                        tile: tile,
+                        isSelected: isSelected,
+                      ),
                     ),
                   ),
                 ),
