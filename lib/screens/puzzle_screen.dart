@@ -51,6 +51,10 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   // Game state
   bool _puzzleComplete = false;
 
+  // Clue system
+  bool _showClues = false;
+  int _cluesUsed = 0;
+
   // Grid dimensions
   int get _gridSize => widget.gridSize.size;
   int get _tileCount => widget.gridSize.tileCount;
@@ -89,6 +93,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     _elapsedSeconds = 0;
     _timerStarted = false;
     _puzzleComplete = false;
+    _showClues = false;
+    _cluesUsed = 0;
     _timer?.cancel();
     _timer = null;
   }
@@ -150,32 +156,17 @@ class _PuzzleScreenState extends State<PuzzleScreen>
 
     _startTimer();
 
-    // Check if placement is valid
-    if (!_canPlaceTile(_selectedTile!, gridIndex)) {
-      setState(() {
-        _mistakesCount++;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).tryAnotherSpot),
-          duration: const Duration(seconds: 1),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
+    // Allow any placement - mistakes are revealed at the end
     setState(() {
       _grid[gridIndex] = _selectedTile;
       _availableTiles.removeWhere((t) => t.id == _selectedTile!.id);
       _selectedTile = null;
       _selectedIndex = null;
 
-      // Check if puzzle is complete (grid is full)
+      // Check if grid is full
       if (!_grid.contains(null)) {
-        _puzzleComplete = true;
         _timer?.cancel();
-        _showCompletionDialog();
+        _checkPuzzleCompletion();
       }
     });
   }
@@ -186,6 +177,92 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     setState(() {
       _availableTiles.add(_grid[gridIndex]!);
       _grid[gridIndex] = null;
+      _puzzleComplete = false; // Reset completion state when removing tiles
+    });
+  }
+
+  /// Count how many tiles have mismatched edges
+  int _countMisplacedTiles() {
+    int misplacedCount = 0;
+    for (int i = 0; i < _tileCount; i++) {
+      if (_grid[i] != null && !_canPlaceTile(_grid[i]!, i)) {
+        misplacedCount++;
+      }
+    }
+    return misplacedCount;
+  }
+
+  /// Check if all placements are valid when grid is full
+  void _checkPuzzleCompletion() {
+    final misplacedCount = _countMisplacedTiles();
+    _mistakesCount = misplacedCount;
+
+    if (misplacedCount == 0) {
+      // All placements are correct!
+      _puzzleComplete = true;
+      _showCompletionDialog();
+    } else {
+      // Show message that there are mistakes
+      _showNotDoneYetDialog(misplacedCount);
+    }
+  }
+
+  /// Show dialog when grid is full but has mistakes
+  void _showNotDoneYetDialog(int misplacedCount) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange, size: 32),
+            SizedBox(width: 12),
+            Text('Not Done Yet!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'The board is full, but $misplacedCount tile${misplacedCount > 1 ? 's are' : ' is'} misplaced.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Tap tiles on the board to move them back, then try different placements.',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Use the Clue button to see which tiles are wrong (costs points).',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('OK'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _toggleClues();
+            },
+            icon: const Icon(Icons.lightbulb_outline),
+            label: const Text('Show Clues'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Toggle showing clues (edge match indicators)
+  void _toggleClues() {
+    setState(() {
+      if (!_showClues) {
+        _cluesUsed++;
+      }
+      _showClues = !_showClues;
     });
   }
 
@@ -476,6 +553,15 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         title: Text(title),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Clue button
+          IconButton(
+            icon: Icon(
+              _showClues ? Icons.lightbulb : Icons.lightbulb_outline,
+              color: _showClues ? Colors.amber : null,
+            ),
+            onPressed: _toggleClues,
+            tooltip: _showClues ? 'Hide Clues' : 'Show Clues (costs points)',
+          ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: _showRulesDialog,
@@ -708,7 +794,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
 
     return DragTarget<CarpetTile>(
       onWillAcceptWithDetails: (details) {
-        return _grid[index] == null && _canPlaceTile(details.data, index);
+        // Allow placement in any empty cell (no color matching required)
+        return _grid[index] == null;
       },
       onAcceptWithDetails: (details) {
         final tile = details.data;
@@ -721,15 +808,13 @@ class _PuzzleScreenState extends State<PuzzleScreen>
 
           // Check if grid is full
           if (!_grid.contains(null)) {
-            _puzzleComplete = true;
             _timer?.cancel();
-            _showCompletionDialog();
+            _checkPuzzleCompletion();
           }
         });
       },
       builder: (context, candidateData, rejectedData) {
         final isValidDrop = candidateData.isNotEmpty;
-        final isRejected = rejectedData.isNotEmpty;
 
         if (tile != null) {
           return GestureDetector(
@@ -738,28 +823,22 @@ class _PuzzleScreenState extends State<PuzzleScreen>
               size: Size(size, size),
               painter: TilePainter(
                 tile: tile,
-                edgeStatus: _getEdgeStatus(index),
+                edgeStatus: _showClues ? _getEdgeStatus(index) : null,
               ),
             ),
           );
         }
 
+        // Simple neutral appearance for empty cells
         Color bgColor;
         Color borderColor;
         Widget? icon;
 
         if (isValidDrop) {
-          bgColor = Colors.green.withOpacity(0.3);
-          borderColor = Colors.green;
-          icon = const Icon(Icons.add, color: Colors.green, size: 32);
-        } else if (isRejected) {
-          bgColor = Colors.red.withOpacity(0.2);
-          borderColor = Colors.red;
-          icon = const Icon(Icons.close, color: Colors.red, size: 32);
-        } else if (_selectedTile != null && _canPlaceTile(_selectedTile!, index)) {
-          bgColor = Colors.green.withOpacity(0.15);
-          borderColor = Colors.green.shade300;
-          icon = const Icon(Icons.add, color: Colors.green, size: 24);
+          // Show subtle highlight when dragging over
+          bgColor = Colors.blue.withOpacity(0.2);
+          borderColor = Colors.blue.shade300;
+          icon = const Icon(Icons.add, color: Colors.blue, size: 24);
         } else {
           bgColor = Colors.grey.withOpacity(0.1);
           borderColor = Colors.grey.shade400;
@@ -815,8 +894,22 @@ class _PuzzleScreenState extends State<PuzzleScreen>
             key: ValueKey('boundary_$tileKey'),
             child: GestureDetector(
               key: ValueKey('gesture_$tileKey'),
-              onTap: () => _selectTile(tile, index),
-              onDoubleTap: () => _rotateTile(index),
+              onTapUp: (details) {
+                if (isSelected) {
+                  // If already selected, rotate based on which side was tapped
+                  final tapX = details.localPosition.dx;
+                  if (tapX < tileSize / 2) {
+                    // Tapped on left side - rotate counter-clockwise
+                    _rotateTile(index, counterClockwise: true);
+                  } else {
+                    // Tapped on right side - rotate clockwise
+                    _rotateTile(index);
+                  }
+                } else {
+                  // Select the tile
+                  _selectTile(tile, index);
+                }
+              },
               child: Draggable<CarpetTile>(
                 key: ValueKey('drag_$tileKey'),
                 // Pass the tile directly - this is what gets dropped
