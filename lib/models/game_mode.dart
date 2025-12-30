@@ -13,7 +13,10 @@ enum GameMode {
   cooperative,
 
   /// Starter Puzzle - 3x3 grid puzzle with all tiles, rotation counter and timer.
-  starterPuzzle;
+  starterPuzzle,
+
+  /// Shape Builder - build shapes based on colors with deferred validation.
+  shapeBuilder;
 
   String get displayName {
     switch (this) {
@@ -27,6 +30,8 @@ enum GameMode {
         return 'Build Together';
       case GameMode.starterPuzzle:
         return 'Starter Puzzle';
+      case GameMode.shapeBuilder:
+        return 'Shape Builder';
     }
   }
 
@@ -42,10 +47,18 @@ enum GameMode {
         return 'Work together to build a beautiful carpet!';
       case GameMode.starterPuzzle:
         return 'Fill the 3x3 grid with matching colors!';
+      case GameMode.shapeBuilder:
+        return 'Build shapes by color - see results when done!';
     }
   }
 
   bool get isCompetitive => this == GameMode.colorDominoes;
   bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle;
   bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle;
+
+  /// Whether this mode uses deferred validation (results shown only when board is complete).
+  bool get hasDeferredValidation => this == GameMode.shapeBuilder;
+
+  /// Whether this mode allows free placement without matching requirements.
+  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.shapeBuilder;
 }

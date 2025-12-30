@@ -29,6 +29,10 @@ class GameState extends ChangeNotifier {
   // Undo support
   final List<_GameAction> _history = [];
 
+  // Clue system
+  int _cluesUsed = 0;
+  static const int cluePointPenalty = 15;
+
   GameState({
     required this.mode,
     required this.players,
@@ -59,6 +63,10 @@ class GameState extends ChangeNotifier {
   int get maxRow => _maxRow;
   int get minCol => _minCol;
   int get maxCol => _maxCol;
+  int get cluesUsed => _cluesUsed;
+
+  /// Whether scores should be hidden (for deferred validation modes).
+  bool get hideScores => mode.hasDeferredValidation && !_gameOver;
 
   /// Get the current player's score (or team score for cooperative).
   ScoreSystem get currentScore {
@@ -161,6 +169,28 @@ class GameState extends ChangeNotifier {
     return state;
   }
 
+  /// Initialize a new Shape Builder game.
+  static GameState newShapeBuilder({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.shapeBuilder, players: players);
+
+    // Give initial tiles
+    for (final player in players) {
+      for (int i = 0; i < 8; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    // Create tile pool for drawing
+    state._refillTilePool();
+    state._updatePositions();
+    return state;
+  }
+
   void _refillTilePool() {
     // Keep a pool of tiles to draw from
     while (_tilePool.length < 20) {
@@ -195,6 +225,20 @@ class GameState extends ChangeNotifier {
     final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
     if (index >= 0) {
       final rotated = _selectedTile!.rotateClockwise();
+      currentPlayer.hand[index] = rotated;
+      _selectedTile = rotated;
+      _updatePositions();
+      notifyListeners();
+    }
+  }
+
+  /// Rotate the selected tile counter-clockwise.
+  void rotateSelectedTileCounterClockwise() {
+    if (_selectedTile == null) return;
+
+    final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
+    if (index >= 0) {
+      final rotated = _selectedTile!.rotateCounterClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
       _updatePositions();
@@ -265,8 +309,8 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play and guided learning allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
+    // Free play, guided learning, and shape builder allow any adjacent placement
+    if (mode.allowsFreePlacement) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -374,6 +418,9 @@ class GameState extends ChangeNotifier {
         // Starter Puzzle uses its own screen, fallback to free play behavior
         _handleFreePlayPlacement();
         break;
+      case GameMode.shapeBuilder:
+        _handleShapeBuilderPlacement();
+        break;
     }
 
     _selectedTile = null;
@@ -463,6 +510,22 @@ class GameState extends ChangeNotifier {
     _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
   }
 
+  void _handleShapeBuilderPlacement() {
+    // Don't show score feedback during placement
+    _message = null;
+
+    // Auto-draw a new tile if hand is getting low
+    if (currentPlayer.hand.length < 3) {
+      drawTile();
+      drawTile();
+    }
+
+    // Rotate players if multiplayer
+    if (players.length > 1) {
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    }
+  }
+
   void _nextTurn() {
     _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
 
@@ -503,6 +566,62 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Remove a tile from the board and return it to the current player's hand.
+  void removeTileFromBoard(BoardPosition position) {
+    final tile = board[position];
+    if (tile == null) return;
+
+    // Remove from history if it exists
+    _history.removeWhere((action) => action.position == position);
+
+    board.remove(position);
+    currentPlayer.addTile(tile);
+
+    // Recalculate boundaries
+    _recalculateBoundaries();
+    _updatePositions();
+    _message = 'Tile returned to hand';
+    notifyListeners();
+  }
+
+  /// Use a clue to highlight a valid placement for the selected tile.
+  /// Returns true if a clue was available, false otherwise.
+  bool useClue() {
+    if (_selectedTile == null) {
+      _message = 'Select a tile first!';
+      notifyListeners();
+      return false;
+    }
+
+    // Find a valid position with good matching
+    BoardPosition? bestPosition;
+    int bestMatches = -1;
+
+    for (final pos in _allAdjacentPositions) {
+      if (canPlaceTile(_selectedTile!, pos)) {
+        final (matching, _) = countMatchingEdges(_selectedTile!, pos);
+        if (matching > bestMatches) {
+          bestMatches = matching;
+          bestPosition = pos;
+        }
+      }
+    }
+
+    if (bestPosition != null) {
+      _cluesUsed++;
+      // Deduct points for using a clue
+      currentScore.deductPoints(cluePointPenalty);
+      _message = 'Hint: Try the highlighted position! (-$cluePointPenalty points)';
+      // The valid positions will be highlighted in the UI
+      notifyListeners();
+      return true;
+    } else {
+      _message = 'No valid placement found. Try rotating the tile!';
+      notifyListeners();
+      return false;
+    }
+  }
+
   void _recalculateBoundaries() {
     if (board.isEmpty) {
       _minRow = _maxRow = _minCol = _maxCol = 0;
@@ -528,6 +647,7 @@ class GameState extends ChangeNotifier {
     _lastPlacementResult = null;
     _history.clear();
     _minRow = _maxRow = _minCol = _maxCol = 0;
+    _cluesUsed = 0;
 
     score.reset();
     for (final ps in playerScores) {
