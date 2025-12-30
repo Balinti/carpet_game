@@ -191,6 +191,29 @@ class GameState extends ChangeNotifier {
     return state;
   }
 
+  /// Initialize a new Geometric Shapes game.
+  static GameState newGeometricShapes({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.geometricShapes, players: players);
+
+    // Give initial tiles - more tiles for building shapes
+    for (final player in players) {
+      for (int i = 0; i < 12; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    // Create tile pool for drawing
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 2×2 square!';
+    return state;
+  }
+
   void _refillTilePool() {
     // Keep a pool of tiles to draw from
     while (_tilePool.length < 20) {
@@ -421,6 +444,9 @@ class GameState extends ChangeNotifier {
       case GameMode.shapeBuilder:
         _handleShapeBuilderPlacement();
         break;
+      case GameMode.geometricShapes:
+        _handleGeometricShapesPlacement();
+        break;
     }
 
     _selectedTile = null;
@@ -524,6 +550,128 @@ class GameState extends ChangeNotifier {
     if (players.length > 1) {
       _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
     }
+  }
+
+  void _handleGeometricShapesPlacement() {
+    // Check if current shape goal is complete
+    final shapeComplete = _checkGeometricShapeComplete();
+
+    if (shapeComplete) {
+      final currentShape = _getCurrentShapeName();
+      final nextShape = _getNextShapeName();
+      if (nextShape != null) {
+        _message = '✓ $currentShape complete! Now build a $nextShape!';
+      } else {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed all geometric shapes!';
+      }
+    } else {
+      // Show progress message
+      final tilesNeeded = _getTilesNeededForCurrentShape();
+      if (tilesNeeded > 0) {
+        _message = 'Place ${tilesNeeded} more tile${tilesNeeded == 1 ? '' : 's'} to complete the shape!';
+      }
+    }
+
+    // Auto-draw a new tile if hand is getting low
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
+    }
+
+    // Rotate players if multiplayer
+    if (players.length > 1) {
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    }
+  }
+
+  /// Check if the current geometric shape goal is complete.
+  bool _checkGeometricShapeComplete() {
+    final tilesPlaced = board.length;
+    // Shapes: 2x2 square (4), 3x2 rectangle (6), L-shape (5), T-shape (4), 3x3 square (9)
+    if (tilesPlaced < 4) return false;
+
+    // Check for 2x2 square first
+    if (tilesPlaced >= 4 && tilesPlaced < 6) {
+      return _isSquare(2);
+    }
+    // Check for 3x2 rectangle
+    if (tilesPlaced >= 6 && tilesPlaced < 9) {
+      return _isRectangle(3, 2) || _isRectangle(2, 3);
+    }
+    // Check for 3x3 square
+    if (tilesPlaced >= 9) {
+      return _isSquare(3);
+    }
+    return false;
+  }
+
+  bool _isSquare(int size) {
+    if (board.length < size * size) return false;
+
+    // Find the bounding box
+    final rows = board.keys.map((p) => p.row).toSet();
+    final cols = board.keys.map((p) => p.col).toSet();
+
+    if (rows.length != size || cols.length != size) return false;
+
+    final minR = rows.reduce((a, b) => a < b ? a : b);
+    final minC = cols.reduce((a, b) => a < b ? a : b);
+
+    // Check all positions are filled
+    for (int r = 0; r < size; r++) {
+      for (int c = 0; c < size; c++) {
+        if (!board.containsKey(BoardPosition(minR + r, minC + c))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  bool _isRectangle(int width, int height) {
+    if (board.length < width * height) return false;
+
+    final rows = board.keys.map((p) => p.row).toSet();
+    final cols = board.keys.map((p) => p.col).toSet();
+
+    if (rows.length != height || cols.length != width) return false;
+
+    final minR = rows.reduce((a, b) => a < b ? a : b);
+    final minC = cols.reduce((a, b) => a < b ? a : b);
+
+    for (int r = 0; r < height; r++) {
+      for (int c = 0; c < width; c++) {
+        if (!board.containsKey(BoardPosition(minR + r, minC + c))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  String _getCurrentShapeName() {
+    final tilesPlaced = board.length;
+    if (tilesPlaced < 4) return '2×2 Square';
+    if (tilesPlaced < 6) return '2×2 Square';
+    if (tilesPlaced < 9) return '3×2 Rectangle';
+    return '3×3 Square';
+  }
+
+  String? _getNextShapeName() {
+    final tilesPlaced = board.length;
+    if (tilesPlaced < 4) return null; // Still on first shape
+    if (tilesPlaced < 6) return '3×2 Rectangle';
+    if (tilesPlaced < 9) return '3×3 Square';
+    return null; // All complete
+  }
+
+  int _getTilesNeededForCurrentShape() {
+    final tilesPlaced = board.length;
+    if (tilesPlaced < 4) return 4 - tilesPlaced;
+    if (tilesPlaced < 6) return 6 - tilesPlaced;
+    if (tilesPlaced < 9) return 9 - tilesPlaced;
+    return 0;
   }
 
   void _nextTurn() {

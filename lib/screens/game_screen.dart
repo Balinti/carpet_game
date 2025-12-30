@@ -57,6 +57,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       case GameMode.shapeBuilder:
         _gameState = GameState.newShapeBuilder(playerCount: widget.playerCount);
         break;
+      case GameMode.geometricShapes:
+        _gameState = GameState.newGeometricShapes(playerCount: widget.playerCount);
+        break;
     }
   }
 
@@ -135,6 +138,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.starterPuzzle;
       case GameMode.shapeBuilder:
         return l10n.shapeBuilder;
+      case GameMode.geometricShapes:
+        return l10n.geometricShapes;
     }
   }
 
@@ -247,6 +252,20 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           Text(l10n.shapeBuilderRule4),
           const SizedBox(height: 4),
           Text(l10n.shapeBuilderRule5),
+        ];
+      case GameMode.geometricShapes:
+        return [
+          Text(l10n.geometricShapesRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.geometricShapesRule1),
+          const SizedBox(height: 4),
+          Text(l10n.geometricShapesRule2),
+          const SizedBox(height: 4),
+          Text(l10n.geometricShapesRule3),
+          const SizedBox(height: 4),
+          Text(l10n.geometricShapesRule4),
+          const SizedBox(height: 4),
+          Text(l10n.geometricShapesRule5),
         ];
     }
   }
