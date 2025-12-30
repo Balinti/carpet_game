@@ -182,13 +182,13 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     final row = gridIndex ~/ _gridSize;
     final col = gridIndex % _gridSize;
 
-    // Check each adjacent tile - colors must be DIFFERENT (not the same)
+    // Check each adjacent tile - colors must be the SAME to be allowed
     // Top neighbor
     if (row > 0) {
       final topIndex = (row - 1) * _gridSize + col;
       final topTile = _grid[topIndex];
-      if (topTile != null && topTile.bottom == tile.top) {
-        return false; // Same color - not allowed
+      if (topTile != null && topTile.bottom != tile.top) {
+        return false; // Different colors - not allowed
       }
     }
 
@@ -196,8 +196,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     if (row < _gridSize - 1) {
       final bottomIndex = (row + 1) * _gridSize + col;
       final bottomTile = _grid[bottomIndex];
-      if (bottomTile != null && bottomTile.top == tile.bottom) {
-        return false; // Same color - not allowed
+      if (bottomTile != null && bottomTile.top != tile.bottom) {
+        return false; // Different colors - not allowed
       }
     }
 
@@ -205,8 +205,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     if (col > 0) {
       final leftIndex = row * _gridSize + (col - 1);
       final leftTile = _grid[leftIndex];
-      if (leftTile != null && leftTile.right == tile.left) {
-        return false; // Same color - not allowed
+      if (leftTile != null && leftTile.right != tile.left) {
+        return false; // Different colors - not allowed
       }
     }
 
@@ -214,8 +214,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     if (col < _gridSize - 1) {
       final rightIndex = row * _gridSize + (col + 1);
       final rightTile = _grid[rightIndex];
-      if (rightTile != null && rightTile.left == tile.right) {
-        return false; // Same color - not allowed
+      if (rightTile != null && rightTile.left != tile.right) {
+        return false; // Different colors - not allowed
       }
     }
 
@@ -230,14 +230,14 @@ class _PuzzleScreenState extends State<PuzzleScreen>
     final col = gridIndex % _gridSize;
     final status = <int, EdgeMatchStatus>{};
 
-    // Top edge - DIFFERENT colors = matching (good), SAME colors = mismatched (bad)
+    // Top edge - SAME colors = matching (good), DIFFERENT colors = mismatched (bad)
     if (row > 0) {
       final topIndex = (row - 1) * _gridSize + col;
       final topTile = _grid[topIndex];
       if (topTile != null) {
-        status[0] = topTile.bottom != tile.top
-            ? EdgeMatchStatus.matching   // Different colors = good
-            : EdgeMatchStatus.mismatched; // Same colors = bad
+        status[0] = topTile.bottom == tile.top
+            ? EdgeMatchStatus.matching   // Same colors = good
+            : EdgeMatchStatus.mismatched; // Different colors = bad
       } else {
         status[0] = EdgeMatchStatus.noAdjacent;
       }
@@ -250,7 +250,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       final rightIndex = row * _gridSize + (col + 1);
       final rightTile = _grid[rightIndex];
       if (rightTile != null) {
-        status[1] = rightTile.left != tile.right
+        status[1] = rightTile.left == tile.right
             ? EdgeMatchStatus.matching
             : EdgeMatchStatus.mismatched;
       } else {
@@ -265,7 +265,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       final bottomIndex = (row + 1) * _gridSize + col;
       final bottomTile = _grid[bottomIndex];
       if (bottomTile != null) {
-        status[2] = bottomTile.top != tile.bottom
+        status[2] = bottomTile.top == tile.bottom
             ? EdgeMatchStatus.matching
             : EdgeMatchStatus.mismatched;
       } else {
@@ -280,7 +280,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       final leftIndex = row * _gridSize + (col - 1);
       final leftTile = _grid[leftIndex];
       if (leftTile != null) {
-        status[3] = leftTile.right != tile.left
+        status[3] = leftTile.right == tile.left
             ? EdgeMatchStatus.matching
             : EdgeMatchStatus.mismatched;
       } else {
