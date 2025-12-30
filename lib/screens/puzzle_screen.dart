@@ -40,6 +40,9 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   late AnimationController _rotationController;
   late Animation<double> _rotationAnimation;
 
+  // Mistakes counter
+  int _mistakesCount = 0;
+
   // Timer
   Timer? _timer;
   int _elapsedSeconds = 0;
@@ -73,15 +76,13 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   }
 
   void _initializePuzzle() {
-    // Generate 64 tiles for all modes (full tile set)
-    _availableTiles = List.generate(
-      64,
-      (i) => CarpetTile.generateRandom('tile_$i'),
-    );
+    // Generate all 64 unique tiles (one per rotation equivalence class)
+    _availableTiles = CarpetTile.generateAllUniqueTiles();
     _grid = List.filled(_tileCount, null);
     _selectedTile = null;
     _selectedIndex = null;
     _rotationCount = 0;
+    _mistakesCount = 0;
     _elapsedSeconds = 0;
     _timerStarted = false;
     _puzzleComplete = false;
@@ -144,6 +145,9 @@ class _PuzzleScreenState extends State<PuzzleScreen>
 
     // Check if placement is valid
     if (!_canPlaceTile(_selectedTile!, gridIndex)) {
+      setState(() {
+        _mistakesCount++;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context).tryAnotherSpot),
@@ -367,6 +371,12 @@ class _PuzzleScreenState extends State<PuzzleScreen>
               icon: Icons.rotate_right,
               label: l10n.totalRotations,
               value: '$_rotationCount',
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              icon: Icons.close,
+              label: 'Mistakes',
+              value: '$_mistakesCount',
             ),
           ],
         ),
@@ -618,6 +628,21 @@ class _PuzzleScreenState extends State<PuzzleScreen>
               ),
             ],
           ),
+
+          // Mistakes count
+          Row(
+            children: [
+              Icon(Icons.close, size: 24, color: _mistakesCount > 0 ? Colors.red : null),
+              const SizedBox(width: 8),
+              Text(
+                '$_mistakesCount',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: _mistakesCount > 0 ? Colors.red : Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -780,6 +805,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
             onTap: () => _selectTile(tile, index),
             onDoubleTap: () => _rotateTile(index),
             child: Draggable<CarpetTile>(
+              // Key includes rotation state to ensure widget rebuilds after rotation
+              key: ValueKey('${tile.id}_${tile.rotationKey}'),
               data: tile,
               feedback: Material(
                 color: Colors.transparent,
