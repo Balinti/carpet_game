@@ -54,6 +54,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         // Starter Puzzle uses its own screen, but fallback to free play if reached
         _gameState = GameState.newFreePlay(playerCount: 1);
         break;
+      case GameMode.shapeBuilder:
+        _gameState = GameState.newShapeBuilder(playerCount: widget.playerCount);
+        break;
     }
   }
 
@@ -90,6 +93,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.rotateSelectedTile();
   }
 
+  void _rotateTileCounterClockwise() {
+    _gameState.rotateSelectedTileCounterClockwise();
+  }
+
+  void _removeTileFromBoard(BoardPosition position) {
+    _gameState.removeTileFromBoard(position);
+  }
+
+  void _useClue() {
+    _gameState.useClue();
+  }
+
   void _placeTile(BoardPosition position) {
     _gameState.placeTile(position);
   }
@@ -118,6 +133,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.buildTogether;
       case GameMode.starterPuzzle:
         return l10n.starterPuzzle;
+      case GameMode.shapeBuilder:
+        return l10n.shapeBuilder;
     }
   }
 
@@ -217,6 +234,20 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           const SizedBox(height: 4),
           Text(l10n.rule4Timer),
         ];
+      case GameMode.shapeBuilder:
+        return [
+          Text(l10n.shapeBuilderRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.shapeBuilderRule1),
+          const SizedBox(height: 4),
+          Text(l10n.shapeBuilderRule2),
+          const SizedBox(height: 4),
+          Text(l10n.shapeBuilderRule3),
+          const SizedBox(height: 4),
+          Text(l10n.shapeBuilderRule4),
+          const SizedBox(height: 4),
+          Text(l10n.shapeBuilderRule5),
+        ];
     }
   }
 
@@ -229,6 +260,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         title: Text(_getModeTitle(l10n)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Clue button (for non-competitive modes)
+          if (widget.mode != GameMode.colorDominoes && _gameState.selectedTile != null)
+            IconButton(
+              icon: const Icon(Icons.lightbulb_outline),
+              onPressed: _useClue,
+              tooltip: l10n.clue,
+            ),
           // Undo button (non-competitive modes)
           if (widget.mode != GameMode.colorDominoes && _gameState.canUndo)
             IconButton(
@@ -259,8 +297,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         children: [
           Column(
             children: [
-              // Score bar
-              _buildScoreBar(l10n),
+              // Score bar (hidden for deferred validation modes until complete)
+              if (!_gameState.hideScores) _buildScoreBar(l10n),
 
               // Message bar
               if (_gameState.message != null) _buildMessageBar(),
@@ -273,7 +311,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                   child: GameBoard(
                     gameState: _gameState,
                     onPositionTap: _placeTile,
+                    onTileRemove: widget.mode.hasDeferredValidation ? _removeTileFromBoard : null,
                     showMatchFeedback: widget.mode.showMatchFeedback,
+                    hideValidationFeedback: widget.mode.hasDeferredValidation,
                   ),
                 ),
               ),
@@ -296,6 +336,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                           isCurrentPlayer: true,
                           onTileSelected: _selectTile,
                           onRotate: _rotateTile,
+                          onRotateCounterClockwise: _rotateTileCounterClockwise,
                         ),
                         if (_gameState.players.length > 1) ...[
                           const SizedBox(height: 12),

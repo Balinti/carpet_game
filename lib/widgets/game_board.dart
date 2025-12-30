@@ -9,14 +9,18 @@ class GameBoard extends StatelessWidget {
   final GameState gameState;
   final double tileSize;
   final Function(BoardPosition)? onPositionTap;
+  final Function(BoardPosition)? onTileRemove;
   final bool showMatchFeedback;
+  final bool hideValidationFeedback;
 
   const GameBoard({
     super.key,
     required this.gameState,
     this.tileSize = 70,
     this.onPositionTap,
+    this.onTileRemove,
     this.showMatchFeedback = false,
+    this.hideValidationFeedback = false,
   });
 
   @override
@@ -59,9 +63,12 @@ class GameBoard extends StatelessWidget {
                     if (tile != null) {
                       return Padding(
                         padding: const EdgeInsets.all(1),
-                        child: TileWidget(
-                          tile: tile,
-                          size: tileSize,
+                        child: GestureDetector(
+                          onTap: onTileRemove != null ? () => onTileRemove!(position) : null,
+                          child: TileWidget(
+                            tile: tile,
+                            size: tileSize,
+                          ),
                         ),
                       );
                     } else {
@@ -86,8 +93,18 @@ class GameBoard extends StatelessWidget {
     bool isValidDrop,
     bool isAdjacent,
   ) {
+    // In shape builder mode with deferred validation, allow placing anywhere adjacent
+    final canPlace = hideValidationFeedback
+        ? (gameState.board.isEmpty || isAdjacent)
+        : isValidDrop;
+
     return DragTarget<CarpetTile>(
       onWillAcceptWithDetails: (details) {
+        // In shape builder mode, accept any adjacent position
+        if (hideValidationFeedback) {
+          if (gameState.board.isEmpty) return true;
+          return isAdjacent;
+        }
         return gameState.canPlaceTile(details.data, position);
       },
       onAcceptWithDetails: (details) {
@@ -95,7 +112,7 @@ class GameBoard extends StatelessWidget {
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
-        final showPreview = isHovering && showMatchFeedback && candidateData.first != null;
+        final showPreview = isHovering && showMatchFeedback && candidateData.first != null && !hideValidationFeedback;
 
         if (showPreview) {
           // Show preview with edge match feedback
@@ -103,7 +120,7 @@ class GameBoard extends StatelessWidget {
           final edgeStatus = gameState.getEdgeMatchStatus(tile, position);
 
           return GestureDetector(
-            onTap: isValidDrop ? () => onPositionTap?.call(position) : null,
+            onTap: canPlace ? () => onPositionTap?.call(position) : null,
             child: Opacity(
               opacity: 0.7,
               child: CustomPaint(
@@ -118,11 +135,12 @@ class GameBoard extends StatelessWidget {
         }
 
         return GestureDetector(
-          onTap: isValidDrop ? () => onPositionTap?.call(position) : null,
+          onTap: canPlace ? () => onPositionTap?.call(position) : null,
           child: EmptyTileSlot(
             size: tileSize,
-            isValidDrop: isValidDrop || isHovering,
-            showHint: isAdjacent && !isValidDrop && gameState.selectedTile != null,
+            isValidDrop: canPlace || isHovering,
+            showHint: !hideValidationFeedback && isAdjacent && !isValidDrop && gameState.selectedTile != null,
+            hideValidationFeedback: hideValidationFeedback,
           ),
         );
       },

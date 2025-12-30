@@ -11,6 +11,8 @@ class TileWidget extends StatelessWidget {
   final bool isDraggable;
   final VoidCallback? onTap;
   final VoidCallback? onDoubleTap;
+  final VoidCallback? onRotateClockwise;
+  final VoidCallback? onRotateCounterClockwise;
 
   const TileWidget({
     super.key,
@@ -21,20 +23,82 @@ class TileWidget extends StatelessWidget {
     this.isDraggable = false,
     this.onTap,
     this.onDoubleTap,
+    this.onRotateClockwise,
+    this.onRotateCounterClockwise,
   });
+
+  void _handleTapDown(TapDownDetails details, BuildContext context) {
+    if (!isSelected || (onRotateClockwise == null && onRotateCounterClockwise == null)) {
+      onTap?.call();
+      return;
+    }
+
+    // Determine if tap is on left or right side
+    final localX = details.localPosition.dx;
+    final threshold = size / 3;
+
+    if (localX < threshold && onRotateCounterClockwise != null) {
+      // Left side - rotate counter-clockwise
+      onRotateCounterClockwise!();
+    } else if (localX > size - threshold && onRotateClockwise != null) {
+      // Right side - rotate clockwise
+      onRotateClockwise!();
+    } else {
+      // Center - normal tap
+      onTap?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     Widget tileContent = GestureDetector(
-      onTap: onTap,
+      onTapDown: (details) => _handleTapDown(details, context),
       onDoubleTap: onDoubleTap,
-      child: CustomPaint(
-        size: Size(size, size),
-        painter: TilePainter(
-          tile: tile,
-          isSelected: isSelected,
-          isHighlighted: isHighlighted,
-        ),
+      child: Stack(
+        children: [
+          CustomPaint(
+            size: Size(size, size),
+            painter: TilePainter(
+              tile: tile,
+              isSelected: isSelected,
+              isHighlighted: isHighlighted,
+            ),
+          ),
+          // Show rotation hints when selected
+          if (isSelected && (onRotateClockwise != null || onRotateCounterClockwise != null))
+            Positioned.fill(
+              child: Row(
+                children: [
+                  // Left rotation zone
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Icon(
+                        Icons.rotate_left,
+                        size: size * 0.2,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                  // Center spacer
+                  const Expanded(child: SizedBox()),
+                  // Right rotation zone
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 2),
+                      child: Icon(
+                        Icons.rotate_right,
+                        size: size * 0.2,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
 
@@ -72,6 +136,7 @@ class EmptyTileSlot extends StatelessWidget {
   final double size;
   final bool isValidDrop;
   final bool showHint;
+  final bool hideValidationFeedback;
   final VoidCallback? onTap;
 
   const EmptyTileSlot({
@@ -79,6 +144,7 @@ class EmptyTileSlot extends StatelessWidget {
     this.size = 80,
     this.isValidDrop = false,
     this.showHint = false,
+    this.hideValidationFeedback = false,
     this.onTap,
   });
 
@@ -89,7 +155,13 @@ class EmptyTileSlot extends StatelessWidget {
     double borderWidth;
     Widget? child;
 
-    if (isValidDrop) {
+    // If hiding validation feedback, show neutral styling
+    if (hideValidationFeedback) {
+      backgroundColor = Colors.grey.withOpacity(0.1);
+      borderColor = Colors.grey.shade400;
+      borderWidth = 1;
+      child = null;
+    } else if (isValidDrop) {
       backgroundColor = Colors.green.withOpacity(0.3);
       borderColor = Colors.green;
       borderWidth = 2;
