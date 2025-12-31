@@ -560,6 +560,38 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Replace a tile on the board with a tile from hand.
+  /// The board tile goes back to hand, the hand tile goes to board.
+  void replaceTile(CarpetTile handTile, BoardPosition position) {
+    final boardTile = board[position];
+    if (boardTile == null) return;
+
+    // Remove hand tile from player's hand
+    currentPlayer.removeTile(handTile);
+
+    // Put board tile back in player's hand
+    currentPlayer.addTile(boardTile);
+
+    // Put hand tile on the board
+    board[position] = handTile;
+
+    // Clear selection
+    _selectedTile = null;
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    _updatePositions();
+    notifyListeners();
+  }
+
   void _generatePlacementMessage() {
     if (_lastPlacementResult == null) return;
 

@@ -11,6 +11,7 @@ class GameBoard extends StatelessWidget {
   final Function(BoardPosition)? onPositionTap;
   final Function(BoardPosition)? onTileRotate;
   final Function(BoardPosition, BoardPosition)? onTileSwap;
+  final Function(CarpetTile, BoardPosition)? onTileReplace;
   final bool showMatchFeedback;
 
   const GameBoard({
@@ -20,6 +21,7 @@ class GameBoard extends StatelessWidget {
     this.onPositionTap,
     this.onTileRotate,
     this.onTileSwap,
+    this.onTileReplace,
     this.showMatchFeedback = false,
   });
 
@@ -139,57 +141,72 @@ class GameBoard extends StatelessWidget {
     );
   }
 
-  /// Build a placed tile that can be rotated (tap) or swapped (drag)
+  /// Build a placed tile that can be rotated (tap), swapped (drag from board), or replaced (drag from hand)
   Widget _buildPlacedTile(BuildContext context, CarpetTile tile, BoardPosition position, double slotSize) {
-    return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
+    // Outer DragTarget for tiles from hand (replacement)
+    return DragTarget<CarpetTile>(
       onWillAcceptWithDetails: (details) => true,
       onAcceptWithDetails: (details) {
-        // Swap tiles between positions
-        onTileSwap?.call(details.data.value, position);
+        // Replace: hand tile goes to board, board tile goes to hand
+        onTileReplace?.call(details.data, position);
       },
-      builder: (context, candidateData, rejectedData) {
-        final isHovering = candidateData.isNotEmpty;
-        return Draggable<MapEntry<CarpetTile, BoardPosition>>(
-          data: MapEntry(tile, position),
-          feedback: Material(
-            color: Colors.transparent,
-            elevation: 8,
-            child: Opacity(
-              opacity: 0.8,
-              child: CustomPaint(
-                size: Size(slotSize, slotSize),
-                painter: TilePainter(tile: tile),
+      builder: (context, handCandidateData, handRejectedData) {
+        final isHandHovering = handCandidateData.isNotEmpty;
+
+        // Inner DragTarget for tiles from board (swap)
+        return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
+          onWillAcceptWithDetails: (details) => details.data.value != position,
+          onAcceptWithDetails: (details) {
+            // Swap tiles between positions
+            onTileSwap?.call(details.data.value, position);
+          },
+          builder: (context, boardCandidateData, boardRejectedData) {
+            final isBoardHovering = boardCandidateData.isNotEmpty;
+            final isHovering = isHandHovering || isBoardHovering;
+
+            return Draggable<MapEntry<CarpetTile, BoardPosition>>(
+              data: MapEntry(tile, position),
+              feedback: Material(
+                color: Colors.transparent,
+                elevation: 8,
+                child: Opacity(
+                  opacity: 0.8,
+                  child: CustomPaint(
+                    size: Size(slotSize, slotSize),
+                    painter: TilePainter(tile: tile),
+                  ),
+                ),
               ),
-            ),
-          ),
-          childWhenDragging: Container(
-            width: slotSize,
-            height: slotSize,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+              childWhenDragging: Container(
+                width: slotSize,
+                height: slotSize,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          child: GestureDetector(
-            onTap: () => onTileRotate?.call(position),
-            child: Container(
-              decoration: isHovering
-                  ? BoxDecoration(
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 3,
-                      ),
-                    )
-                  : null,
-              child: CustomPaint(
-                size: Size(slotSize, slotSize),
-                painter: TilePainter(tile: tile),
+              child: GestureDetector(
+                onTap: () => onTileRotate?.call(position),
+                child: Container(
+                  decoration: isHovering
+                      ? BoxDecoration(
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 3,
+                          ),
+                        )
+                      : null,
+                  child: CustomPaint(
+                    size: Size(slotSize, slotSize),
+                    painter: TilePainter(tile: tile),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
