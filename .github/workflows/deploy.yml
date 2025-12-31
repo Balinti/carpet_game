@@ -4,30 +4,31 @@ on:
   push:
     branches:
       - main
-      - 'claude/refactor-game-modes-*'
+      - 'claude/*'
   workflow_dispatch:
 
 permissions:
   contents: write
-  pages: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.24.0'
           channel: 'stable'
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --base-href="/carpet_game/" --release
+        run: flutter build web --release --base-href "/carpet_game/"
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

@@ -161,6 +161,96 @@ class GameState extends ChangeNotifier {
     return state;
   }
 
+  /// Initialize a new 2x2 Square game.
+  static GameState newSquare2x2({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.square2x2, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 8; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 2×2 square!';
+    return state;
+  }
+
+  /// Initialize a new 3x3 Square game.
+  static GameState newSquare3x3({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.square3x3, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 12; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 3×3 square!';
+    return state;
+  }
+
+  /// Initialize a new 4x4 Square game.
+  static GameState newSquare4x4({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.square4x4, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 20; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 4×4 square!';
+    return state;
+  }
+
+  /// Initialize a new Square Progression game.
+  static GameState newSquareProgression({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.squareProgression, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 10; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Start with a 2×2 square!';
+    return state;
+  }
+
+  /// Initialize a new Geometric Shapes game.
+  static GameState newGeometricShapes({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.geometricShapes, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 12; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 2×2 square!';
+    return state;
+  }
+
   void _refillTilePool() {
     // Keep a pool of tiles to draw from
     while (_tilePool.length < 20) {
@@ -265,8 +355,8 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play and guided learning allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
+    // Free play, guided learning, and square modes allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning || mode.isSquareMode) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -371,8 +461,22 @@ class GameState extends ChangeNotifier {
         _handleCooperativePlacement();
         break;
       case GameMode.starterPuzzle:
-        // Starter Puzzle uses its own screen, fallback to free play behavior
         _handleFreePlayPlacement();
+        break;
+      case GameMode.square2x2:
+        _handleSquarePlacement(2);
+        break;
+      case GameMode.square3x3:
+        _handleSquarePlacement(3);
+        break;
+      case GameMode.square4x4:
+        _handleSquarePlacement(4);
+        break;
+      case GameMode.squareProgression:
+        _handleSquareProgressionPlacement();
+        break;
+      case GameMode.geometricShapes:
+        _handleGeometricShapesPlacement();
         break;
     }
 
@@ -461,6 +565,103 @@ class GameState extends ChangeNotifier {
     // Next player
     _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
     _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
+  }
+
+  void _handleSquarePlacement(int size) {
+    final target = size * size;
+    final tilesPlaced = board.length;
+    final tilesNeeded = target - tilesPlaced;
+
+    if (tilesNeeded <= 0 && _isSquare(size)) {
+      _gameOver = true;
+      _message = '🎉 You built a $size×$size square!';
+    } else if (tilesNeeded > 0) {
+      _message = 'Place $tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'}!';
+    } else {
+      _message = 'Arrange into a $size×$size square!';
+    }
+
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
+    }
+  }
+
+  int _progressionStage = 0;
+
+  void _handleSquareProgressionPlacement() {
+    final tilesPlaced = board.length;
+
+    if (_progressionStage == 0) {
+      if (tilesPlaced >= 4 && _isSquare(2)) {
+        _progressionStage = 1;
+        _message = '✓ 2×2 complete! Now build a 3×3!';
+        board.clear();
+        _recalculateBoundaries();
+      } else {
+        final needed = 4 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 2×2!';
+      }
+    } else if (_progressionStage == 1) {
+      if (tilesPlaced >= 9 && _isSquare(3)) {
+        _progressionStage = 2;
+        _message = '✓ 3×3 complete! Now build a 4×4!';
+        board.clear();
+        _recalculateBoundaries();
+      } else {
+        final needed = 9 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 3×3!';
+      }
+    } else {
+      if (tilesPlaced >= 16 && _isSquare(4)) {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed the progression!';
+      } else {
+        final needed = 16 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 4×4!';
+      }
+    }
+
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
+    }
+  }
+
+  void _handleGeometricShapesPlacement() {
+    final tilesPlaced = board.length;
+
+    if (tilesPlaced >= 4 && _isSquare(2)) {
+      if (tilesPlaced >= 9 && _isSquare(3)) {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed all shapes!';
+      } else {
+        _message = 'Now build a 3×3 square!';
+      }
+    } else {
+      final needed = 4 - tilesPlaced;
+      if (needed > 0) _message = 'Place $needed more for 2×2!';
+    }
+
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
+    }
+  }
+
+  bool _isSquare(int size) {
+    if (board.length < size * size) return false;
+    final rows = board.keys.map((p) => p.row).toSet();
+    final cols = board.keys.map((p) => p.col).toSet();
+    if (rows.length != size || cols.length != size) return false;
+    final minR = rows.reduce((a, b) => a < b ? a : b);
+    final minC = cols.reduce((a, b) => a < b ? a : b);
+    for (int r = 0; r < size; r++) {
+      for (int c = 0; c < size; c++) {
+        if (!board.containsKey(BoardPosition(minR + r, minC + c))) return false;
+      }
+    }
+    return true;
   }
 
   void _nextTurn() {

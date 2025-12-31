@@ -51,8 +51,22 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         _gameState = GameState.newCooperative(widget.playerCount);
         break;
       case GameMode.starterPuzzle:
-        // Starter Puzzle uses its own screen, but fallback to free play if reached
         _gameState = GameState.newFreePlay(playerCount: 1);
+        break;
+      case GameMode.square2x2:
+        _gameState = GameState.newSquare2x2();
+        break;
+      case GameMode.square3x3:
+        _gameState = GameState.newSquare3x3();
+        break;
+      case GameMode.square4x4:
+        _gameState = GameState.newSquare4x4();
+        break;
+      case GameMode.squareProgression:
+        _gameState = GameState.newSquareProgression();
+        break;
+      case GameMode.geometricShapes:
+        _gameState = GameState.newGeometricShapes();
         break;
     }
   }
@@ -118,6 +132,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.buildTogether;
       case GameMode.starterPuzzle:
         return l10n.starterPuzzle;
+      case GameMode.square2x2:
+        return '2×2 Square';
+      case GameMode.square3x3:
+        return '3×3 Square';
+      case GameMode.square4x4:
+        return '4×4 Square';
+      case GameMode.squareProgression:
+        return 'Progression';
+      case GameMode.geometricShapes:
+        return 'Geometric Shapes';
     }
   }
 
@@ -216,6 +240,38 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           Text(l10n.rule3Rotate),
           const SizedBox(height: 4),
           Text(l10n.rule4Timer),
+        ];
+      case GameMode.square2x2:
+      case GameMode.square3x3:
+      case GameMode.square4x4:
+        return [
+          const Text('Square Building', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('• Place tiles to form a complete square'),
+          const SizedBox(height: 4),
+          const Text('• Tiles must be next to each other'),
+          const SizedBox(height: 4),
+          const Text('• Complete the square to win!'),
+        ];
+      case GameMode.squareProgression:
+        return [
+          const Text('Progression Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('• Build a 2×2 square first'),
+          const SizedBox(height: 4),
+          const Text('• Then build a 3×3 square'),
+          const SizedBox(height: 4),
+          const Text('• Finally build a 4×4 square to win!'),
+        ];
+      case GameMode.geometricShapes:
+        return [
+          const Text('Geometric Shapes', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('• Build different geometric shapes'),
+          const SizedBox(height: 4),
+          const Text('• Start with a 2×2 square'),
+          const SizedBox(height: 4),
+          const Text('• Then build a 3×3 square to win!'),
         ];
     }
   }
