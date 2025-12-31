@@ -46,10 +46,10 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
   }
 
   void _initializePuzzle() {
-    // Generate 9 random tiles
+    // Generate 9 tiles from the 36 specific build tiles
     _availableTiles = List.generate(
       9,
-      (i) => CarpetTile.generateRandom('tile_$i'),
+      (i) => CarpetTile.getRandomBuildTile('tile_$i'),
     );
     _grid.fillRange(0, 9, null);
     _selectedTile = null;
