@@ -92,7 +92,7 @@ class GameState extends ChangeNotifier {
     // Deal 6 tiles to each player
     for (final player in players) {
       for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -112,7 +112,7 @@ class GameState extends ChangeNotifier {
     // Give initial tiles
     for (final player in players) {
       for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -134,7 +134,7 @@ class GameState extends ChangeNotifier {
     // Give initial tiles
     for (final player in players) {
       for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -159,7 +159,7 @@ class GameState extends ChangeNotifier {
     // Deal tiles to each player
     for (final player in players) {
       for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -181,7 +181,7 @@ class GameState extends ChangeNotifier {
     // Give initial tiles
     for (final player in players) {
       for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -203,7 +203,7 @@ class GameState extends ChangeNotifier {
     // Give initial tiles - more tiles for building shapes
     for (final player in players) {
       for (int i = 0; i < 12; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${state._nextTileId++}'));
       }
     }
 
@@ -215,9 +215,9 @@ class GameState extends ChangeNotifier {
   }
 
   void _refillTilePool() {
-    // Keep a pool of tiles to draw from
+    // Keep a pool of tiles to draw from (using the 36 specific build tiles)
     while (_tilePool.length < 20) {
-      _tilePool.add(CarpetTile.generateRandom('tile_${_nextTileId++}'));
+      _tilePool.add(CarpetTile.getRandomBuildTile('tile_${_nextTileId++}'));
     }
   }
 
@@ -805,12 +805,12 @@ class GameState extends ChangeNotifier {
     _nextTileId = 0;
     _tilePool.clear();
 
-    // Deal new tiles based on mode
+    // Deal new tiles based on mode (using the 36 specific build tiles)
     final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
     for (final player in players) {
       player.hand.clear();
       for (int i = 0; i < tilesPerPlayer; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${_nextTileId++}'));
+        player.addTile(CarpetTile.getRandomBuildTile('tile_${_nextTileId++}'));
       }
     }
 

@@ -1,6 +1,24 @@
 import 'dart:math';
 import 'tile_color.dart';
 
+/// The 36 specific build tiles for the game.
+/// Format: each 4-letter code represents top, right, bottom, left colors
+/// Colors: y=yellow, b=blue, r=red, g=green
+const List<String> kBuildTileCodes = [
+  // Row 1
+  'yybr', 'ybbr', 'rbgy', 'gybr', 'byry', 'rbyg',
+  // Row 2
+  'rrby', 'bbbb', 'bbrb', 'yyry', 'yyyy', 'yggb',
+  // Row 3
+  'brby', 'rgbb', 'gygb', 'gbby', 'byyy', 'ygyr',
+  // Row 4
+  'yggy', 'ggbr', 'bgry', 'rggb', 'grgy', 'grbr',
+  // Row 5
+  'bbgg', 'yggg', 'gggg', 'yrgy', 'rrrr', 'rybr',
+  // Row 6
+  'gyyb', 'yrgg', 'grbg', 'brgy', 'gryr', 'ybry',
+];
+
 /// Represents a carpet tile with 4 triangular sections.
 /// Each section is identified by its position: top, right, bottom, left.
 ///
@@ -189,5 +207,51 @@ class CarpetTile {
     } else {
       return generateFourColor(id); // 20% chance
     }
+  }
+
+  /// Parse a color character to TileColor.
+  static TileColor _parseColor(String char) {
+    switch (char.toLowerCase()) {
+      case 'r':
+        return TileColor.red;
+      case 'g':
+        return TileColor.green;
+      case 'b':
+        return TileColor.blue;
+      case 'y':
+        return TileColor.yellow;
+      default:
+        throw ArgumentError('Invalid color character: $char');
+    }
+  }
+
+  /// Creates a tile from a 4-character code.
+  /// Code format: TRBL (top, right, bottom, left)
+  /// Colors: y=yellow, b=blue, r=red, g=green
+  static CarpetTile fromCode(String id, String code) {
+    if (code.length != 4) {
+      throw ArgumentError('Tile code must be exactly 4 characters: $code');
+    }
+    return CarpetTile(
+      id: id,
+      top: _parseColor(code[0]),
+      right: _parseColor(code[1]),
+      bottom: _parseColor(code[2]),
+      left: _parseColor(code[3]),
+    );
+  }
+
+  /// Get all 36 build tiles as CarpetTile objects.
+  static List<CarpetTile> getBuildTiles() {
+    return List.generate(
+      kBuildTileCodes.length,
+      (i) => fromCode('build_tile_$i', kBuildTileCodes[i]),
+    );
+  }
+
+  /// Get a random tile from the 36 build tiles.
+  static CarpetTile getRandomBuildTile(String id) {
+    final code = kBuildTileCodes[_random.nextInt(kBuildTileCodes.length)];
+    return fromCode(id, code);
   }
 }
