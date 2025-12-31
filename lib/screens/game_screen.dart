@@ -60,6 +60,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       case GameMode.geometricShapes:
         _gameState = GameState.newGeometricShapes(playerCount: widget.playerCount);
         break;
+      case GameMode.square2x2:
+        _gameState = GameState.newSquare2x2(playerCount: widget.playerCount);
+        break;
+      case GameMode.square3x3:
+        _gameState = GameState.newSquare3x3(playerCount: widget.playerCount);
+        break;
+      case GameMode.square4x4:
+        _gameState = GameState.newSquare4x4(playerCount: widget.playerCount);
+        break;
+      case GameMode.squareProgression:
+        _gameState = GameState.newSquareProgression(playerCount: widget.playerCount);
+        break;
     }
   }
 
@@ -140,6 +152,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.shapeBuilder;
       case GameMode.geometricShapes:
         return l10n.geometricShapes;
+      case GameMode.square2x2:
+        return l10n.square2x2;
+      case GameMode.square3x3:
+        return l10n.square3x3;
+      case GameMode.square4x4:
+        return l10n.square4x4;
+      case GameMode.squareProgression:
+        return l10n.squareProgression;
     }
   }
 
@@ -266,6 +286,46 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           Text(l10n.geometricShapesRule4),
           const SizedBox(height: 4),
           Text(l10n.geometricShapesRule5),
+        ];
+      case GameMode.square2x2:
+        return [
+          Text(l10n.square2x2Rules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.squareRule1),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule2),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule3),
+        ];
+      case GameMode.square3x3:
+        return [
+          Text(l10n.square3x3Rules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.squareRule1),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule2),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule3),
+        ];
+      case GameMode.square4x4:
+        return [
+          Text(l10n.square4x4Rules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.squareRule1),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule2),
+          const SizedBox(height: 4),
+          Text(l10n.squareRule3),
+        ];
+      case GameMode.squareProgression:
+        return [
+          Text(l10n.progressionRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(l10n.progressionRule1),
+          const SizedBox(height: 4),
+          Text(l10n.progressionRule2),
+          const SizedBox(height: 4),
+          Text(l10n.progressionRule3),
         ];
     }
   }

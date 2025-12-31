@@ -19,7 +19,19 @@ enum GameMode {
   shapeBuilder,
 
   /// Geometric Shapes - build geometric patterns like squares, rectangles, etc.
-  geometricShapes;
+  geometricShapes,
+
+  /// Square 2x2 - build a 2x2 square.
+  square2x2,
+
+  /// Square 3x3 - build a 3x3 square.
+  square3x3,
+
+  /// Square 4x4 - build a 4x4 square.
+  square4x4,
+
+  /// Square Progression - build 2x2, then 3x3, then 4x4.
+  squareProgression;
 
   String get displayName {
     switch (this) {
@@ -37,6 +49,14 @@ enum GameMode {
         return 'Shape Builder';
       case GameMode.geometricShapes:
         return 'Geometric Shapes';
+      case GameMode.square2x2:
+        return '2×2 Square';
+      case GameMode.square3x3:
+        return '3×3 Square';
+      case GameMode.square4x4:
+        return '4×4 Square';
+      case GameMode.squareProgression:
+        return 'Progression';
     }
   }
 
@@ -56,16 +76,27 @@ enum GameMode {
         return 'Build shapes by color - see results when done!';
       case GameMode.geometricShapes:
         return 'Build squares, rectangles, and more!';
+      case GameMode.square2x2:
+        return 'Build a 2×2 square!';
+      case GameMode.square3x3:
+        return 'Build a 3×3 square!';
+      case GameMode.square4x4:
+        return 'Build a 4×4 square!';
+      case GameMode.squareProgression:
+        return '2×2 → 3×3 → 4×4 in sequence!';
     }
   }
 
   bool get isCompetitive => this == GameMode.colorDominoes;
-  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
-  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
+  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle || this == GameMode.geometricShapes || this == GameMode.square2x2 || this == GameMode.square3x3 || this == GameMode.square4x4 || this == GameMode.squareProgression;
+  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle || this == GameMode.geometricShapes || this == GameMode.square2x2 || this == GameMode.square3x3 || this == GameMode.square4x4 || this == GameMode.squareProgression;
 
   /// Whether this mode uses deferred validation (results shown only when board is complete).
   bool get hasDeferredValidation => this == GameMode.shapeBuilder;
 
   /// Whether this mode allows free placement without matching requirements.
-  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.shapeBuilder || this == GameMode.geometricShapes;
+  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.shapeBuilder || this == GameMode.geometricShapes || this == GameMode.square2x2 || this == GameMode.square3x3 || this == GameMode.square4x4 || this == GameMode.squareProgression;
+
+  /// Whether this is a square building mode.
+  bool get isSquareMode => this == GameMode.square2x2 || this == GameMode.square3x3 || this == GameMode.square4x4 || this == GameMode.squareProgression;
 }
