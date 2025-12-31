@@ -29,6 +29,16 @@ class GameState extends ChangeNotifier {
   // Undo support
   final List<_GameAction> _history = [];
 
+  // Geometric shapes progression
+  int _currentShapeIndex = 0;
+  static const List<(int, int, String)> _shapeProgression = [
+    (2, 2, '2×2 square'),
+    (3, 2, '3×2 rectangle'),
+    (3, 3, '3×3 square'),
+    (4, 3, '4×3 rectangle'),
+    (4, 4, '4×4 square'),
+  ];
+
   GameState({
     required this.mode,
     required this.players,
@@ -161,6 +171,28 @@ class GameState extends ChangeNotifier {
     return state;
   }
 
+  /// Initialize a new Geometric Shapes game.
+  static GameState newGeometricShapes({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+    );
+
+    final state = GameState(mode: GameMode.geometricShapes, players: players);
+
+    // Give initial tiles
+    for (final player in players) {
+      for (int i = 0; i < 12; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 2×2 square!';
+    return state;
+  }
+
   void _refillTilePool() {
     // Keep a pool of tiles to draw from
     while (_tilePool.length < 20) {
@@ -265,8 +297,8 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play and guided learning allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
+    // Free play, guided learning, and geometric shapes allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning || mode == GameMode.geometricShapes) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -374,6 +406,9 @@ class GameState extends ChangeNotifier {
         // Starter Puzzle uses its own screen, fallback to free play behavior
         _handleFreePlayPlacement();
         break;
+      case GameMode.geometricShapes:
+        _handleGeometricShapesPlacement();
+        break;
     }
 
     _selectedTile = null;
@@ -463,6 +498,71 @@ class GameState extends ChangeNotifier {
     _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
   }
 
+  void _handleGeometricShapesPlacement() {
+    // Check if current shape is complete
+    if (_checkCurrentShapeComplete()) {
+      final currentShape = _shapeProgression[_currentShapeIndex];
+      _currentShapeIndex++;
+
+      if (_currentShapeIndex >= _shapeProgression.length) {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed all geometric shapes!';
+        return;
+      }
+
+      final nextShape = _shapeProgression[_currentShapeIndex];
+      _message = '✓ ${currentShape.$3} complete! Now build a ${nextShape.$3}!';
+    } else {
+      final tilesNeeded = _getTilesNeededForCurrentShape();
+      if (tilesNeeded > 0) {
+        _message = 'Place $tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to complete the ${_shapeProgression[_currentShapeIndex].$3}!';
+      }
+    }
+
+    // Auto-draw tiles if running low
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
+    }
+
+    // Rotate players if multiplayer
+    if (players.length > 1) {
+      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+    }
+  }
+
+  bool _checkCurrentShapeComplete() {
+    if (board.isEmpty) return false;
+
+    final target = _shapeProgression[_currentShapeIndex];
+    final targetWidth = target.$1;
+    final targetHeight = target.$2;
+
+    // Check if board forms the target rectangle
+    final width = _maxCol - _minCol + 1;
+    final height = _maxRow - _minRow + 1;
+
+    // Must be exactly the target size
+    if (width != targetWidth || height != targetHeight) return false;
+
+    // Must be completely filled
+    for (int row = _minRow; row <= _maxRow; row++) {
+      for (int col = _minCol; col <= _maxCol; col++) {
+        if (!board.containsKey(BoardPosition(row, col))) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  int _getTilesNeededForCurrentShape() {
+    final target = _shapeProgression[_currentShapeIndex];
+    final targetTiles = target.$1 * target.$2;
+    return targetTiles - board.length;
+  }
+
   void _nextTurn() {
     _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
 
@@ -528,6 +628,7 @@ class GameState extends ChangeNotifier {
     _lastPlacementResult = null;
     _history.clear();
     _minRow = _maxRow = _minCol = _maxCol = 0;
+    _currentShapeIndex = 0;
 
     score.reset();
     for (final ps in playerScores) {
@@ -538,7 +639,7 @@ class GameState extends ChangeNotifier {
     _tilePool.clear();
 
     // Deal new tiles based on mode
-    final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
+    final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : (mode == GameMode.geometricShapes ? 12 : 8);
     for (final player in players) {
       player.hand.clear();
       for (int i = 0; i < tilesPerPlayer; i++) {
@@ -548,6 +649,10 @@ class GameState extends ChangeNotifier {
 
     if (mode != GameMode.colorDominoes) {
       _refillTilePool();
+    }
+
+    if (mode == GameMode.geometricShapes) {
+      _message = 'Build a 2×2 square!';
     }
 
     _updatePositions();

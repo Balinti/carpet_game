@@ -13,7 +13,10 @@ enum GameMode {
   cooperative,
 
   /// Starter Puzzle - 3x3 grid puzzle with all tiles, rotation counter and timer.
-  starterPuzzle;
+  starterPuzzle,
+
+  /// Geometric Shapes - build geometric patterns like squares, rectangles, etc.
+  geometricShapes;
 
   String get displayName {
     switch (this) {
@@ -27,6 +30,8 @@ enum GameMode {
         return 'Build Together';
       case GameMode.starterPuzzle:
         return 'Starter Puzzle';
+      case GameMode.geometricShapes:
+        return 'Geometric Shapes';
     }
   }
 
@@ -42,10 +47,13 @@ enum GameMode {
         return 'Work together to build a beautiful carpet!';
       case GameMode.starterPuzzle:
         return 'Fill the 3x3 grid with matching colors!';
+      case GameMode.geometricShapes:
+        return 'Build squares, rectangles, and more!';
     }
   }
 
   bool get isCompetitive => this == GameMode.colorDominoes;
-  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle;
-  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle;
+  bool get hasRules => this == GameMode.colorDominoes || this == GameMode.guidedLearning || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
+  bool get showMatchFeedback => this == GameMode.guidedLearning || this == GameMode.cooperative || this == GameMode.starterPuzzle || this == GameMode.geometricShapes;
+  bool get allowsFreePlacement => this == GameMode.freePlay || this == GameMode.guidedLearning || this == GameMode.geometricShapes;
 }

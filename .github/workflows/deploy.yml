@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - 'claude/refactor-game-modes-*'
+      - 'claude/complete-build-*'
+      - 'claude/github-pages-deployment-*'
   workflow_dispatch:
 
 permissions:

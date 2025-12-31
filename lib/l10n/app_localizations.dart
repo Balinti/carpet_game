@@ -163,6 +163,19 @@ class AppLocalizations {
   String get rule3Rotate => _t('3. Tap tiles to rotate them before placing.', '3. Toca los azulejos para rotarlos antes de colocar.', '.הקש על אריחים לסיבוב לפני ההנחה .3');
   String get rule4Timer => _t('4. Complete as fast as you can!', '4. ¡Completa lo más rápido que puedas!', '!השלם כמה שיותר מהר .4');
 
+  // Creative modes section
+  String get creativeModes => _t('Creative Modes', 'Modos Creativos', 'מצבים יצירתיים');
+
+  // Geometric Shapes mode
+  String get geometricShapes => _t('Geometric Shapes', 'Formas Geométricas', 'צורות גיאומטריות');
+  String get geometricShapesDesc => _t('Build squares, rectangles, and more!', 'Construye cuadrados, rectángulos y más!', '!בנה ריבועים, מלבנים ועוד');
+  String get geometricShapesRules => _t('Geometric Shapes Rules', 'Reglas de Formas Geométricas', 'חוקי צורות גיאומטריות');
+  String get geometricShapesRule1 => _t('1. Build geometric shapes: squares and rectangles.', '1. Construye formas geométricas: cuadrados y rectángulos.', '.בנה צורות גיאומטריות: ריבועים ומלבנים .1');
+  String get geometricShapesRule2 => _t('2. Start with a 2×2 square, then progress to larger shapes.', '2. Comienza con un cuadrado 2×2, luego avanza a formas más grandes.', '.התחל עם ריבוע 2×2, ואז התקדם לצורות גדולות יותר .2');
+  String get geometricShapesRule3 => _t('3. Place tiles anywhere - no matching required!', '3. Coloca azulejos en cualquier lugar - ¡no se requiere coincidir!', '!הנח אריחים בכל מקום - לא צריך התאמה .3');
+  String get geometricShapesRule4 => _t('4. Complete each shape to unlock the next.', '4. Completa cada forma para desbloquear la siguiente.', '.השלם כל צורה כדי לפתוח את הבאה .4');
+  String get geometricShapesRule5 => _t('5. Finish all 5 shapes to win!', '5. ¡Termina las 5 formas para ganar!', '!סיים את כל 5 הצורות כדי לנצח .5');
+
   // Helper method for translations
   String _t(String en, String es, String he) {
     switch (language) {

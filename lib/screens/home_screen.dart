@@ -148,6 +148,23 @@ class HomeScreen extends StatelessWidget {
                           iconColor: Colors.indigo,
                           onTap: () => _showPlayerCountDialog(context, GameMode.colorDominoes),
                         ),
+
+                        const SizedBox(height: 32),
+
+                        // Creative modes section
+                        _SectionHeader(
+                          title: l10n.creativeModes,
+                          icon: Icons.category,
+                          color: Colors.teal,
+                        ),
+                        const SizedBox(height: 12),
+                        _GameModeCard(
+                          title: l10n.geometricShapes,
+                          subtitle: l10n.geometricShapesDesc,
+                          icon: Icons.square_outlined,
+                          iconColor: Colors.deepPurple,
+                          onTap: () => _startGame(context, GameMode.geometricShapes, 1),
+                        ),
                       ],
                     ),
                   ),
