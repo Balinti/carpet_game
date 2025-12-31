@@ -173,12 +173,11 @@ class GameState extends ChangeNotifier {
     );
     final state = GameState(mode: GameMode.square2x2, players: players);
     state._targetGridSize = 2;
-    for (final player in players) {
-      for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Fill the 2×2 grid!';
     return state;
@@ -192,12 +191,11 @@ class GameState extends ChangeNotifier {
     );
     final state = GameState(mode: GameMode.square3x3, players: players);
     state._targetGridSize = 3;
-    for (final player in players) {
-      for (int i = 0; i < 12; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Fill the 3×3 grid!';
     return state;
@@ -211,12 +209,11 @@ class GameState extends ChangeNotifier {
     );
     final state = GameState(mode: GameMode.square4x4, players: players);
     state._targetGridSize = 4;
-    for (final player in players) {
-      for (int i = 0; i < 20; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Fill the 4×4 grid!';
     return state;
@@ -229,12 +226,11 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.squareProgression, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 10; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Start with a 2×2 square!';
     return state;
@@ -247,12 +243,11 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.geometricShapes, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 12; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Build a 2×2 square!';
     return state;
@@ -600,16 +595,43 @@ class GameState extends ChangeNotifier {
     final tilesNeeded = target - tilesPlaced;
 
     if (tilesNeeded <= 0) {
+      final mismatches = _countMismatches();
       _gameOver = true;
-      _message = '🎉 You filled the $size×$size grid!';
+      if (mismatches == 0) {
+        _message = '🎉 Perfect! All colors match!';
+      } else {
+        _message = '✓ Grid filled! $mismatches mismatch${mismatches == 1 ? '' : 'es'} - try again for perfect!';
+      }
     } else {
-      _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      final mismatches = _countMismatches();
+      if (mismatches > 0) {
+        _message = '$tilesNeeded to go • $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+      } else {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
     }
 
     if (currentPlayer.hand.length < 4) {
       drawTile();
       drawTile();
     }
+  }
+
+  /// Count the number of mismatched edges in the current board.
+  int _countMismatches() {
+    int mismatches = 0;
+    for (final entry in board.entries) {
+      final position = entry.key;
+      final tile = entry.value;
+      final status = getEdgeMatchStatus(tile, position);
+      for (final edgeStatus in status.values) {
+        if (edgeStatus == EdgeMatchStatus.mismatched) {
+          mismatches++;
+        }
+      }
+    }
+    // Each mismatch is counted twice (once from each tile), so divide by 2
+    return mismatches ~/ 2;
   }
 
   int _progressionStage = 0;
