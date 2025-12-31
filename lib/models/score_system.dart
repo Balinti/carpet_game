@@ -86,13 +86,6 @@ class ScoreSystem {
     );
   }
 
-  /// Deduct points (for clue usage).
-  void deductPoints(int amount) {
-    _points = (_points - amount).clamp(0, _points);
-    // Recalculate stars based on new point total
-    _stars = _points ~/ pointsPerStar;
-  }
-
   /// Reset the score.
   void reset() {
     _points = 0;

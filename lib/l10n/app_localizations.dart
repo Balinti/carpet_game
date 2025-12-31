@@ -163,30 +163,6 @@ class AppLocalizations {
   String get rule3Rotate => _t('3. Tap tiles to rotate them before placing.', '3. Toca los azulejos para rotarlos antes de colocar.', '.הקש על אריחים לסיבוב לפני ההנחה .3');
   String get rule4Timer => _t('4. Complete as fast as you can!', '4. ¡Completa lo más rápido que puedas!', '!השלם כמה שיותר מהר .4');
 
-  // Shape Builder mode
-  String get shapeBuilder => _t('Shape Builder', 'Constructor de Formas', 'בונה צורות');
-  String get shapeBuilderDesc => _t('Build shapes by color - see results when done!', '¡Construye formas por color - ve los resultados al terminar!', '!בנה צורות לפי צבע - ראה תוצאות בסיום');
-  String get shapeBuilderRules => _t('Shape Builder Rules', 'Reglas del Constructor de Formas', 'חוקי בונה צורות');
-  String get shapeBuilderRule1 => _t('1. Place tiles anywhere to build shapes.', '1. Coloca azulejos en cualquier lugar para construir formas.', '.הנח אריחים בכל מקום לבניית צורות .1');
-  String get shapeBuilderRule2 => _t('2. No validation during play - experiment freely!', '2. Sin validación durante el juego - ¡experimenta libremente!', '!אין בדיקה במהלך המשחק - התנסה בחופשיות .2');
-  String get shapeBuilderRule3 => _t('3. Tap placed tiles to return them to your hand.', '3. Toca los azulejos colocados para devolverlos a tu mano.', '.הקש על אריחים שהונחו להחזירם ליד .3');
-  String get shapeBuilderRule4 => _t('4. Use the Clue button for hints (costs points).', '4. Usa el botón de Pista para ayuda (cuesta puntos).', '.(השתמש בכפתור רמז לעזרה (עולה נקודות .4');
-  String get shapeBuilderRule5 => _t('5. Click left/right side of tile to rotate.', '5. Haz clic en el lado izquierdo/derecho del azulejo para rotar.', '.לחץ על צד שמאל/ימין של האריח לסיבוב .5');
-  String get clue => _t('Clue', 'Pista', 'רמז');
-
-  // Creative modes section
-  String get creativeModes => _t('Creative Modes', 'Modos Creativos', 'מצבים יצירתיים');
-
-  // Geometric Shapes mode
-  String get geometricShapes => _t('Geometric Shapes', 'Formas Geométricas', 'צורות גיאומטריות');
-  String get geometricShapesDesc => _t('Build squares, rectangles, and more!', '¡Construye cuadrados, rectángulos y más!', '!בנה ריבועים, מלבנים ועוד');
-  String get geometricShapesRules => _t('Geometric Shapes Rules', 'Reglas de Formas Geométricas', 'חוקי צורות גיאומטריות');
-  String get geometricShapesRule1 => _t('1. Build geometric shapes: squares and rectangles.', '1. Construye formas geométricas: cuadrados y rectángulos.', '.בנה צורות גיאומטריות: ריבועים ומלבנים .1');
-  String get geometricShapesRule2 => _t('2. Start with a 2×2 square, then 3×2 rectangle, then 3×3 square.', '2. Comienza con un cuadrado 2×2, luego rectángulo 3×2, luego cuadrado 3×3.', '.התחל עם ריבוע 2×2, אז מלבן 3×2, אז ריבוע 3×3 .2');
-  String get geometricShapesRule3 => _t('3. Place tiles adjacent to each other to form the shape.', '3. Coloca azulejos adyacentes para formar la forma.', '.הנח אריחים צמודים זה לזה ליצירת הצורה .3');
-  String get geometricShapesRule4 => _t('4. Try to match colors on edges for bonus points!', '4. ¡Intenta combinar colores en los bordes para puntos extra!', '!נסה להתאים צבעים בקצוות לנקודות בונוס .4');
-  String get geometricShapesRule5 => _t('5. Complete all three shapes to win!', '5. ¡Completa las tres formas para ganar!', '!השלם את שלוש הצורות כדי לנצח .5');
-
   // Helper method for translations
   String _t(String en, String es, String he) {
     switch (language) {

@@ -11,7 +11,6 @@ class PlayerHand extends StatelessWidget {
   final double tileSize;
   final Function(CarpetTile)? onTileSelected;
   final VoidCallback? onRotate;
-  final VoidCallback? onRotateCounterClockwise;
 
   const PlayerHand({
     super.key,
@@ -21,7 +20,6 @@ class PlayerHand extends StatelessWidget {
     this.tileSize = 70,
     this.onTileSelected,
     this.onRotate,
-    this.onRotateCounterClockwise,
   });
 
   @override
@@ -91,8 +89,6 @@ class PlayerHand extends StatelessWidget {
                     isDraggable: true,
                     onTap: () => onTileSelected?.call(tile),
                     onDoubleTap: isSelected ? onRotate : null,
-                    onRotateClockwise: isSelected ? onRotate : null,
-                    onRotateCounterClockwise: isSelected ? onRotateCounterClockwise : null,
                   );
                 }),
               ],

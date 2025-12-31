@@ -1,0 +1,993 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+import '../models/models.dart';
+import '../models/challenge.dart';
+import '../models/progression.dart';
+import '../widgets/tile_painter.dart';
+
+/// Generic puzzle screen supporting 2x2, 3x3, and 4x4 grids.
+class PuzzleScreen extends StatefulWidget {
+  final GridSize gridSize;
+  final Challenge? challenge;
+  final ProgressionManager? progressionManager;
+
+  const PuzzleScreen({
+    super.key,
+    required this.gridSize,
+    this.challenge,
+    this.progressionManager,
+  });
+
+  @override
+  State<PuzzleScreen> createState() => _PuzzleScreenState();
+}
+
+class _PuzzleScreenState extends State<PuzzleScreen>
+    with TickerProviderStateMixin {
+  // Grid state
+  late List<CarpetTile?> _grid;
+
+  // Available tiles
+  late List<CarpetTile> _availableTiles;
+
+  // Selected tile for placement
+  CarpetTile? _selectedTile;
+  int? _selectedIndex;
+
+  // Rotation counter and animation
+  int _rotationCount = 0;
+  late AnimationController _rotationController;
+  late Animation<double> _rotationAnimation;
+
+  // Mistakes counter
+  int _mistakesCount = 0;
+
+  // Timer
+  Timer? _timer;
+  int _elapsedSeconds = 0;
+  bool _timerStarted = false;
+
+  // Game state
+  bool _puzzleComplete = false;
+
+  // Clue system
+  bool _showClues = false;
+  int _cluesUsed = 0;
+
+  // Grid dimensions
+  int get _gridSize => widget.gridSize.size;
+  int get _tileCount => widget.gridSize.tileCount;
+
+  // Track rotation direction for animation
+  bool _lastRotationClockwise = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _rotationAnimation = Tween<double>(begin: -0.25, end: 0).animate(
+      CurvedAnimation(parent: _rotationController, curve: Curves.easeOut),
+    );
+    _initializePuzzle();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  void _initializePuzzle() {
+    // Generate all 64 unique tiles (one per rotation equivalence class)
+    _availableTiles = CarpetTile.generateAllUniqueTiles();
+    _grid = List.filled(_tileCount, null);
+    _selectedTile = null;
+    _selectedIndex = null;
+    _rotationCount = 0;
+    _mistakesCount = 0;
+    _elapsedSeconds = 0;
+    _timerStarted = false;
+    _puzzleComplete = false;
+    _showClues = false;
+    _cluesUsed = 0;
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _startTimer() {
+    if (!_timerStarted) {
+      _timerStarted = true;
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted && !_puzzleComplete) {
+          setState(() {
+            _elapsedSeconds++;
+          });
+        }
+      });
+    }
+  }
+
+  void _rotateTile(int index, {bool counterClockwise = false}) {
+    _startTimer();
+
+    // Update tile data IMMEDIATELY (not after animation)
+    // This ensures dragging always gets the rotated tile
+    setState(() {
+      _lastRotationClockwise = !counterClockwise;
+      if (counterClockwise) {
+        _availableTiles[index] =
+            _availableTiles[index].rotateCounterClockwise();
+      } else {
+        _availableTiles[index] = _availableTiles[index].rotateClockwise();
+      }
+      _rotationCount++;
+      // Update selected tile if it was the one rotated
+      if (_selectedIndex == index) {
+        _selectedTile = _availableTiles[index];
+      }
+    });
+
+    // Animate from "old" position to "new" position
+    // The tile data is already rotated, animation is just visual smoothing
+    _rotationController.forward(from: 0);
+  }
+
+  void _selectTile(CarpetTile tile, int index) {
+    _startTimer();
+    setState(() {
+      if (_selectedTile?.id == tile.id) {
+        _selectedTile = null;
+        _selectedIndex = null;
+      } else {
+        _selectedTile = tile;
+        _selectedIndex = index;
+      }
+    });
+  }
+
+  void _placeTileOnGrid(int gridIndex) {
+    if (_selectedTile == null) return;
+    if (_grid[gridIndex] != null) return;
+
+    _startTimer();
+
+    // Allow any placement - mistakes are revealed at the end
+    setState(() {
+      _grid[gridIndex] = _selectedTile;
+      _availableTiles.removeWhere((t) => t.id == _selectedTile!.id);
+      _selectedTile = null;
+      _selectedIndex = null;
+
+      // Check if grid is full
+      if (!_grid.contains(null)) {
+        _timer?.cancel();
+        _checkPuzzleCompletion();
+      }
+    });
+  }
+
+  void _removeTileFromGrid(int gridIndex) {
+    if (_grid[gridIndex] == null) return;
+
+    setState(() {
+      _availableTiles.add(_grid[gridIndex]!);
+      _grid[gridIndex] = null;
+      _puzzleComplete = false; // Reset completion state when removing tiles
+    });
+  }
+
+  /// Count how many tiles have mismatched edges
+  int _countMisplacedTiles() {
+    int misplacedCount = 0;
+    for (int i = 0; i < _tileCount; i++) {
+      if (_grid[i] != null && !_canPlaceTile(_grid[i]!, i)) {
+        misplacedCount++;
+      }
+    }
+    return misplacedCount;
+  }
+
+  /// Check if all placements are valid when grid is full
+  void _checkPuzzleCompletion() {
+    final misplacedCount = _countMisplacedTiles();
+    _mistakesCount = misplacedCount;
+
+    if (misplacedCount == 0) {
+      // All placements are correct!
+      _puzzleComplete = true;
+      _showCompletionDialog();
+    } else {
+      // Show message that there are mistakes
+      _showNotDoneYetDialog(misplacedCount);
+    }
+  }
+
+  /// Show dialog when grid is full but has mistakes
+  void _showNotDoneYetDialog(int misplacedCount) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber, color: Colors.orange, size: 32),
+            SizedBox(width: 12),
+            Text('Not Done Yet!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'The board is full, but $misplacedCount tile${misplacedCount > 1 ? 's are' : ' is'} misplaced.',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Tap tiles on the board to move them back, then try different placements.',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Use the Clue button to see which tiles are wrong (costs points).',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('OK'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _toggleClues();
+            },
+            icon: const Icon(Icons.lightbulb_outline),
+            label: const Text('Show Clues'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Toggle showing clues (edge match indicators)
+  void _toggleClues() {
+    setState(() {
+      if (!_showClues) {
+        _cluesUsed++;
+      }
+      _showClues = !_showClues;
+    });
+  }
+
+  bool _canPlaceTile(CarpetTile tile, int gridIndex) {
+    final row = gridIndex ~/ _gridSize;
+    final col = gridIndex % _gridSize;
+
+    // Check each adjacent tile - colors must be the SAME to be allowed
+    // Top neighbor
+    if (row > 0) {
+      final topIndex = (row - 1) * _gridSize + col;
+      final topTile = _grid[topIndex];
+      if (topTile != null && topTile.bottom != tile.top) {
+        return false; // Different colors - not allowed
+      }
+    }
+
+    // Bottom neighbor
+    if (row < _gridSize - 1) {
+      final bottomIndex = (row + 1) * _gridSize + col;
+      final bottomTile = _grid[bottomIndex];
+      if (bottomTile != null && bottomTile.top != tile.bottom) {
+        return false; // Different colors - not allowed
+      }
+    }
+
+    // Left neighbor
+    if (col > 0) {
+      final leftIndex = row * _gridSize + (col - 1);
+      final leftTile = _grid[leftIndex];
+      if (leftTile != null && leftTile.right != tile.left) {
+        return false; // Different colors - not allowed
+      }
+    }
+
+    // Right neighbor
+    if (col < _gridSize - 1) {
+      final rightIndex = row * _gridSize + (col + 1);
+      final rightTile = _grid[rightIndex];
+      if (rightTile != null && rightTile.left != tile.right) {
+        return false; // Different colors - not allowed
+      }
+    }
+
+    return true;
+  }
+
+  Map<int, EdgeMatchStatus> _getEdgeStatus(int gridIndex) {
+    final tile = _grid[gridIndex];
+    if (tile == null) return {};
+
+    final row = gridIndex ~/ _gridSize;
+    final col = gridIndex % _gridSize;
+    final status = <int, EdgeMatchStatus>{};
+
+    // Top edge - SAME colors = matching (good), DIFFERENT colors = mismatched (bad)
+    if (row > 0) {
+      final topIndex = (row - 1) * _gridSize + col;
+      final topTile = _grid[topIndex];
+      if (topTile != null) {
+        status[0] = topTile.bottom == tile.top
+            ? EdgeMatchStatus.matching   // Same colors = good
+            : EdgeMatchStatus.mismatched; // Different colors = bad
+      } else {
+        status[0] = EdgeMatchStatus.noAdjacent;
+      }
+    } else {
+      status[0] = EdgeMatchStatus.noAdjacent;
+    }
+
+    // Right edge
+    if (col < _gridSize - 1) {
+      final rightIndex = row * _gridSize + (col + 1);
+      final rightTile = _grid[rightIndex];
+      if (rightTile != null) {
+        status[1] = rightTile.left == tile.right
+            ? EdgeMatchStatus.matching
+            : EdgeMatchStatus.mismatched;
+      } else {
+        status[1] = EdgeMatchStatus.noAdjacent;
+      }
+    } else {
+      status[1] = EdgeMatchStatus.noAdjacent;
+    }
+
+    // Bottom edge
+    if (row < _gridSize - 1) {
+      final bottomIndex = (row + 1) * _gridSize + col;
+      final bottomTile = _grid[bottomIndex];
+      if (bottomTile != null) {
+        status[2] = bottomTile.top == tile.bottom
+            ? EdgeMatchStatus.matching
+            : EdgeMatchStatus.mismatched;
+      } else {
+        status[2] = EdgeMatchStatus.noAdjacent;
+      }
+    } else {
+      status[2] = EdgeMatchStatus.noAdjacent;
+    }
+
+    // Left edge
+    if (col > 0) {
+      final leftIndex = row * _gridSize + (col - 1);
+      final leftTile = _grid[leftIndex];
+      if (leftTile != null) {
+        status[3] = leftTile.right == tile.left
+            ? EdgeMatchStatus.matching
+            : EdgeMatchStatus.mismatched;
+      } else {
+        status[3] = EdgeMatchStatus.noAdjacent;
+      }
+    } else {
+      status[3] = EdgeMatchStatus.noAdjacent;
+    }
+
+    return status;
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void _showCompletionDialog() async {
+    final l10n = AppLocalizations.of(context);
+
+    // Calculate stars
+    final stars = ChallengeResult.calculateStars(
+      timeSeconds: _elapsedSeconds,
+      rotations: _rotationCount,
+      gridSize: widget.gridSize,
+    );
+
+    // Save progress if we have a challenge
+    if (widget.challenge != null && widget.progressionManager != null) {
+      final result = ChallengeResult(
+        challengeId: widget.challenge!.id,
+        completed: true,
+        timeSeconds: _elapsedSeconds,
+        rotations: _rotationCount,
+        stars: stars,
+      );
+      await widget.progressionManager!.completeChallenge(result);
+    }
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.celebration, color: Colors.amber, size: 32),
+            const SizedBox(width: 12),
+            Text(l10n.puzzleComplete),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.congratulations,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            // Stars display
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(3, (index) {
+                return Icon(
+                  index < stars ? Icons.star : Icons.star_border,
+                  color: Colors.amber,
+                  size: 40,
+                );
+              }),
+            ),
+            const SizedBox(height: 24),
+            _buildStatRow(
+              icon: Icons.timer,
+              label: l10n.yourTime,
+              value: _formatTime(_elapsedSeconds),
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              icon: Icons.rotate_right,
+              label: l10n.totalRotations,
+              value: '$_rotationCount',
+            ),
+            const SizedBox(height: 12),
+            _buildStatRow(
+              icon: Icons.close,
+              label: 'Mistakes',
+              value: '$_mistakesCount',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.pop(context);
+            },
+            child: Text(l10n.cancel),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              setState(() {
+                _initializePuzzle();
+              });
+            },
+            icon: const Icon(Icons.replay),
+            label: Text(l10n.playAgain),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+      ],
+    );
+  }
+
+  void _showRulesDialog() {
+    final l10n = AppLocalizations.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('${widget.gridSize.displayName} Puzzle Rules'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('1. Place all ${widget.gridSize.tileCount} tiles on the ${widget.gridSize.displayName} grid.'),
+            const SizedBox(height: 8),
+            Text(l10n.rule2MatchColors),
+            const SizedBox(height: 8),
+            Text(l10n.rule3Rotate),
+            const SizedBox(height: 8),
+            Text(l10n.rule4Timer),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l10n.gotIt),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final title = widget.challenge?.name ?? '${widget.gridSize.displayName} Puzzle';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          // Clue button
+          IconButton(
+            icon: Icon(
+              _showClues ? Icons.lightbulb : Icons.lightbulb_outline,
+              color: _showClues ? Colors.amber : null,
+            ),
+            onPressed: _toggleClues,
+            tooltip: _showClues ? 'Hide Clues' : 'Show Clues (costs points)',
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: _showRulesDialog,
+            tooltip: l10n.rules,
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _initializePuzzle();
+              });
+            },
+            tooltip: l10n.newGame,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Stats bar
+          _buildStatsBar(l10n),
+
+          // Instructions
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            child: Text(
+              widget.challenge?.description ?? l10n.matchingColors,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          // Grid
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: _buildGrid(),
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          // Available tiles with rotation button
+          Expanded(
+            flex: 2,
+            child: Container(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tap to select, drag to place',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                      ),
+                      // Rotation button
+                      if (_selectedTile != null && _selectedIndex != null)
+                        Row(
+                          children: [
+                            IconButton.filled(
+                              onPressed: () =>
+                                  _rotateTile(_selectedIndex!, counterClockwise: true),
+                              icon: const Icon(Icons.rotate_left),
+                              tooltip: 'Rotate left',
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.filled(
+                              onPressed: () => _rotateTile(_selectedIndex!),
+                              icon: const Icon(Icons.rotate_right),
+                              tooltip: 'Rotate right',
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildAvailableTiles(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsBar(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // Grid size indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              widget.gridSize.displayName,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+            ),
+          ),
+
+          // Timer
+          Row(
+            children: [
+              const Icon(Icons.timer, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                _formatTime(_elapsedSeconds),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+
+          // Rotation count
+          Row(
+            children: [
+              const Icon(Icons.rotate_right, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                '$_rotationCount',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+
+          // Mistakes count
+          Row(
+            children: [
+              Icon(Icons.close, size: 24, color: _mistakesCount > 0 ? Colors.red : null),
+              const SizedBox(width: 8),
+              Text(
+                '$_mistakesCount',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: _mistakesCount > 0 ? Colors.red : Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrid() {
+    // Calculate tile size based on grid size
+    final double tileSize;
+    const double spacing = 4.0;
+
+    switch (widget.gridSize) {
+      case GridSize.twoByTwo:
+        tileSize = 100.0;
+        break;
+      case GridSize.threeByThree:
+        tileSize = 90.0;
+        break;
+      case GridSize.fourByFour:
+        tileSize = 70.0;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(_gridSize, (row) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(_gridSize, (col) {
+              final index = row * _gridSize + col;
+              return Padding(
+                padding: const EdgeInsets.all(spacing / 2),
+                child: _buildGridCell(index, tileSize),
+              );
+            }),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildGridCell(int index, double size) {
+    final tile = _grid[index];
+
+    return DragTarget<CarpetTile>(
+      onWillAcceptWithDetails: (details) {
+        // Allow placement in any empty cell (no color matching required)
+        return _grid[index] == null;
+      },
+      onAcceptWithDetails: (details) {
+        final tile = details.data;
+        _startTimer();
+        setState(() {
+          _grid[index] = tile;
+          _availableTiles.removeWhere((t) => t.id == tile.id);
+          _selectedTile = null;
+          _selectedIndex = null;
+
+          // Check if grid is full
+          if (!_grid.contains(null)) {
+            _timer?.cancel();
+            _checkPuzzleCompletion();
+          }
+        });
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isValidDrop = candidateData.isNotEmpty;
+
+        if (tile != null) {
+          return GestureDetector(
+            onTap: () => _removeTileFromGrid(index),
+            child: CustomPaint(
+              size: Size(size, size),
+              painter: TilePainter(
+                tile: tile,
+                edgeStatus: _showClues ? _getEdgeStatus(index) : null,
+              ),
+            ),
+          );
+        }
+
+        // Simple neutral appearance for empty cells
+        Color bgColor;
+        Color borderColor;
+        Widget? icon;
+
+        if (isValidDrop) {
+          // Show subtle highlight when dragging over
+          bgColor = Colors.blue.withOpacity(0.2);
+          borderColor = Colors.blue.shade300;
+          icon = const Icon(Icons.add, color: Colors.blue, size: 24);
+        } else {
+          bgColor = Colors.grey.withOpacity(0.1);
+          borderColor = Colors.grey.shade400;
+          icon = null;
+        }
+
+        return GestureDetector(
+          onTap: () => _placeTileOnGrid(index),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: Border.all(color: borderColor, width: 2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Center(child: icon),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAvailableTiles() {
+    // Calculate tile size based on grid size
+    final double tileSize;
+    switch (widget.gridSize) {
+      case GridSize.twoByTwo:
+        tileSize = 80.0;
+        break;
+      case GridSize.threeByThree:
+        tileSize = 70.0;
+        break;
+      case GridSize.fourByFour:
+        tileSize = 60.0;
+        break;
+    }
+
+    return SingleChildScrollView(
+      child: Center(
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: List.generate(_availableTiles.length, (index) {
+          // Get fresh reference to tile at this index
+          final tile = _availableTiles[index];
+          final isSelected = _selectedTile?.id == tile.id;
+          // Create a unique key that changes with rotation
+          final tileKey = '${tile.id}_${tile.top.index}${tile.right.index}${tile.bottom.index}${tile.left.index}';
+
+          return RepaintBoundary(
+            key: ValueKey('boundary_$tileKey'),
+            child: GestureDetector(
+              key: ValueKey('gesture_$tileKey'),
+              onTapUp: (details) {
+                if (isSelected) {
+                  // If already selected, rotate based on which side was tapped
+                  final tapX = details.localPosition.dx;
+                  if (tapX < tileSize / 2) {
+                    // Tapped on left side - rotate counter-clockwise
+                    _rotateTile(index, counterClockwise: true);
+                  } else {
+                    // Tapped on right side - rotate clockwise
+                    _rotateTile(index);
+                  }
+                } else {
+                  // Select the tile
+                  _selectTile(tile, index);
+                }
+              },
+              child: Draggable<CarpetTile>(
+                key: ValueKey('drag_$tileKey'),
+                // Pass the tile directly - this is what gets dropped
+                data: tile,
+                feedback: RepaintBoundary(
+                  child: Material(
+                    color: Colors.transparent,
+                    elevation: 8,
+                    child: Opacity(
+                      opacity: 0.9,
+                      child: SizedBox(
+                        width: tileSize,
+                        height: tileSize,
+                        child: CustomPaint(
+                          key: ValueKey('feedback_$tileKey'),
+                          size: Size(tileSize, tileSize),
+                          painter: TilePainter(
+                            tile: tile,
+                            isSelected: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.3,
+                  child: CustomPaint(
+                    size: Size(tileSize, tileSize),
+                    painter: TilePainter(tile: tile),
+                  ),
+                ),
+                child: AnimatedBuilder(
+                  animation: _rotationController,
+                  builder: (context, child) {
+                    // Apply rotation animation only to selected tile
+                    // Direction multiplier: clockwise = 1, counter-clockwise = -1
+                    final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
+                    final rotationValue = _selectedIndex == index
+                        ? _rotationAnimation.value * directionMultiplier
+                        : 0.0;
+                    return Transform.rotate(
+                      angle: rotationValue * 2 * 3.14159,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          )
+                        : null,
+                    child: CustomPaint(
+                      key: ValueKey('paint_$tileKey'),
+                      size: Size(tileSize, tileSize),
+                      painter: TilePainter(
+                        tile: tile,
+                        isSelected: isSelected,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+        ),
+      ),
+    );
+  }
+}
