@@ -44,15 +44,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Web build artifacts - NEVER commit these
-main.dart.js
-main.dart.js.map
-flutter.js
-flutter_bootstrap.js
-flutter_service_worker.js
-index.html
-manifest.json
-version.json
+# Web build artifacts in ROOT - NEVER commit these
+# (but keep web/ folder which has source templates)
+/main.dart.js
+/main.dart.js.map
+/flutter.js
+/flutter_bootstrap.js
+/flutter_service_worker.js
+/index.html
+/manifest.json
+/version.json
 /assets/
 /canvaskit/
-/web/
