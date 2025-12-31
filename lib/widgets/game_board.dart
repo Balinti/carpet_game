@@ -9,6 +9,8 @@ class GameBoard extends StatelessWidget {
   final GameState gameState;
   final double tileSize;
   final Function(BoardPosition)? onPositionTap;
+  final Function(BoardPosition)? onTileRotate;
+  final Function(BoardPosition, BoardPosition)? onTileSwap;
   final bool showMatchFeedback;
 
   const GameBoard({
@@ -16,6 +18,8 @@ class GameBoard extends StatelessWidget {
     required this.gameState,
     this.tileSize = 70,
     this.onPositionTap,
+    this.onTileRotate,
+    this.onTileSwap,
     this.showMatchFeedback = false,
   });
 
@@ -115,17 +119,10 @@ class GameBoard extends StatelessWidget {
                   final tile = gameState.board[position];
 
                   if (tile != null) {
-                    // Show tile with edge match feedback
-                    final edgeStatus = gameState.getEdgeMatchStatus(tile, position);
+                    // Show placed tile - tap to rotate, drag to swap
                     return Padding(
                       padding: const EdgeInsets.all(2),
-                      child: CustomPaint(
-                        size: Size(calculatedTileSize, calculatedTileSize),
-                        painter: TilePainter(
-                          tile: tile,
-                          edgeStatus: edgeStatus,
-                        ),
-                      ),
+                      child: _buildPlacedTile(context, tile, position, calculatedTileSize),
                     );
                   } else {
                     return Padding(
@@ -142,41 +139,107 @@ class GameBoard extends StatelessWidget {
     );
   }
 
-  Widget _buildFixedGridSlot(BuildContext context, BoardPosition position, double slotSize) {
-    return GestureDetector(
-      onTap: gameState.selectedTile != null ? () => onPositionTap?.call(position) : null,
-      child: DragTarget<CarpetTile>(
-        onWillAcceptWithDetails: (details) => true,
-        onAcceptWithDetails: (details) {
-          onPositionTap?.call(position);
-        },
-        builder: (context, candidateData, rejectedData) {
-          final isHovering = candidateData.isNotEmpty;
-          return Container(
+  /// Build a placed tile that can be rotated (tap) or swapped (drag)
+  Widget _buildPlacedTile(BuildContext context, CarpetTile tile, BoardPosition position, double slotSize) {
+    return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
+      onWillAcceptWithDetails: (details) => true,
+      onAcceptWithDetails: (details) {
+        // Swap tiles between positions
+        onTileSwap?.call(details.data.value, position);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return Draggable<MapEntry<CarpetTile, BoardPosition>>(
+          data: MapEntry(tile, position),
+          feedback: Material(
+            color: Colors.transparent,
+            elevation: 8,
+            child: Opacity(
+              opacity: 0.8,
+              child: CustomPaint(
+                size: Size(slotSize, slotSize),
+                painter: TilePainter(tile: tile),
+              ),
+            ),
+          ),
+          childWhenDragging: Container(
             width: slotSize,
             height: slotSize,
             decoration: BoxDecoration(
-              color: isHovering
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               border: Border.all(
-                color: gameState.selectedTile != null
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                width: gameState.selectedTile != null ? 2 : 1,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               ),
               borderRadius: BorderRadius.circular(4),
             ),
-            child: gameState.selectedTile != null
-                ? Icon(
-                    Icons.add,
-                    color: Theme.of(context).colorScheme.primary,
-                    size: slotSize * 0.4,
-                  )
-                : null,
-          );
-        },
-      ),
+          ),
+          child: GestureDetector(
+            onTap: () => onTileRotate?.call(position),
+            child: Container(
+              decoration: isHovering
+                  ? BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 3,
+                      ),
+                    )
+                  : null,
+              child: CustomPaint(
+                size: Size(slotSize, slotSize),
+                painter: TilePainter(tile: tile),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFixedGridSlot(BuildContext context, BoardPosition position, double slotSize) {
+    return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
+      onWillAcceptWithDetails: (details) => true,
+      onAcceptWithDetails: (details) {
+        // Move tile from old position to this empty position
+        onTileSwap?.call(details.data.value, position);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovering = candidateData.isNotEmpty;
+        return GestureDetector(
+          onTap: gameState.selectedTile != null ? () => onPositionTap?.call(position) : null,
+          child: DragTarget<CarpetTile>(
+            onWillAcceptWithDetails: (details) => true,
+            onAcceptWithDetails: (details) {
+              onPositionTap?.call(position);
+            },
+            builder: (context, candidateData2, rejectedData2) {
+              final isHovering2 = candidateData2.isNotEmpty || isHovering;
+              return Container(
+                width: slotSize,
+                height: slotSize,
+                decoration: BoxDecoration(
+                  color: isHovering2
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                    color: gameState.selectedTile != null || isHovering2
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                    width: gameState.selectedTile != null || isHovering2 ? 2 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: gameState.selectedTile != null
+                    ? Icon(
+                        Icons.add,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: slotSize * 0.4,
+                      )
+                    : null,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

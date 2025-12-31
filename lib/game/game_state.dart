@@ -508,6 +508,58 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
+  /// Rotate a tile that is already placed on the board.
+  void rotatePlacedTile(BoardPosition position) {
+    final tile = board[position];
+    if (tile == null) return;
+
+    board[position] = tile.rotateClockwise();
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Swap or move a tile from one position to another.
+  void swapTiles(BoardPosition from, BoardPosition to) {
+    if (from == to) return;
+
+    final fromTile = board[from];
+    final toTile = board[to];
+
+    if (fromTile == null) return;
+
+    // Perform the swap
+    if (toTile != null) {
+      board[from] = toTile;
+      board[to] = fromTile;
+    } else {
+      // Just move to empty position
+      board.remove(from);
+      board[to] = fromTile;
+    }
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    notifyListeners();
+  }
+
   void _generatePlacementMessage() {
     if (_lastPlacementResult == null) return;
 
