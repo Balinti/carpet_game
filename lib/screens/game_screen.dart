@@ -108,6 +108,14 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.placeTile(position);
   }
 
+  void _rotatePlacedTile(BoardPosition position) {
+    _gameState.rotatePlacedTile(position);
+  }
+
+  void _swapTiles(BoardPosition from, BoardPosition to) {
+    _gameState.swapTiles(from, to);
+  }
+
   void _restartGame() {
     _gameState.restart();
   }
@@ -329,6 +337,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                   child: GameBoard(
                     gameState: _gameState,
                     onPositionTap: _placeTile,
+                    onTileRotate: _rotatePlacedTile,
+                    onTileSwap: _swapTiles,
                     showMatchFeedback: widget.mode.showMatchFeedback,
                   ),
                 ),
