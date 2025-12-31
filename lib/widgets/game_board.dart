@@ -115,11 +115,16 @@ class GameBoard extends StatelessWidget {
                   final tile = gameState.board[position];
 
                   if (tile != null) {
+                    // Show tile with edge match feedback
+                    final edgeStatus = gameState.getEdgeMatchStatus(tile, position);
                     return Padding(
                       padding: const EdgeInsets.all(2),
-                      child: TileWidget(
-                        tile: tile,
-                        size: calculatedTileSize,
+                      child: CustomPaint(
+                        size: Size(calculatedTileSize, calculatedTileSize),
+                        painter: TilePainter(
+                          tile: tile,
+                          edgeStatus: edgeStatus,
+                        ),
                       ),
                     );
                   } else {
