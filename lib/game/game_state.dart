@@ -29,10 +29,6 @@ class GameState extends ChangeNotifier {
   // Undo support
   final List<_GameAction> _history = [];
 
-  // Clue system
-  int _cluesUsed = 0;
-  static const int cluePointPenalty = 15;
-
   GameState({
     required this.mode,
     required this.players,
@@ -63,10 +59,6 @@ class GameState extends ChangeNotifier {
   int get maxRow => _maxRow;
   int get minCol => _minCol;
   int get maxCol => _maxCol;
-  int get cluesUsed => _cluesUsed;
-
-  /// Whether scores should be hidden (for deferred validation modes).
-  bool get hideScores => mode.hasDeferredValidation && !_gameOver;
 
   /// Get the current player's score (or team score for cooperative).
   ScoreSystem get currentScore {
@@ -169,25 +161,75 @@ class GameState extends ChangeNotifier {
     return state;
   }
 
-  /// Initialize a new Shape Builder game.
-  static GameState newShapeBuilder({int playerCount = 1}) {
+  /// Initialize a new 2x2 Square game.
+  static GameState newSquare2x2({int playerCount = 1}) {
     final players = List.generate(
       playerCount,
-      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+      (i) => Player(id: 'player_$i', name: 'Builder'),
     );
-
-    final state = GameState(mode: GameMode.shapeBuilder, players: players);
-
-    // Give initial tiles
+    final state = GameState(mode: GameMode.square2x2, players: players);
     for (final player in players) {
       for (int i = 0; i < 8; i++) {
         player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
       }
     }
-
-    // Create tile pool for drawing
     state._refillTilePool();
     state._updatePositions();
+    state._message = 'Build a 2×2 square!';
+    return state;
+  }
+
+  /// Initialize a new 3x3 Square game.
+  static GameState newSquare3x3({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.square3x3, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 12; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 3×3 square!';
+    return state;
+  }
+
+  /// Initialize a new 4x4 Square game.
+  static GameState newSquare4x4({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.square4x4, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 20; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Build a 4×4 square!';
+    return state;
+  }
+
+  /// Initialize a new Square Progression game.
+  static GameState newSquareProgression({int playerCount = 1}) {
+    final players = List.generate(
+      playerCount,
+      (i) => Player(id: 'player_$i', name: 'Builder'),
+    );
+    final state = GameState(mode: GameMode.squareProgression, players: players);
+    for (final player in players) {
+      for (int i = 0; i < 10; i++) {
+        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
+      }
+    }
+    state._refillTilePool();
+    state._updatePositions();
+    state._message = 'Start with a 2×2 square!';
     return state;
   }
 
@@ -195,19 +237,14 @@ class GameState extends ChangeNotifier {
   static GameState newGeometricShapes({int playerCount = 1}) {
     final players = List.generate(
       playerCount,
-      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
+      (i) => Player(id: 'player_$i', name: 'Builder'),
     );
-
     final state = GameState(mode: GameMode.geometricShapes, players: players);
-
-    // Give initial tiles - more tiles for building shapes
     for (final player in players) {
       for (int i = 0; i < 12; i++) {
         player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
       }
     }
-
-    // Create tile pool for drawing
     state._refillTilePool();
     state._updatePositions();
     state._message = 'Build a 2×2 square!';
@@ -248,20 +285,6 @@ class GameState extends ChangeNotifier {
     final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
     if (index >= 0) {
       final rotated = _selectedTile!.rotateClockwise();
-      currentPlayer.hand[index] = rotated;
-      _selectedTile = rotated;
-      _updatePositions();
-      notifyListeners();
-    }
-  }
-
-  /// Rotate the selected tile counter-clockwise.
-  void rotateSelectedTileCounterClockwise() {
-    if (_selectedTile == null) return;
-
-    final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
-    if (index >= 0) {
-      final rotated = _selectedTile!.rotateCounterClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
       _updatePositions();
@@ -332,8 +355,8 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play, guided learning, and shape builder allow any adjacent placement
-    if (mode.allowsFreePlacement) {
+    // Free play, guided learning, and square modes allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning || mode.isSquareMode) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -438,11 +461,19 @@ class GameState extends ChangeNotifier {
         _handleCooperativePlacement();
         break;
       case GameMode.starterPuzzle:
-        // Starter Puzzle uses its own screen, fallback to free play behavior
         _handleFreePlayPlacement();
         break;
-      case GameMode.shapeBuilder:
-        _handleShapeBuilderPlacement();
+      case GameMode.square2x2:
+        _handleSquarePlacement(2);
+        break;
+      case GameMode.square3x3:
+        _handleSquarePlacement(3);
+        break;
+      case GameMode.square4x4:
+        _handleSquarePlacement(4);
+        break;
+      case GameMode.squareProgression:
+        _handleSquareProgressionPlacement();
         break;
       case GameMode.geometricShapes:
         _handleGeometricShapesPlacement();
@@ -536,142 +567,101 @@ class GameState extends ChangeNotifier {
     _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
   }
 
-  void _handleShapeBuilderPlacement() {
-    // Don't show score feedback during placement
-    _message = null;
+  void _handleSquarePlacement(int size) {
+    final target = size * size;
+    final tilesPlaced = board.length;
+    final tilesNeeded = target - tilesPlaced;
 
-    // Auto-draw a new tile if hand is getting low
-    if (currentPlayer.hand.length < 3) {
-      drawTile();
-      drawTile();
-    }
-
-    // Rotate players if multiplayer
-    if (players.length > 1) {
-      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    }
-  }
-
-  void _handleGeometricShapesPlacement() {
-    // Check if current shape goal is complete
-    final shapeComplete = _checkGeometricShapeComplete();
-
-    if (shapeComplete) {
-      final currentShape = _getCurrentShapeName();
-      final nextShape = _getNextShapeName();
-      if (nextShape != null) {
-        _message = '✓ $currentShape complete! Now build a $nextShape!';
-      } else {
-        _gameOver = true;
-        _message = '🎉 Amazing! You completed all geometric shapes!';
-      }
+    if (tilesNeeded <= 0 && _isSquare(size)) {
+      _gameOver = true;
+      _message = '🎉 You built a $size×$size square!';
+    } else if (tilesNeeded > 0) {
+      _message = 'Place $tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'}!';
     } else {
-      // Show progress message
-      final tilesNeeded = _getTilesNeededForCurrentShape();
-      if (tilesNeeded > 0) {
-        _message = 'Place ${tilesNeeded} more tile${tilesNeeded == 1 ? '' : 's'} to complete the shape!';
-      }
+      _message = 'Arrange into a $size×$size square!';
     }
 
-    // Auto-draw a new tile if hand is getting low
     if (currentPlayer.hand.length < 4) {
       drawTile();
       drawTile();
     }
+  }
 
-    // Rotate players if multiplayer
-    if (players.length > 1) {
-      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
+  int _progressionStage = 0;
+
+  void _handleSquareProgressionPlacement() {
+    final tilesPlaced = board.length;
+
+    if (_progressionStage == 0) {
+      if (tilesPlaced >= 4 && _isSquare(2)) {
+        _progressionStage = 1;
+        _message = '✓ 2×2 complete! Now build a 3×3!';
+        board.clear();
+        _recalculateBoundaries();
+      } else {
+        final needed = 4 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 2×2!';
+      }
+    } else if (_progressionStage == 1) {
+      if (tilesPlaced >= 9 && _isSquare(3)) {
+        _progressionStage = 2;
+        _message = '✓ 3×3 complete! Now build a 4×4!';
+        board.clear();
+        _recalculateBoundaries();
+      } else {
+        final needed = 9 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 3×3!';
+      }
+    } else {
+      if (tilesPlaced >= 16 && _isSquare(4)) {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed the progression!';
+      } else {
+        final needed = 16 - tilesPlaced;
+        if (needed > 0) _message = 'Place $needed more for 4×4!';
+      }
+    }
+
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
     }
   }
 
-  /// Check if the current geometric shape goal is complete.
-  bool _checkGeometricShapeComplete() {
+  void _handleGeometricShapesPlacement() {
     final tilesPlaced = board.length;
-    // Shapes: 2x2 square (4), 3x2 rectangle (6), L-shape (5), T-shape (4), 3x3 square (9)
-    if (tilesPlaced < 4) return false;
 
-    // Check for 2x2 square first
-    if (tilesPlaced >= 4 && tilesPlaced < 6) {
-      return _isSquare(2);
+    if (tilesPlaced >= 4 && _isSquare(2)) {
+      if (tilesPlaced >= 9 && _isSquare(3)) {
+        _gameOver = true;
+        _message = '🎉 Amazing! You completed all shapes!';
+      } else {
+        _message = 'Now build a 3×3 square!';
+      }
+    } else {
+      final needed = 4 - tilesPlaced;
+      if (needed > 0) _message = 'Place $needed more for 2×2!';
     }
-    // Check for 3x2 rectangle
-    if (tilesPlaced >= 6 && tilesPlaced < 9) {
-      return _isRectangle(3, 2) || _isRectangle(2, 3);
+
+    if (currentPlayer.hand.length < 4) {
+      drawTile();
+      drawTile();
     }
-    // Check for 3x3 square
-    if (tilesPlaced >= 9) {
-      return _isSquare(3);
-    }
-    return false;
   }
 
   bool _isSquare(int size) {
     if (board.length < size * size) return false;
-
-    // Find the bounding box
     final rows = board.keys.map((p) => p.row).toSet();
     final cols = board.keys.map((p) => p.col).toSet();
-
     if (rows.length != size || cols.length != size) return false;
-
     final minR = rows.reduce((a, b) => a < b ? a : b);
     final minC = cols.reduce((a, b) => a < b ? a : b);
-
-    // Check all positions are filled
     for (int r = 0; r < size; r++) {
       for (int c = 0; c < size; c++) {
-        if (!board.containsKey(BoardPosition(minR + r, minC + c))) {
-          return false;
-        }
+        if (!board.containsKey(BoardPosition(minR + r, minC + c))) return false;
       }
     }
     return true;
-  }
-
-  bool _isRectangle(int width, int height) {
-    if (board.length < width * height) return false;
-
-    final rows = board.keys.map((p) => p.row).toSet();
-    final cols = board.keys.map((p) => p.col).toSet();
-
-    if (rows.length != height || cols.length != width) return false;
-
-    final minR = rows.reduce((a, b) => a < b ? a : b);
-    final minC = cols.reduce((a, b) => a < b ? a : b);
-
-    for (int r = 0; r < height; r++) {
-      for (int c = 0; c < width; c++) {
-        if (!board.containsKey(BoardPosition(minR + r, minC + c))) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  String _getCurrentShapeName() {
-    final tilesPlaced = board.length;
-    if (tilesPlaced < 4) return '2×2 Square';
-    if (tilesPlaced < 6) return '2×2 Square';
-    if (tilesPlaced < 9) return '3×2 Rectangle';
-    return '3×3 Square';
-  }
-
-  String? _getNextShapeName() {
-    final tilesPlaced = board.length;
-    if (tilesPlaced < 4) return null; // Still on first shape
-    if (tilesPlaced < 6) return '3×2 Rectangle';
-    if (tilesPlaced < 9) return '3×3 Square';
-    return null; // All complete
-  }
-
-  int _getTilesNeededForCurrentShape() {
-    final tilesPlaced = board.length;
-    if (tilesPlaced < 4) return 4 - tilesPlaced;
-    if (tilesPlaced < 6) return 6 - tilesPlaced;
-    if (tilesPlaced < 9) return 9 - tilesPlaced;
-    return 0;
   }
 
   void _nextTurn() {
@@ -714,62 +704,6 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Remove a tile from the board and return it to the current player's hand.
-  void removeTileFromBoard(BoardPosition position) {
-    final tile = board[position];
-    if (tile == null) return;
-
-    // Remove from history if it exists
-    _history.removeWhere((action) => action.position == position);
-
-    board.remove(position);
-    currentPlayer.addTile(tile);
-
-    // Recalculate boundaries
-    _recalculateBoundaries();
-    _updatePositions();
-    _message = 'Tile returned to hand';
-    notifyListeners();
-  }
-
-  /// Use a clue to highlight a valid placement for the selected tile.
-  /// Returns true if a clue was available, false otherwise.
-  bool useClue() {
-    if (_selectedTile == null) {
-      _message = 'Select a tile first!';
-      notifyListeners();
-      return false;
-    }
-
-    // Find a valid position with good matching
-    BoardPosition? bestPosition;
-    int bestMatches = -1;
-
-    for (final pos in _allAdjacentPositions) {
-      if (canPlaceTile(_selectedTile!, pos)) {
-        final (matching, _) = countMatchingEdges(_selectedTile!, pos);
-        if (matching > bestMatches) {
-          bestMatches = matching;
-          bestPosition = pos;
-        }
-      }
-    }
-
-    if (bestPosition != null) {
-      _cluesUsed++;
-      // Deduct points for using a clue
-      currentScore.deductPoints(cluePointPenalty);
-      _message = 'Hint: Try the highlighted position! (-$cluePointPenalty points)';
-      // The valid positions will be highlighted in the UI
-      notifyListeners();
-      return true;
-    } else {
-      _message = 'No valid placement found. Try rotating the tile!';
-      notifyListeners();
-      return false;
-    }
-  }
-
   void _recalculateBoundaries() {
     if (board.isEmpty) {
       _minRow = _maxRow = _minCol = _maxCol = 0;
@@ -795,7 +729,6 @@ class GameState extends ChangeNotifier {
     _lastPlacementResult = null;
     _history.clear();
     _minRow = _maxRow = _minCol = _maxCol = 0;
-    _cluesUsed = 0;
 
     score.reset();
     for (final ps in playerScores) {

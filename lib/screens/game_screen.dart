@@ -51,14 +51,22 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         _gameState = GameState.newCooperative(widget.playerCount);
         break;
       case GameMode.starterPuzzle:
-        // Starter Puzzle uses its own screen, but fallback to free play if reached
         _gameState = GameState.newFreePlay(playerCount: 1);
         break;
-      case GameMode.shapeBuilder:
-        _gameState = GameState.newShapeBuilder(playerCount: widget.playerCount);
+      case GameMode.square2x2:
+        _gameState = GameState.newSquare2x2();
+        break;
+      case GameMode.square3x3:
+        _gameState = GameState.newSquare3x3();
+        break;
+      case GameMode.square4x4:
+        _gameState = GameState.newSquare4x4();
+        break;
+      case GameMode.squareProgression:
+        _gameState = GameState.newSquareProgression();
         break;
       case GameMode.geometricShapes:
-        _gameState = GameState.newGeometricShapes(playerCount: widget.playerCount);
+        _gameState = GameState.newGeometricShapes();
         break;
     }
   }
@@ -96,18 +104,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.rotateSelectedTile();
   }
 
-  void _rotateTileCounterClockwise() {
-    _gameState.rotateSelectedTileCounterClockwise();
-  }
-
-  void _removeTileFromBoard(BoardPosition position) {
-    _gameState.removeTileFromBoard(position);
-  }
-
-  void _useClue() {
-    _gameState.useClue();
-  }
-
   void _placeTile(BoardPosition position) {
     _gameState.placeTile(position);
   }
@@ -136,10 +132,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return l10n.buildTogether;
       case GameMode.starterPuzzle:
         return l10n.starterPuzzle;
-      case GameMode.shapeBuilder:
-        return l10n.shapeBuilder;
+      case GameMode.square2x2:
+        return '2×2 Square';
+      case GameMode.square3x3:
+        return '3×3 Square';
+      case GameMode.square4x4:
+        return '4×4 Square';
+      case GameMode.squareProgression:
+        return 'Progression';
       case GameMode.geometricShapes:
-        return l10n.geometricShapes;
+        return 'Geometric Shapes';
     }
   }
 
@@ -239,33 +241,37 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           const SizedBox(height: 4),
           Text(l10n.rule4Timer),
         ];
-      case GameMode.shapeBuilder:
+      case GameMode.square2x2:
+      case GameMode.square3x3:
+      case GameMode.square4x4:
         return [
-          Text(l10n.shapeBuilderRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Square Building', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(l10n.shapeBuilderRule1),
+          const Text('• Place tiles to form a complete square'),
           const SizedBox(height: 4),
-          Text(l10n.shapeBuilderRule2),
+          const Text('• Tiles must be next to each other'),
           const SizedBox(height: 4),
-          Text(l10n.shapeBuilderRule3),
+          const Text('• Complete the square to win!'),
+        ];
+      case GameMode.squareProgression:
+        return [
+          const Text('Progression Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('• Build a 2×2 square first'),
           const SizedBox(height: 4),
-          Text(l10n.shapeBuilderRule4),
+          const Text('• Then build a 3×3 square'),
           const SizedBox(height: 4),
-          Text(l10n.shapeBuilderRule5),
+          const Text('• Finally build a 4×4 square to win!'),
         ];
       case GameMode.geometricShapes:
         return [
-          Text(l10n.geometricShapesRules, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Geometric Shapes', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(l10n.geometricShapesRule1),
+          const Text('• Build different geometric shapes'),
           const SizedBox(height: 4),
-          Text(l10n.geometricShapesRule2),
+          const Text('• Start with a 2×2 square'),
           const SizedBox(height: 4),
-          Text(l10n.geometricShapesRule3),
-          const SizedBox(height: 4),
-          Text(l10n.geometricShapesRule4),
-          const SizedBox(height: 4),
-          Text(l10n.geometricShapesRule5),
+          const Text('• Then build a 3×3 square to win!'),
         ];
     }
   }
@@ -279,13 +285,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         title: Text(_getModeTitle(l10n)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          // Clue button (for non-competitive modes)
-          if (widget.mode != GameMode.colorDominoes && _gameState.selectedTile != null)
-            IconButton(
-              icon: const Icon(Icons.lightbulb_outline),
-              onPressed: _useClue,
-              tooltip: l10n.clue,
-            ),
           // Undo button (non-competitive modes)
           if (widget.mode != GameMode.colorDominoes && _gameState.canUndo)
             IconButton(
@@ -316,8 +315,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         children: [
           Column(
             children: [
-              // Score bar (hidden for deferred validation modes until complete)
-              if (!_gameState.hideScores) _buildScoreBar(l10n),
+              // Score bar
+              _buildScoreBar(l10n),
 
               // Message bar
               if (_gameState.message != null) _buildMessageBar(),
@@ -330,9 +329,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                   child: GameBoard(
                     gameState: _gameState,
                     onPositionTap: _placeTile,
-                    onTileRemove: widget.mode.hasDeferredValidation ? _removeTileFromBoard : null,
                     showMatchFeedback: widget.mode.showMatchFeedback,
-                    hideValidationFeedback: widget.mode.hasDeferredValidation,
                   ),
                 ),
               ),
@@ -355,7 +352,6 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                           isCurrentPlayer: true,
                           onTileSelected: _selectTile,
                           onRotate: _rotateTile,
-                          onRotateCounterClockwise: _rotateTileCounterClockwise,
                         ),
                         if (_gameState.players.length > 1) ...[
                           const SizedBox(height: 12),

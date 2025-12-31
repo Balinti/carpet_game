@@ -107,10 +107,14 @@ class CarpetTile {
       identical(this, other) ||
       other is CarpetTile &&
           runtimeType == other.runtimeType &&
-          id == other.id;
+          id == other.id &&
+          top == other.top &&
+          right == other.right &&
+          bottom == other.bottom &&
+          left == other.left;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(id, top, right, bottom, left);
 
   // Static factory methods for generating different tile types
 
@@ -189,5 +193,59 @@ class CarpetTile {
     } else {
       return generateFourColor(id); // 20% chance
     }
+  }
+
+  /// Returns the canonical form of this tile (smallest rotation).
+  /// Used to identify unique tiles regardless of rotation.
+  String get canonicalKey {
+    final rotations = [
+      '${top.index}${right.index}${bottom.index}${left.index}',
+      '${left.index}${top.index}${right.index}${bottom.index}',
+      '${bottom.index}${left.index}${top.index}${right.index}',
+      '${right.index}${bottom.index}${left.index}${top.index}',
+    ];
+    rotations.sort();
+    return rotations.first;
+  }
+
+  /// Returns a unique key representing the current rotation state.
+  String get rotationKey => '${top.index}${right.index}${bottom.index}${left.index}';
+
+  /// Generates all 64 unique tiles (one representative per rotation equivalence class).
+  /// With 4 colors and 4 positions, there are 256 combinations.
+  /// Removing rotational duplicates gives us ~70 unique tiles, but we take 64.
+  static List<CarpetTile> generateAllUniqueTiles() {
+    final uniqueTiles = <String, CarpetTile>{};
+    final colors = TileColor.values;
+    var id = 0;
+
+    // Generate all 256 combinations
+    for (final top in colors) {
+      for (final right in colors) {
+        for (final bottom in colors) {
+          for (final left in colors) {
+            final tile = CarpetTile(
+              id: 'tile_$id',
+              top: top,
+              right: right,
+              bottom: bottom,
+              left: left,
+            );
+
+            // Only keep one tile per rotation equivalence class
+            final key = tile.canonicalKey;
+            if (!uniqueTiles.containsKey(key)) {
+              uniqueTiles[key] = tile;
+              id++;
+            }
+          }
+        }
+      }
+    }
+
+    // Shuffle and return all unique tiles
+    final tiles = uniqueTiles.values.toList();
+    tiles.shuffle(_random);
+    return tiles;
   }
 }
