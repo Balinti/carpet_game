@@ -177,6 +177,39 @@ class AppLocalizations {
   // Creative modes section
   String get creativeModes => _t('Creative Modes', 'Modos Creativos', 'מצבים יצירתיים');
 
+  // Square modes section
+  String get squareModes => _t('Square Building', 'Construcción de Cuadrados', 'בניית ריבועים');
+
+  // 2x2 Square mode
+  String get square2x2 => _t('2×2 Square', 'Cuadrado 2×2', 'ריבוע 2×2');
+  String get square2x2Desc => _t('Build a 2×2 square!', '¡Construye un cuadrado 2×2!', '!בנה ריבוע 2×2');
+  String get square2x2Rules => _t('2×2 Square Rules', 'Reglas del Cuadrado 2×2', 'חוקי ריבוע 2×2');
+
+  // 3x3 Square mode
+  String get square3x3 => _t('3×3 Square', 'Cuadrado 3×3', 'ריבוע 3×3');
+  String get square3x3Desc => _t('Build a 3×3 square!', '¡Construye un cuadrado 3×3!', '!בנה ריבוע 3×3');
+  String get square3x3Rules => _t('3×3 Square Rules', 'Reglas del Cuadrado 3×3', 'חוקי ריבוע 3×3');
+
+  // 4x4 Square mode
+  String get square4x4 => _t('4×4 Square', 'Cuadrado 4×4', 'ריבוע 4×4');
+  String get square4x4Desc => _t('Build a 4×4 square!', '¡Construye un cuadrado 4×4!', '!בנה ריבוע 4×4');
+  String get square4x4Rules => _t('4×4 Square Rules', 'Reglas del Cuadrado 4×4', 'חוקי ריבוע 4×4');
+
+  // Square Progression mode
+  String get squareProgression => _t('Progression', 'Progresión', 'התקדמות');
+  String get squareProgressionDesc => _t('2×2 → 3×3 → 4×4 in sequence!', '¡2×2 → 3×3 → 4×4 en secuencia!', '!2×2 → 3×3 → 4×4 ברצף');
+
+  // Square rules (shared)
+  String get squareRule1 => _t('1. Place tiles to form a complete square.', '1. Coloca azulejos para formar un cuadrado completo.', '.הנח אריחים ליצירת ריבוע שלם .1');
+  String get squareRule2 => _t('2. Tiles must be adjacent to each other.', '2. Los azulejos deben estar adyacentes entre sí.', '.האריחים חייבים להיות צמודים זה לזה .2');
+  String get squareRule3 => _t('3. Complete the square to win!', '3. ¡Completa el cuadrado para ganar!', '!השלם את הריבוע כדי לנצח .3');
+
+  // Progression rules
+  String get progressionRules => _t('Progression Rules', 'Reglas de Progresión', 'חוקי התקדמות');
+  String get progressionRule1 => _t('1. Build a 2×2 square first.', '1. Construye un cuadrado 2×2 primero.', '.בנה ריבוע 2×2 קודם .1');
+  String get progressionRule2 => _t('2. Then build a 3×3 square.', '2. Luego construye un cuadrado 3×3.', '.אז בנה ריבוע 3×3 .2');
+  String get progressionRule3 => _t('3. Finally build a 4×4 square to win!', '3. ¡Finalmente construye un cuadrado 4×4 para ganar!', '!לבסוף בנה ריבוע 4×4 כדי לנצח .3');
+
   // Geometric Shapes mode
   String get geometricShapes => _t('Geometric Shapes', 'Formas Geométricas', 'צורות גיאומטריות');
   String get geometricShapesDesc => _t('Build squares, rectangles, and more!', '¡Construye cuadrados, rectángulos y más!', '!בנה ריבועים, מלבנים ועוד');
