@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
-import 'screens/grid_selection_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const CarpetGameApp());
@@ -69,7 +69,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
             child: child!,
           );
         },
-        home: const GridSelectionScreen(),
+        home: const HomeScreen(),
       ),
     );
   }
