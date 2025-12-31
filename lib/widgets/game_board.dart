@@ -21,6 +21,12 @@ class GameBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // For square modes with fixed grid, show only the target grid
+    final gridSize = gameState.targetGridSize;
+    if (gridSize > 0) {
+      return _buildFixedGrid(context, gridSize);
+    }
+
     // Calculate visible board area with padding
     final minRow = gameState.minRow - 1;
     final maxRow = gameState.maxRow + 1;
@@ -76,6 +82,95 @@ class GameBoard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFixedGrid(BuildContext context, int gridSize) {
+    // Calculate tile size to fit the grid nicely on screen
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final availableSize = (screenWidth < screenHeight ? screenWidth : screenHeight) * 0.7;
+    final calculatedTileSize = (availableSize / gridSize).clamp(60.0, 100.0);
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary,
+              width: 3,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(gridSize, (row) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(gridSize, (col) {
+                  final position = BoardPosition(row, col);
+                  final tile = gameState.board[position];
+
+                  if (tile != null) {
+                    return Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: TileWidget(
+                        tile: tile,
+                        size: calculatedTileSize,
+                      ),
+                    );
+                  } else {
+                    return Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: _buildFixedGridSlot(context, position, calculatedTileSize),
+                    );
+                  }
+                }),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedGridSlot(BuildContext context, BoardPosition position, double slotSize) {
+    return GestureDetector(
+      onTap: gameState.selectedTile != null ? () => onPositionTap?.call(position) : null,
+      child: DragTarget<CarpetTile>(
+        onWillAcceptWithDetails: (details) => true,
+        onAcceptWithDetails: (details) {
+          onPositionTap?.call(position);
+        },
+        builder: (context, candidateData, rejectedData) {
+          final isHovering = candidateData.isNotEmpty;
+          return Container(
+            width: slotSize,
+            height: slotSize,
+            decoration: BoxDecoration(
+              color: isHovering
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: Border.all(
+                color: gameState.selectedTile != null
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                width: gameState.selectedTile != null ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: gameState.selectedTile != null
+                ? Icon(
+                    Icons.add,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: slotSize * 0.4,
+                  )
+                : null,
+          );
+        },
       ),
     );
   }

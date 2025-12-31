@@ -20,6 +20,9 @@ class GameState extends ChangeNotifier {
   List<CarpetTile> _tilePool; // For free play mode
   int _nextTileId;
 
+  // Target grid size for square modes (0 = no fixed grid)
+  int _targetGridSize = 0;
+
   // Board boundaries (dynamic, expands as tiles are placed)
   int _minRow = 0;
   int _maxRow = 0;
@@ -59,6 +62,7 @@ class GameState extends ChangeNotifier {
   int get maxRow => _maxRow;
   int get minCol => _minCol;
   int get maxCol => _maxCol;
+  int get targetGridSize => _targetGridSize;
 
   /// Get the current player's score (or team score for cooperative).
   ScoreSystem get currentScore {
@@ -168,6 +172,7 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square2x2, players: players);
+    state._targetGridSize = 2;
     for (final player in players) {
       for (int i = 0; i < 8; i++) {
         player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
@@ -175,7 +180,7 @@ class GameState extends ChangeNotifier {
     }
     state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 2×2 square!';
+    state._message = 'Fill the 2×2 grid!';
     return state;
   }
 
@@ -186,6 +191,7 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square3x3, players: players);
+    state._targetGridSize = 3;
     for (final player in players) {
       for (int i = 0; i < 12; i++) {
         player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
@@ -193,7 +199,7 @@ class GameState extends ChangeNotifier {
     }
     state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 3×3 square!';
+    state._message = 'Fill the 3×3 grid!';
     return state;
   }
 
@@ -204,6 +210,7 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square4x4, players: players);
+    state._targetGridSize = 4;
     for (final player in players) {
       for (int i = 0; i < 20; i++) {
         player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
@@ -211,7 +218,7 @@ class GameState extends ChangeNotifier {
     }
     state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 4×4 square!';
+    state._message = 'Fill the 4×4 grid!';
     return state;
   }
 
@@ -355,8 +362,14 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play, guided learning, and square modes allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning || mode.isSquareMode) {
+    // Fixed grid modes allow placing anywhere in the grid
+    if (_targetGridSize > 0) {
+      return position.row >= 0 && position.row < _targetGridSize &&
+             position.col >= 0 && position.col < _targetGridSize;
+    }
+
+    // Free play and guided learning allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -367,6 +380,20 @@ class GameState extends ChangeNotifier {
 
   /// Get all valid positions for a tile.
   List<BoardPosition> getValidPositions(CarpetTile tile) {
+    // Fixed grid modes - return all empty positions in the grid
+    if (_targetGridSize > 0) {
+      final positions = <BoardPosition>[];
+      for (int row = 0; row < _targetGridSize; row++) {
+        for (int col = 0; col < _targetGridSize; col++) {
+          final pos = BoardPosition(row, col);
+          if (!board.containsKey(pos)) {
+            positions.add(pos);
+          }
+        }
+      }
+      return positions;
+    }
+
     if (board.isEmpty) {
       return [const BoardPosition(0, 0)];
     }
@@ -572,13 +599,11 @@ class GameState extends ChangeNotifier {
     final tilesPlaced = board.length;
     final tilesNeeded = target - tilesPlaced;
 
-    if (tilesNeeded <= 0 && _isSquare(size)) {
+    if (tilesNeeded <= 0) {
       _gameOver = true;
-      _message = '🎉 You built a $size×$size square!';
-    } else if (tilesNeeded > 0) {
-      _message = 'Place $tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'}!';
+      _message = '🎉 You filled the $size×$size grid!';
     } else {
-      _message = 'Arrange into a $size×$size square!';
+      _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
     }
 
     if (currentPlayer.hand.length < 4) {
