@@ -76,7 +76,7 @@ enum GameMode {
       case GameMode.squareProgression:
         return '2×2 → 3×3 → 4×4 in sequence!';
       case GameMode.geometricShapes:
-        return 'Build squares, rectangles, and more!';
+        return 'Build diamonds, triangles, rectangles & arrows!';
     }
   }
 

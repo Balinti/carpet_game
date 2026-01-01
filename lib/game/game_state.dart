@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/models.dart';
+import 'shape_detector.dart';
 
 /// Represents the state of a carpet tile game supporting multiple modes.
 class GameState extends ChangeNotifier {
@@ -32,6 +33,10 @@ class GameState extends ChangeNotifier {
   // Undo support
   final List<_GameAction> _history = [];
 
+  // Geometric shapes mode - track completed shapes
+  final Set<GeometricShapeType> _completedShapeTypes = {};
+  List<DetectedShape> _detectedShapes = [];
+
   GameState({
     required this.mode,
     required this.players,
@@ -63,6 +68,8 @@ class GameState extends ChangeNotifier {
   int get minCol => _minCol;
   int get maxCol => _maxCol;
   int get targetGridSize => _targetGridSize;
+  Set<GeometricShapeType> get completedShapeTypes => _completedShapeTypes;
+  List<DetectedShape> get detectedShapes => _detectedShapes;
 
   /// Get the current player's score (or team score for cooperative).
   ScoreSystem get currentScore {
@@ -249,7 +256,7 @@ class GameState extends ChangeNotifier {
       players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
     state._updatePositions();
-    state._message = 'Build a 2×2 square!';
+    state._message = ShapeDetector.getNextShapeHint(state._completedShapeTypes);
     return state;
   }
 
@@ -774,18 +781,31 @@ class GameState extends ChangeNotifier {
   }
 
   void _handleGeometricShapesPlacement() {
-    final tilesPlaced = board.length;
+    // Detect all shapes on the board
+    _detectedShapes = ShapeDetector.detectAllShapes(board);
 
-    if (tilesPlaced >= 4 && _isSquare(2)) {
-      if (tilesPlaced >= 9 && _isSquare(3)) {
-        _gameOver = true;
-        _message = '🎉 Amazing! You completed all shapes!';
-      } else {
-        _message = 'Now build a 3×3 square!';
+    // Track newly completed shape types
+    final newlyCompleted = <GeometricShapeType>[];
+    for (final shape in _detectedShapes) {
+      if (!_completedShapeTypes.contains(shape.type)) {
+        _completedShapeTypes.add(shape.type);
+        newlyCompleted.add(shape.type);
       }
+    }
+
+    // Check if all shapes are completed
+    if (_completedShapeTypes.length == GeometricShapeType.values.length) {
+      _gameOver = true;
+      _message = 'Amazing! You completed all 7 shapes!';
+      return;
+    }
+
+    // Generate feedback message
+    if (newlyCompleted.isNotEmpty) {
+      final shapeNames = newlyCompleted.map((t) => t.displayName).join(', ');
+      _message = 'Created: $shapeNames! (${_completedShapeTypes.length}/7)';
     } else {
-      final needed = 4 - tilesPlaced;
-      if (needed > 0) _message = 'Place $needed more for 2×2!';
+      _message = '${ShapeDetector.getNextShapeHint(_completedShapeTypes)} (${_completedShapeTypes.length}/7 complete)';
     }
 
     if (currentPlayer.hand.length < 4) {
@@ -875,6 +895,10 @@ class GameState extends ChangeNotifier {
     _history.clear();
     _minRow = _maxRow = _minCol = _maxCol = 0;
 
+    // Reset geometric shapes tracking
+    _completedShapeTypes.clear();
+    _detectedShapes = [];
+
     score.reset();
     for (final ps in playerScores) {
       ps.reset();
@@ -884,11 +908,23 @@ class GameState extends ChangeNotifier {
     _tilePool.clear();
 
     // Deal new tiles based on mode
-    final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
-    for (final player in players) {
-      player.hand.clear();
-      for (int i = 0; i < tilesPerPlayer; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${_nextTileId++}'));
+    if (mode == GameMode.geometricShapes) {
+      // Give all 36 build tiles for geometric shapes
+      for (final player in players) {
+        player.hand.clear();
+      }
+      final buildTiles = CarpetTile.getBuildTiles();
+      for (final tile in buildTiles) {
+        players[0].addTile(tile.copyWithId('tile_${_nextTileId++}'));
+      }
+      _message = ShapeDetector.getNextShapeHint(_completedShapeTypes);
+    } else {
+      final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
+      for (final player in players) {
+        player.hand.clear();
+        for (int i = 0; i < tilesPerPlayer; i++) {
+          player.addTile(CarpetTile.generateRandom('tile_${_nextTileId++}'));
+        }
       }
     }
 
