@@ -292,6 +292,16 @@ class GameState extends ChangeNotifier {
     }
   }
 
+  /// Rotate a tile in the current player's hand.
+  void rotateHandTile(CarpetTile tile) {
+    final index = currentPlayer.hand.indexWhere((t) => t.id == tile.id);
+    if (index >= 0) {
+      final rotated = tile.rotateClockwise();
+      currentPlayer.hand[index] = rotated;
+      notifyListeners();
+    }
+  }
+
   /// Check edge match status for a tile at a position.
   Map<int, EdgeMatchStatus> getEdgeMatchStatus(CarpetTile tile, BoardPosition position) {
     final status = <int, EdgeMatchStatus>{};

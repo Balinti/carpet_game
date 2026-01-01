@@ -141,6 +141,7 @@ class AppLocalizations {
   // Player hand
   String get rotate => _t('Rotate', 'Rotar', 'סובב');
   String get doubleTapRotate => _t('Double-tap tile to rotate', 'Toca dos veces para rotar', 'הקש פעמיים לסיבוב');
+  String get tapRotateDragPlace => _t('Tap to rotate, drag to place', 'Toca para rotar, arrastra para colocar', 'הקש לסיבוב, גרור להנחה');
   String tilesCount(int count) => _t('$count tiles', '$count azulejos', 'אריחים $count');
 
   // Language selector
