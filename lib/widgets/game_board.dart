@@ -228,7 +228,7 @@ class GameBoard extends StatelessWidget {
           child: DragTarget<CarpetTile>(
             onWillAcceptWithDetails: (details) => true,
             onAcceptWithDetails: (details) {
-              onPositionTap?.call(position);
+              onTileDrop?.call(details.data, position);
             },
             builder: (context, candidateData2, rejectedData2) {
               final isHovering2 = candidateData2.isNotEmpty || isHovering;
