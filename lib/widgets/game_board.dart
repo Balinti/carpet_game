@@ -9,6 +9,7 @@ class GameBoard extends StatelessWidget {
   final GameState gameState;
   final double tileSize;
   final Function(BoardPosition)? onPositionTap;
+  final Function(CarpetTile, BoardPosition)? onTileDrop;
   final Function(BoardPosition)? onTileRotate;
   final Function(BoardPosition, BoardPosition)? onTileSwap;
   final Function(CarpetTile, BoardPosition)? onTileReplace;
@@ -19,6 +20,7 @@ class GameBoard extends StatelessWidget {
     required this.gameState,
     this.tileSize = 70,
     this.onPositionTap,
+    this.onTileDrop,
     this.onTileRotate,
     this.onTileSwap,
     this.onTileReplace,
@@ -271,7 +273,7 @@ class GameBoard extends StatelessWidget {
         return gameState.canPlaceTile(details.data, position);
       },
       onAcceptWithDetails: (details) {
-        onPositionTap?.call(position);
+        onTileDrop?.call(details.data, position);
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
