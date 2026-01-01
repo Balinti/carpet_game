@@ -100,6 +100,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.placeTile(position);
   }
 
+  void _dropTile(CarpetTile tile, BoardPosition position) {
+    _gameState.placeTileAt(tile, position);
+  }
+
   void _restartGame() {
     _gameState.restart();
   }
@@ -321,6 +325,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                   child: GameBoard(
                     gameState: _gameState,
                     onPositionTap: _placeTile,
+                    onTileDrop: _dropTile,
                     showMatchFeedback: widget.mode.showMatchFeedback,
                   ),
                 ),

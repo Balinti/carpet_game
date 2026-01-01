@@ -422,8 +422,12 @@ class GameState extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+    return placeTileAt(_selectedTile!, position);
+  }
 
-    if (!canPlaceTile(_selectedTile!, position)) {
+  /// Place a specific tile at a position (used for drag-and-drop).
+  bool placeTileAt(CarpetTile tile, BoardPosition position) {
+    if (!canPlaceTile(tile, position)) {
       _message = 'Try another spot!';
       notifyListeners();
       return false;
@@ -431,21 +435,21 @@ class GameState extends ChangeNotifier {
 
     // Save for undo
     _history.add(_GameAction(
-      tile: _selectedTile!,
+      tile: tile,
       position: position,
       playerIndex: _currentPlayerIndex,
     ));
 
     // Calculate score
-    final (matching, total) = countMatchingEdges(_selectedTile!, position);
+    final (matching, total) = countMatchingEdges(tile, position);
     _lastPlacementResult = currentScore.addTilePlacement(
       matchingEdges: matching,
       totalAdjacentTiles: total,
     );
 
     // Place the tile
-    board[position] = _selectedTile!;
-    currentPlayer.removeTile(_selectedTile!);
+    board[position] = tile;
+    currentPlayer.removeTile(tile);
 
     // Update board boundaries
     if (position.row < _minRow) _minRow = position.row;
