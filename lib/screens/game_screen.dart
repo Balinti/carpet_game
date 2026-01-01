@@ -275,7 +275,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         return [
           const Text('Geometric Shapes Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Build 7 shapes by matching edge colors:'),
+          const Text('Build 7 shapes in a 3×3 grid by matching edge colors:'),
           const SizedBox(height: 8),
           const Text('Diamonds:', style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 2 tiles with matching seam'),
@@ -287,11 +287,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           const SizedBox(height: 4),
           const Text('Rectangles:', style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 2 tiles with color stripe'),
-          const Text('• Large: 3-4 tiles in line with stripe'),
+          const Text('• Large: 3 tiles in line with stripe'),
           const SizedBox(height: 4),
           const Text('Arrows:', style: TextStyle(fontWeight: FontWeight.w600)),
-          const Text('• 3-5 tiles forming a pointed shape'),
+          const Text('• 3+ tiles forming a pointed shape'),
           const SizedBox(height: 8),
+          const Text('Board resets after each shape!', style: TextStyle(fontStyle: FontStyle.italic)),
           const Text('Complete all 7 to win!', style: TextStyle(fontWeight: FontWeight.bold)),
         ];
     }
