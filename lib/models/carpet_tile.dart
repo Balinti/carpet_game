@@ -211,6 +211,54 @@ class CarpetTile {
   /// Returns a unique key representing the current rotation state.
   String get rotationKey => '${top.index}${right.index}${bottom.index}${left.index}';
 
+  /// The 36 specific build tiles (codes: top-right-bottom-left).
+  /// Colors: r=red, g=green, b=blue, y=yellow
+  static const List<String> buildTileCodes = [
+    'yybr', 'ybbr', 'rbgy', 'gybr', 'byry', 'rbyg',
+    'rrby', 'bbbb', 'bbrb', 'yyry', 'yyyy', 'yggb',
+    'brby', 'rgbb', 'gygb', 'gbby', 'byyy', 'ygyr',
+    'yggy', 'ggbr', 'bgry', 'rggb', 'grgy', 'grbr',
+    'bbgg', 'yggg', 'gggg', 'yrgy', 'rrrr', 'rybr',
+    'gyyb', 'yrgg', 'grbg', 'brgy', 'gryr', 'ybry',
+  ];
+
+  /// Creates a tile from a 4-character code (top-right-bottom-left).
+  /// Colors: r=red, g=green, b=blue, y=yellow
+  static CarpetTile fromCode(String id, String code) {
+    TileColor charToColor(String c) {
+      switch (c) {
+        case 'r': return TileColor.red;
+        case 'g': return TileColor.green;
+        case 'b': return TileColor.blue;
+        case 'y': return TileColor.yellow;
+        default: return TileColor.red;
+      }
+    }
+    return CarpetTile(
+      id: id,
+      top: charToColor(code[0]),
+      right: charToColor(code[1]),
+      bottom: charToColor(code[2]),
+      left: charToColor(code[3]),
+    );
+  }
+
+  /// Returns the 36 specific build tiles, shuffled.
+  static List<CarpetTile> getBuildTiles() {
+    final tiles = <CarpetTile>[];
+    for (int i = 0; i < buildTileCodes.length; i++) {
+      tiles.add(fromCode('build_$i', buildTileCodes[i]));
+    }
+    tiles.shuffle(_random);
+    return tiles;
+  }
+
+  /// Returns a random tile from the 36 build tiles.
+  static CarpetTile getRandomBuildTile(String id) {
+    final code = buildTileCodes[_random.nextInt(buildTileCodes.length)];
+    return fromCode(id, code);
+  }
+
   /// Generates all 64 unique tiles (one representative per rotation equivalence class).
   /// With 4 colors and 4 positions, there are 256 combinations.
   /// Removing rotational duplicates gives us ~70 unique tiles, but we take 64.

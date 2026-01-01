@@ -104,6 +104,18 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.placeTileAt(tile, position);
   }
 
+  void _rotatePlacedTile(BoardPosition position) {
+    _gameState.rotatePlacedTile(position);
+  }
+
+  void _swapTiles(BoardPosition from, BoardPosition to) {
+    _gameState.swapTiles(from, to);
+  }
+
+  void _replaceTile(CarpetTile handTile, BoardPosition position) {
+    _gameState.replaceTile(handTile, position);
+  }
+
   void _restartGame() {
     _gameState.restart();
   }
@@ -326,6 +338,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                     gameState: _gameState,
                     onPositionTap: _placeTile,
                     onTileDrop: _dropTile,
+                    onTileRotate: _rotatePlacedTile,
+                    onTileSwap: _swapTiles,
+                    onTileReplace: _replaceTile,
                     showMatchFeedback: widget.mode.showMatchFeedback,
                   ),
                 ),

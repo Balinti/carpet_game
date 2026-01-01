@@ -20,6 +20,9 @@ class GameState extends ChangeNotifier {
   List<CarpetTile> _tilePool; // For free play mode
   int _nextTileId;
 
+  // Target grid size for square modes (0 = no fixed grid)
+  int _targetGridSize = 0;
+
   // Board boundaries (dynamic, expands as tiles are placed)
   int _minRow = 0;
   int _maxRow = 0;
@@ -59,6 +62,7 @@ class GameState extends ChangeNotifier {
   int get maxRow => _maxRow;
   int get minCol => _minCol;
   int get maxCol => _maxCol;
+  int get targetGridSize => _targetGridSize;
 
   /// Get the current player's score (or team score for cooperative).
   ScoreSystem get currentScore {
@@ -168,14 +172,14 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square2x2, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    state._targetGridSize = 2;
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 2×2 square!';
+    state._message = 'Fill the 2×2 grid!';
     return state;
   }
 
@@ -186,14 +190,14 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square3x3, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 12; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    state._targetGridSize = 3;
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 3×3 square!';
+    state._message = 'Fill the 3×3 grid!';
     return state;
   }
 
@@ -204,14 +208,14 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.square4x4, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 20; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    state._targetGridSize = 4;
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
-    state._message = 'Build a 4×4 square!';
+    state._message = 'Fill the 4×4 grid!';
     return state;
   }
 
@@ -222,12 +226,11 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.squareProgression, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 10; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Start with a 2×2 square!';
     return state;
@@ -240,12 +243,11 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.geometricShapes, players: players);
-    for (final player in players) {
-      for (int i = 0; i < 12; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
-    state._refillTilePool();
     state._updatePositions();
     state._message = 'Build a 2×2 square!';
     return state;
@@ -365,8 +367,14 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Free play, guided learning, and square modes allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning || mode.isSquareMode) {
+    // Fixed grid modes allow placing anywhere in the grid
+    if (_targetGridSize > 0) {
+      return position.row >= 0 && position.row < _targetGridSize &&
+             position.col >= 0 && position.col < _targetGridSize;
+    }
+
+    // Free play and guided learning allow any adjacent placement
+    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
       if (board.isEmpty) return true;
       return position.neighbors.any((n) => board.containsKey(n));
     }
@@ -377,6 +385,20 @@ class GameState extends ChangeNotifier {
 
   /// Get all valid positions for a tile.
   List<BoardPosition> getValidPositions(CarpetTile tile) {
+    // Fixed grid modes - return all empty positions in the grid
+    if (_targetGridSize > 0) {
+      final positions = <BoardPosition>[];
+      for (int row = 0; row < _targetGridSize; row++) {
+        for (int col = 0; col < _targetGridSize; col++) {
+          final pos = BoardPosition(row, col);
+          if (!board.containsKey(pos)) {
+            positions.add(pos);
+          }
+        }
+      }
+      return positions;
+    }
+
     if (board.isEmpty) {
       return [const BoardPosition(0, 0)];
     }
@@ -500,6 +522,90 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
+  /// Rotate a tile that is already placed on the board.
+  void rotatePlacedTile(BoardPosition position) {
+    final tile = board[position];
+    if (tile == null) return;
+
+    board[position] = tile.rotateClockwise();
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Swap or move a tile from one position to another.
+  void swapTiles(BoardPosition from, BoardPosition to) {
+    if (from == to) return;
+
+    final fromTile = board[from];
+    final toTile = board[to];
+
+    if (fromTile == null) return;
+
+    // Perform the swap
+    if (toTile != null) {
+      board[from] = toTile;
+      board[to] = fromTile;
+    } else {
+      // Just move to empty position
+      board.remove(from);
+      board[to] = fromTile;
+    }
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    notifyListeners();
+  }
+
+  /// Replace a tile on the board with a tile from hand.
+  /// The board tile goes back to hand, the hand tile goes to board.
+  void replaceTile(CarpetTile handTile, BoardPosition position) {
+    final boardTile = board[position];
+    if (boardTile == null) return;
+
+    // Remove hand tile from player's hand
+    currentPlayer.removeTile(handTile);
+
+    // Put board tile back in player's hand
+    currentPlayer.addTile(boardTile);
+
+    // Put hand tile on the board
+    board[position] = handTile;
+
+    // Clear selection
+    _selectedTile = null;
+
+    // Update message with current status
+    if (_targetGridSize > 0) {
+      final target = _targetGridSize * _targetGridSize;
+      final tilesPlaced = board.length;
+      final tilesNeeded = target - tilesPlaced;
+      if (tilesNeeded > 0) {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
+    }
+
+    _updatePositions();
+    notifyListeners();
+  }
+
   void _generatePlacementMessage() {
     if (_lastPlacementResult == null) return;
 
@@ -586,19 +692,44 @@ class GameState extends ChangeNotifier {
     final tilesPlaced = board.length;
     final tilesNeeded = target - tilesPlaced;
 
-    if (tilesNeeded <= 0 && _isSquare(size)) {
+    if (tilesNeeded <= 0) {
+      final mismatches = _countMismatches();
       _gameOver = true;
-      _message = '🎉 You built a $size×$size square!';
-    } else if (tilesNeeded > 0) {
-      _message = 'Place $tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'}!';
+      if (mismatches == 0) {
+        _message = '🎉 Perfect! All colors match!';
+      } else {
+        _message = '✓ Grid filled! $mismatches mismatch${mismatches == 1 ? '' : 'es'} - try again for perfect!';
+      }
     } else {
-      _message = 'Arrange into a $size×$size square!';
+      final mismatches = _countMismatches();
+      if (mismatches > 0) {
+        _message = '$tilesNeeded to go • $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+      } else {
+        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+      }
     }
 
     if (currentPlayer.hand.length < 4) {
       drawTile();
       drawTile();
     }
+  }
+
+  /// Count the number of mismatched edges in the current board.
+  int _countMismatches() {
+    int mismatches = 0;
+    for (final entry in board.entries) {
+      final position = entry.key;
+      final tile = entry.value;
+      final status = getEdgeMatchStatus(tile, position);
+      for (final edgeStatus in status.values) {
+        if (edgeStatus == EdgeMatchStatus.mismatched) {
+          mismatches++;
+        }
+      }
+    }
+    // Each mismatch is counted twice (once from each tile), so divide by 2
+    return mismatches ~/ 2;
   }
 
   int _progressionStage = 0;

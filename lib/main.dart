@@ -38,6 +38,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
     return LocaleProviderScope(
       provider: _localeProvider,
       child: MaterialApp(
+        key: ValueKey(_localeProvider.language),
         title: 'Carpet Game',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
@@ -69,7 +70,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
             child: child!,
           );
         },
-        home: const HomeScreen(),
+        home: HomeScreen(key: ValueKey(_localeProvider.language)),
       ),
     );
   }
