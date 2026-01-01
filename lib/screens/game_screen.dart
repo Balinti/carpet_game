@@ -273,13 +273,26 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         ];
       case GameMode.geometricShapes:
         return [
-          const Text('Geometric Shapes', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Geometric Shapes Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('• Build different geometric shapes'),
+          const Text('Build 7 shapes by matching edge colors:'),
+          const SizedBox(height: 8),
+          const Text('Diamonds:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('• Small: 2 tiles with matching seam'),
+          const Text('• Large: 4 tiles (2×2) with center match'),
           const SizedBox(height: 4),
-          const Text('• Start with a 2×2 square'),
+          const Text('Triangles:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('• Small: 1 tile with 3-1 color split'),
+          const Text('• Large: 3 tiles in L-shape, matching edges'),
           const SizedBox(height: 4),
-          const Text('• Then build a 3×3 square to win!'),
+          const Text('Rectangles:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('• Small: 2 tiles with color stripe'),
+          const Text('• Large: 3-4 tiles in line with stripe'),
+          const SizedBox(height: 4),
+          const Text('Arrows:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('• 3-5 tiles forming a pointed shape'),
+          const SizedBox(height: 8),
+          const Text('Complete all 7 to win!', style: TextStyle(fontWeight: FontWeight.bold)),
         ];
     }
   }
