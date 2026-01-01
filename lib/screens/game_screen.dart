@@ -92,16 +92,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _selectTile(CarpetTile tile) {
-    if (_gameState.selectedTile?.id == tile.id) {
-      _gameState.selectTile(null);
-    } else {
-      _gameState.selectTile(tile);
-    }
-  }
-
-  void _rotateTile() {
-    _gameState.rotateSelectedTile();
+  void _rotateHandTile(CarpetTile tile) {
+    _gameState.rotateHandTile(tile);
   }
 
   void _placeTile(BoardPosition position) {
@@ -363,10 +355,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                       children: [
                         PlayerHand(
                           player: _gameState.currentPlayer,
-                          selectedTile: _gameState.selectedTile,
                           isCurrentPlayer: true,
-                          onTileSelected: _selectTile,
-                          onRotate: _rotateTile,
+                          onTileTap: _rotateHandTile,
                         ),
                         if (_gameState.players.length > 1) ...[
                           const SizedBox(height: 12),

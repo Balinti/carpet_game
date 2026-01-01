@@ -6,20 +6,16 @@ import 'tile_widget.dart';
 /// Widget that displays a player's hand of tiles.
 class PlayerHand extends StatelessWidget {
   final Player player;
-  final CarpetTile? selectedTile;
   final bool isCurrentPlayer;
   final double tileSize;
-  final Function(CarpetTile)? onTileSelected;
-  final VoidCallback? onRotate;
+  final Function(CarpetTile)? onTileTap;
 
   const PlayerHand({
     super.key,
     required this.player,
-    this.selectedTile,
     this.isCurrentPlayer = false,
     this.tileSize = 70,
-    this.onTileSelected,
-    this.onRotate,
+    this.onTileTap,
   });
 
   @override
@@ -81,14 +77,11 @@ class PlayerHand extends StatelessWidget {
               runSpacing: 8,
               children: [
                 ...player.hand.map((tile) {
-                  final isSelected = selectedTile?.id == tile.id;
                   return TileWidget(
                     tile: tile,
                     size: tileSize,
-                    isSelected: isSelected,
                     isDraggable: true,
-                    onTap: () => onTileSelected?.call(tile),
-                    onDoubleTap: isSelected ? onRotate : null,
+                    onTap: () => onTileTap?.call(tile),
                   );
                 }),
               ],
@@ -118,23 +111,13 @@ class PlayerHand extends StatelessWidget {
                 ),
               ),
             ),
-          if (isCurrentPlayer && selectedTile != null) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                FilledButton.tonalIcon(
-                  onPressed: onRotate,
-                  icon: const Icon(Icons.rotate_right),
-                  label: Text(l10n.rotate),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.doubleTapRotate,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                ),
-              ],
+          if (isCurrentPlayer) ...[
+            const SizedBox(height: 8),
+            Text(
+              l10n.tapRotateDragPlace,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
             ),
           ],
         ],
