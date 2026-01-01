@@ -250,6 +250,7 @@ class GameState extends ChangeNotifier {
       (i) => Player(id: 'player_$i', name: 'Builder'),
     );
     final state = GameState(mode: GameMode.geometricShapes, players: players);
+    state._targetGridSize = 3; // Use 3x3 grid
     // Give all 36 build tiles
     final buildTiles = CarpetTile.getBuildTiles();
     for (final tile in buildTiles) {
@@ -800,17 +801,21 @@ class GameState extends ChangeNotifier {
       return;
     }
 
-    // Generate feedback message
+    // If a new shape was completed, reset the board (return tiles to hand)
     if (newlyCompleted.isNotEmpty) {
       final shapeNames = newlyCompleted.map((t) => t.displayName).join(', ');
-      _message = 'Created: $shapeNames! (${_completedShapeTypes.length}/7)';
+
+      // Return all tiles from board back to player's hand
+      for (final tile in board.values) {
+        currentPlayer.addTile(tile);
+      }
+      board.clear();
+      _history.clear();
+      _recalculateBoundaries();
+
+      _message = '$shapeNames complete! (${_completedShapeTypes.length}/7) - ${ShapeDetector.getNextShapeHint(_completedShapeTypes)}';
     } else {
       _message = '${ShapeDetector.getNextShapeHint(_completedShapeTypes)} (${_completedShapeTypes.length}/7 complete)';
-    }
-
-    if (currentPlayer.hand.length < 4) {
-      drawTile();
-      drawTile();
     }
   }
 
@@ -909,6 +914,7 @@ class GameState extends ChangeNotifier {
 
     // Deal new tiles based on mode
     if (mode == GameMode.geometricShapes) {
+      _targetGridSize = 3; // Use 3x3 grid
       // Give all 36 build tiles for geometric shapes
       for (final player in players) {
         player.hand.clear();
