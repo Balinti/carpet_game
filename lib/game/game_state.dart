@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 import 'shape_detector.dart';
 
-/// Represents the state of a carpet tile game supporting multiple modes.
+/// Represents the state of a carpet tile game supporting Regular Flow and Shape Flow modes.
 class GameState extends ChangeNotifier {
   final GameMode mode;
   final List<Player> players;
@@ -18,13 +18,12 @@ class GameState extends ChangeNotifier {
   List<BoardPosition> _validPositions;
   List<BoardPosition> _allAdjacentPositions;
   PlacementResult? _lastPlacementResult;
-  List<CarpetTile> _tilePool; // For free play mode
   int _nextTileId;
 
-  // Target grid size for square modes (0 = no fixed grid)
+  // Target grid size for the current level
   int _targetGridSize = 0;
 
-  // Board boundaries (dynamic, expands as tiles are placed)
+  // Board boundaries
   int _minRow = 0;
   int _maxRow = 0;
   int _minCol = 0;
@@ -33,9 +32,15 @@ class GameState extends ChangeNotifier {
   // Undo support
   final List<_GameAction> _history = [];
 
-  // Geometric shapes mode - track completed shapes
+  // === Regular Flow specific ===
+  int _currentLevel = 1;
+  List<CarpetTile> _availablePieces = []; // Pieces available across levels
+
+  // === Shape Flow specific ===
   final Set<GeometricShapeType> _completedShapeTypes = {};
   List<DetectedShape> _detectedShapes = [];
+  GeometricShapeType? _currentTargetShape;
+  int _shapeFlowLevel = 1;
 
   GameState({
     required this.mode,
@@ -48,7 +53,6 @@ class GameState extends ChangeNotifier {
         _gameOver = false,
         _validPositions = [],
         _allAdjacentPositions = [],
-        _tilePool = [],
         _nextTileId = 0;
 
   // Getters
@@ -68,214 +72,141 @@ class GameState extends ChangeNotifier {
   int get minCol => _minCol;
   int get maxCol => _maxCol;
   int get targetGridSize => _targetGridSize;
+
+  // Regular Flow getters
+  int get currentLevel => _currentLevel;
+  int get availablePiecesCount => _availablePieces.length;
+
+  // Shape Flow getters
   Set<GeometricShapeType> get completedShapeTypes => _completedShapeTypes;
   List<DetectedShape> get detectedShapes => _detectedShapes;
+  GeometricShapeType? get currentTargetShape => _currentTargetShape;
+  int get shapeFlowLevel => _shapeFlowLevel;
 
-  /// Get the current player's score (or team score for cooperative).
+  /// Get the current player's score.
   ScoreSystem get currentScore {
-    if (mode == GameMode.cooperative) {
-      return score;
-    }
     return playerScores[_currentPlayerIndex];
   }
 
-  /// Initialize a new competitive Color Dominoes game.
-  static GameState newColorDominoes(int playerCount) {
-    if (playerCount < 2 || playerCount > 4) {
-      throw ArgumentError('Player count must be between 2 and 4');
-    }
+  /// Initialize a new Regular Flow game.
+  static GameState newRegularFlow() {
+    final players = [Player(id: 'player_0', name: 'Builder')];
+    final state = GameState(mode: GameMode.regularFlow, players: players);
 
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Player ${i + 1}'),
-    );
+    // Initialize with all 36 pieces
+    state._availablePieces = CarpetTile.getBuildTiles()
+        .map((t) => t.copyWithId('tile_${state._nextTileId++}'))
+        .toList();
 
-    final state = GameState(mode: GameMode.colorDominoes, players: players);
+    // Start at level 1
+    state._initLevel(1);
 
-    // Deal 6 tiles to each player
-    for (final player in players) {
-      for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
-    }
-
-    state._updatePositions();
     return state;
   }
 
-  /// Initialize a new Free Play sandbox game.
-  static GameState newFreePlay({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Builder' : 'Player ${i + 1}'),
-    );
+  /// Initialize a new Shape Flow game.
+  static GameState newShapeFlow() {
+    final players = [Player(id: 'player_0', name: 'Builder')];
+    final state = GameState(mode: GameMode.shapeFlow, players: players);
 
-    final state = GameState(mode: GameMode.freePlay, players: players);
-
-    // Give initial tiles
-    for (final player in players) {
-      for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
+    // Give all 36 build tiles
+    final buildTiles = CarpetTile.getBuildTiles();
+    for (final tile in buildTiles) {
+      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
     }
 
-    // Create tile pool for drawing
-    state._refillTilePool();
-    state._updatePositions();
-    return state;
-  }
-
-  /// Initialize a new Guided Learning game.
-  static GameState newGuidedLearning({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: playerCount == 1 ? 'Learner' : 'Player ${i + 1}'),
-    );
-
-    final state = GameState(mode: GameMode.guidedLearning, players: players);
-
-    // Give initial tiles
-    for (final player in players) {
-      for (int i = 0; i < 8; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
-    }
-
-    state._refillTilePool();
-    state._updatePositions();
-    return state;
-  }
-
-  /// Initialize a new Cooperative game.
-  static GameState newCooperative(int playerCount) {
-    if (playerCount < 1 || playerCount > 4) {
-      throw ArgumentError('Player count must be between 1 and 4');
-    }
-
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Player ${i + 1}'),
-    );
-
-    final state = GameState(mode: GameMode.cooperative, players: players);
-
-    // Deal tiles to each player
-    for (final player in players) {
-      for (int i = 0; i < 6; i++) {
-        player.addTile(CarpetTile.generateRandom('tile_${state._nextTileId++}'));
-      }
-    }
-
-    state._refillTilePool();
-    state._updatePositions();
-    state._message = "Let's build together!";
-    return state;
-  }
-
-  /// Initialize a new 2x2 Square game.
-  static GameState newSquare2x2({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Builder'),
-    );
-    final state = GameState(mode: GameMode.square2x2, players: players);
+    // Start with 2x2 grid and first shape target
+    state._shapeFlowLevel = 1;
     state._targetGridSize = 2;
-    // Give all 36 build tiles
-    final buildTiles = CarpetTile.getBuildTiles();
-    for (final tile in buildTiles) {
-      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
-    }
+    state._selectNextTargetShape();
     state._updatePositions();
-    state._message = 'Fill the 2×2 grid!';
+
     return state;
   }
 
-  /// Initialize a new 3x3 Square game.
-  static GameState newSquare3x3({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Builder'),
-    );
-    final state = GameState(mode: GameMode.square3x3, players: players);
-    state._targetGridSize = 3;
-    // Give all 36 build tiles
-    final buildTiles = CarpetTile.getBuildTiles();
-    for (final tile in buildTiles) {
-      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
+  /// Initialize a specific level for Regular Flow.
+  void _initLevel(int level) {
+    _currentLevel = level;
+    final config = getLevelConfig(level);
+    _targetGridSize = config.gridSize;
+
+    // Reset pieces if needed
+    if (config.resetPieces) {
+      _availablePieces = CarpetTile.getBuildTiles()
+          .map((t) => t.copyWithId('tile_${_nextTileId++}'))
+          .toList();
     }
-    state._updatePositions();
-    state._message = 'Fill the 3×3 grid!';
-    return state;
+
+    // Clear board
+    board.clear();
+    _history.clear();
+    _recalculateBoundaries();
+
+    // Give player pieces from available pool
+    currentPlayer.hand.clear();
+    final piecesToGive = List<CarpetTile>.from(_availablePieces);
+    piecesToGive.shuffle();
+    for (final tile in piecesToGive) {
+      currentPlayer.addTile(tile);
+    }
+
+    _message = 'Level $level: Fill the ${config.gridDescription} grid! (${_availablePieces.length} pieces)';
+    _updatePositions();
+    notifyListeners();
   }
 
-  /// Initialize a new 4x4 Square game.
-  static GameState newSquare4x4({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Builder'),
-    );
-    final state = GameState(mode: GameMode.square4x4, players: players);
-    state._targetGridSize = 4;
-    // Give all 36 build tiles
-    final buildTiles = CarpetTile.getBuildTiles();
-    for (final tile in buildTiles) {
-      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
-    }
-    state._updatePositions();
-    state._message = 'Fill the 4×4 grid!';
-    return state;
-  }
-
-  /// Initialize a new Square Progression game.
-  static GameState newSquareProgression({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Builder'),
-    );
-    final state = GameState(mode: GameMode.squareProgression, players: players);
-    // Give all 36 build tiles
-    final buildTiles = CarpetTile.getBuildTiles();
-    for (final tile in buildTiles) {
-      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
-    }
-    state._updatePositions();
-    state._message = 'Start with a 2×2 square!';
-    return state;
-  }
-
-  /// Initialize a new Geometric Shapes game.
-  static GameState newGeometricShapes({int playerCount = 1}) {
-    final players = List.generate(
-      playerCount,
-      (i) => Player(id: 'player_$i', name: 'Builder'),
-    );
-    final state = GameState(mode: GameMode.geometricShapes, players: players);
-    state._targetGridSize = 3; // Use 3x3 grid
-    // Give all 36 build tiles
-    final buildTiles = CarpetTile.getBuildTiles();
-    for (final tile in buildTiles) {
-      players[0].addTile(tile.copyWithId('tile_${state._nextTileId++}'));
-    }
-    state._updatePositions();
-    state._message = ShapeDetector.getNextShapeHint(state._completedShapeTypes);
-    return state;
-  }
-
-  void _refillTilePool() {
-    // Keep a pool of tiles to draw from
-    while (_tilePool.length < 20) {
-      _tilePool.add(CarpetTile.generateRandom('tile_${_nextTileId++}'));
-    }
-  }
-
-  /// Draw a new tile from the pool (for non-competitive modes).
-  void drawTile() {
-    if (mode == GameMode.colorDominoes) return;
-
-    _refillTilePool();
-    if (_tilePool.isNotEmpty) {
-      currentPlayer.addTile(_tilePool.removeAt(0));
+  /// Advance to the next level in Regular Flow.
+  void _advanceToNextLevel() {
+    if (_currentLevel >= totalRegularFlowLevels) {
+      _gameOver = true;
+      _message = 'Congratulations! You completed all 12 levels!';
       notifyListeners();
+      return;
+    }
+
+    // Remove used pieces from available pool
+    final usedPieceIds = board.values.map((t) => t.id).toSet();
+    _availablePieces.removeWhere((t) => usedPieceIds.contains(t.id));
+
+    _initLevel(_currentLevel + 1);
+  }
+
+  /// Select the next target shape for Shape Flow.
+  void _selectNextTargetShape() {
+    final remaining = ShapeDetector.getRemainingShapes(_completedShapeTypes);
+    if (remaining.isEmpty) {
+      _currentTargetShape = null;
+      return;
+    }
+
+    // Prioritize shapes by difficulty (easier first)
+    final priority = [
+      GeometricShapeType.smallTriangle,
+      GeometricShapeType.smallDiamond,
+      GeometricShapeType.smallRectangle,
+      GeometricShapeType.largeDiamond,
+      GeometricShapeType.largeTriangle,
+      GeometricShapeType.largeRectangle,
+      GeometricShapeType.arrow,
+    ];
+
+    for (final shape in priority) {
+      if (remaining.contains(shape)) {
+        _currentTargetShape = shape;
+
+        // Determine grid size based on shape
+        // Small shapes (1-2 tiles) use 2x2, larger shapes use 3x3
+        if (shape == GeometricShapeType.smallTriangle ||
+            shape == GeometricShapeType.smallDiamond ||
+            shape == GeometricShapeType.smallRectangle) {
+          _targetGridSize = 2;
+        } else {
+          _targetGridSize = 3;
+        }
+
+        _message = 'Build a ${shape.displayName} and fill the ${_targetGridSize}x$_targetGridSize grid!';
+        return;
+      }
     }
   }
 
@@ -362,7 +293,7 @@ class GameState extends ChangeNotifier {
     return (matching, total);
   }
 
-  /// Check if a tile can be placed at a position (strict rules).
+  /// Check if a tile can be placed at a position (strict rules - all edges must match).
   bool canPlaceTileStrict(CarpetTile tile, BoardPosition position) {
     if (board.isEmpty) return true;
     if (board.containsKey(position)) return false;
@@ -375,19 +306,12 @@ class GameState extends ChangeNotifier {
   bool canPlaceTile(CarpetTile tile, BoardPosition position) {
     if (board.containsKey(position)) return false;
 
-    // Fixed grid modes allow placing anywhere in the grid
+    // Fixed grid - allow placing anywhere in the grid
     if (_targetGridSize > 0) {
       return position.row >= 0 && position.row < _targetGridSize &&
              position.col >= 0 && position.col < _targetGridSize;
     }
 
-    // Free play and guided learning allow any adjacent placement
-    if (mode == GameMode.freePlay || mode == GameMode.guidedLearning) {
-      if (board.isEmpty) return true;
-      return position.neighbors.any((n) => board.containsKey(n));
-    }
-
-    // Competitive and cooperative require matching
     return canPlaceTileStrict(tile, position);
   }
 
@@ -492,35 +416,11 @@ class GameState extends ChangeNotifier {
 
     // Handle mode-specific logic
     switch (mode) {
-      case GameMode.colorDominoes:
-        _handleColorDominoesPlacement();
+      case GameMode.regularFlow:
+        _handleRegularFlowPlacement();
         break;
-      case GameMode.freePlay:
-        _handleFreePlayPlacement();
-        break;
-      case GameMode.guidedLearning:
-        _handleGuidedLearningPlacement();
-        break;
-      case GameMode.cooperative:
-        _handleCooperativePlacement();
-        break;
-      case GameMode.starterPuzzle:
-        _handleFreePlayPlacement();
-        break;
-      case GameMode.square2x2:
-        _handleSquarePlacement(2);
-        break;
-      case GameMode.square3x3:
-        _handleSquarePlacement(3);
-        break;
-      case GameMode.square4x4:
-        _handleSquarePlacement(4);
-        break;
-      case GameMode.squareProgression:
-        _handleSquareProgressionPlacement();
-        break;
-      case GameMode.geometricShapes:
-        _handleGeometricShapesPlacement();
+      case GameMode.shapeFlow:
+        _handleShapeFlowPlacement();
         break;
     }
 
@@ -538,14 +438,7 @@ class GameState extends ChangeNotifier {
     board[position] = tile.rotateClockwise();
 
     // Update message with current status
-    if (_targetGridSize > 0) {
-      final target = _targetGridSize * _targetGridSize;
-      final tilesPlaced = board.length;
-      final tilesNeeded = target - tilesPlaced;
-      if (tilesNeeded > 0) {
-        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
-      }
-    }
+    _updateStatusMessage();
 
     notifyListeners();
   }
@@ -569,21 +462,11 @@ class GameState extends ChangeNotifier {
       board[to] = fromTile;
     }
 
-    // Update message with current status
-    if (_targetGridSize > 0) {
-      final target = _targetGridSize * _targetGridSize;
-      final tilesPlaced = board.length;
-      final tilesNeeded = target - tilesPlaced;
-      if (tilesNeeded > 0) {
-        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
-      }
-    }
-
+    _updateStatusMessage();
     notifyListeners();
   }
 
   /// Replace a tile on the board with a tile from hand.
-  /// The board tile goes back to hand, the hand tile goes to board.
   void replaceTile(CarpetTile handTile, BoardPosition position) {
     final boardTile = board[position];
     if (boardTile == null) return;
@@ -600,18 +483,25 @@ class GameState extends ChangeNotifier {
     // Clear selection
     _selectedTile = null;
 
-    // Update message with current status
+    _updateStatusMessage();
+    _updatePositions();
+    notifyListeners();
+  }
+
+  void _updateStatusMessage() {
     if (_targetGridSize > 0) {
       final target = _targetGridSize * _targetGridSize;
       final tilesPlaced = board.length;
       final tilesNeeded = target - tilesPlaced;
       if (tilesNeeded > 0) {
-        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+        final mismatches = _countMismatches();
+        if (mismatches > 0) {
+          _message = '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+        } else {
+          _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+        }
       }
     }
-
-    _updatePositions();
-    notifyListeners();
   }
 
   void _generatePlacementMessage() {
@@ -629,98 +519,95 @@ class GameState extends ChangeNotifier {
     }
   }
 
-  void _handleColorDominoesPlacement() {
-    // Check for win
-    if (currentPlayer.hasWon) {
-      _winner = currentPlayer.name;
-      _gameOver = true;
-      _message = '🎉 ${currentPlayer.name} wins!';
-      return;
-    }
-
-    // Extra turn for solid tiles
-    if (_history.last.tile.isSolid) {
-      _message = '${_message ?? ''} Extra turn!';
-    } else {
-      _nextTurn();
-    }
-  }
-
-  void _handleFreePlayPlacement() {
-    // Auto-draw a new tile if hand is getting low
-    if (currentPlayer.hand.length < 3) {
-      drawTile();
-      drawTile();
-    }
-
-    // Rotate players if multiplayer
-    if (players.length > 1) {
-      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    }
-  }
-
-  void _handleGuidedLearningPlacement() {
-    // Similar to free play but with encouragement
-    if (currentPlayer.hand.length < 3) {
-      drawTile();
-      drawTile();
-    }
-
-    final result = _lastPlacementResult!;
-    if (result.matchingEdges == 0 && board.length > 1) {
-      _message = '${_message ?? ''}\nTry matching the colors next time!';
-    }
-
-    if (players.length > 1) {
-      _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    }
-  }
-
-  void _handleCooperativePlacement() {
-    // Check cooperative goal (e.g., build a certain size carpet)
-    if (board.length >= 20) {
-      _gameOver = true;
-      _message = '🎉 Amazing! You built a beautiful carpet together!';
-      return;
-    }
-
-    // Refill hand
-    if (currentPlayer.hand.length < 3) {
-      drawTile();
-      drawTile();
-    }
-
-    // Next player
-    _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-    _message = '${_message ?? ""}\n${currentPlayer.name}\'s turn!';
-  }
-
-  void _handleSquarePlacement(int size) {
-    final target = size * size;
+  /// Handle placement in Regular Flow mode.
+  void _handleRegularFlowPlacement() {
+    final target = _targetGridSize * _targetGridSize;
     final tilesPlaced = board.length;
     final tilesNeeded = target - tilesPlaced;
 
     if (tilesNeeded <= 0) {
+      // Level complete!
       final mismatches = _countMismatches();
-      _gameOver = true;
       if (mismatches == 0) {
-        _message = '🎉 Perfect! All colors match!';
+        _message = 'Level $_currentLevel complete! Perfect match!';
       } else {
-        _message = '✓ Grid filled! $mismatches mismatch${mismatches == 1 ? '' : 'es'} - try again for perfect!';
+        _message = 'Level $_currentLevel complete! $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
       }
+
+      // Advance to next level after a short delay
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        _advanceToNextLevel();
+      });
     } else {
       final mismatches = _countMismatches();
       if (mismatches > 0) {
-        _message = '$tilesNeeded to go • $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+        _message = '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
       } else {
         _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
       }
     }
+  }
 
-    if (currentPlayer.hand.length < 4) {
-      drawTile();
-      drawTile();
+  /// Handle placement in Shape Flow mode.
+  void _handleShapeFlowPlacement() {
+    // Detect shapes on the board
+    _detectedShapes = ShapeDetector.detectAllShapes(board);
+
+    // Check if target shape is completed
+    bool targetShapeCompleted = false;
+    for (final shape in _detectedShapes) {
+      if (shape.type == _currentTargetShape && !_completedShapeTypes.contains(shape.type)) {
+        targetShapeCompleted = true;
+        break;
+      }
     }
+
+    // Check if grid is full
+    final target = _targetGridSize * _targetGridSize;
+    final tilesPlaced = board.length;
+    final gridFull = tilesPlaced >= target;
+
+    if (gridFull) {
+      final mismatches = _countMismatches();
+
+      if (targetShapeCompleted) {
+        // Success! Shape completed AND grid is full
+        _completedShapeTypes.add(_currentTargetShape!);
+        _shapeFlowLevel++;
+
+        // Check if all shapes are completed
+        if (_completedShapeTypes.length == GeometricShapeType.values.length) {
+          _gameOver = true;
+          _message = 'Amazing! You completed all shapes!';
+          return;
+        }
+
+        // Return tiles to hand and select next shape
+        _returnTilesToHand();
+        _selectNextTargetShape();
+        _message = '${_currentTargetShape?.displayName ?? "Shape"} complete! (${_completedShapeTypes.length}/7) - Now: Build a ${_currentTargetShape?.displayName}!';
+      } else {
+        // Grid full but target shape not completed
+        _message = 'Grid full but ${_currentTargetShape?.displayName} not found! $mismatches mismatch${mismatches == 1 ? '' : 'es'}. Try rearranging!';
+      }
+    } else {
+      // Grid not full yet
+      final tilesNeeded = target - tilesPlaced;
+      if (targetShapeCompleted) {
+        _message = '${_currentTargetShape?.displayName} found! Fill ${tilesNeeded} more tile${tilesNeeded == 1 ? '' : 's'}!';
+      } else {
+        _message = 'Build ${_currentTargetShape?.displayName}! $tilesNeeded tile${tilesNeeded == 1 ? '' : 's'} to go.';
+      }
+    }
+  }
+
+  void _returnTilesToHand() {
+    for (final tile in board.values) {
+      currentPlayer.addTile(tile);
+    }
+    board.clear();
+    _history.clear();
+    _recalculateBoundaries();
   }
 
   /// Count the number of mismatched edges in the current board.
@@ -738,123 +625,6 @@ class GameState extends ChangeNotifier {
     }
     // Each mismatch is counted twice (once from each tile), so divide by 2
     return mismatches ~/ 2;
-  }
-
-  int _progressionStage = 0;
-
-  void _handleSquareProgressionPlacement() {
-    final tilesPlaced = board.length;
-
-    if (_progressionStage == 0) {
-      if (tilesPlaced >= 4 && _isSquare(2)) {
-        _progressionStage = 1;
-        _message = '✓ 2×2 complete! Now build a 3×3!';
-        board.clear();
-        _recalculateBoundaries();
-      } else {
-        final needed = 4 - tilesPlaced;
-        if (needed > 0) _message = 'Place $needed more for 2×2!';
-      }
-    } else if (_progressionStage == 1) {
-      if (tilesPlaced >= 9 && _isSquare(3)) {
-        _progressionStage = 2;
-        _message = '✓ 3×3 complete! Now build a 4×4!';
-        board.clear();
-        _recalculateBoundaries();
-      } else {
-        final needed = 9 - tilesPlaced;
-        if (needed > 0) _message = 'Place $needed more for 3×3!';
-      }
-    } else {
-      if (tilesPlaced >= 16 && _isSquare(4)) {
-        _gameOver = true;
-        _message = '🎉 Amazing! You completed the progression!';
-      } else {
-        final needed = 16 - tilesPlaced;
-        if (needed > 0) _message = 'Place $needed more for 4×4!';
-      }
-    }
-
-    if (currentPlayer.hand.length < 4) {
-      drawTile();
-      drawTile();
-    }
-  }
-
-  void _handleGeometricShapesPlacement() {
-    // Detect all shapes on the board
-    _detectedShapes = ShapeDetector.detectAllShapes(board);
-
-    // Track newly completed shape types
-    final newlyCompleted = <GeometricShapeType>[];
-    for (final shape in _detectedShapes) {
-      if (!_completedShapeTypes.contains(shape.type)) {
-        _completedShapeTypes.add(shape.type);
-        newlyCompleted.add(shape.type);
-      }
-    }
-
-    // Check if all shapes are completed
-    if (_completedShapeTypes.length == GeometricShapeType.values.length) {
-      _gameOver = true;
-      _message = 'Amazing! You completed all 7 shapes!';
-      return;
-    }
-
-    // If a new shape was completed, reset the board (return tiles to hand)
-    if (newlyCompleted.isNotEmpty) {
-      final shapeNames = newlyCompleted.map((t) => t.displayName).join(', ');
-
-      // Return all tiles from board back to player's hand
-      for (final tile in board.values) {
-        currentPlayer.addTile(tile);
-      }
-      board.clear();
-      _history.clear();
-      _recalculateBoundaries();
-
-      _message = '$shapeNames complete! (${_completedShapeTypes.length}/7) - ${ShapeDetector.getNextShapeHint(_completedShapeTypes)}';
-    } else {
-      _message = '${ShapeDetector.getNextShapeHint(_completedShapeTypes)} (${_completedShapeTypes.length}/7 complete)';
-    }
-  }
-
-  bool _isSquare(int size) {
-    if (board.length < size * size) return false;
-    final rows = board.keys.map((p) => p.row).toSet();
-    final cols = board.keys.map((p) => p.col).toSet();
-    if (rows.length != size || cols.length != size) return false;
-    final minR = rows.reduce((a, b) => a < b ? a : b);
-    final minC = cols.reduce((a, b) => a < b ? a : b);
-    for (int r = 0; r < size; r++) {
-      for (int c = 0; c < size; c++) {
-        if (!board.containsKey(BoardPosition(minR + r, minC + c))) return false;
-      }
-    }
-    return true;
-  }
-
-  void _nextTurn() {
-    _currentPlayerIndex = (_currentPlayerIndex + 1) % players.length;
-
-    // Check if current player can make any move
-    bool canMakeMove = false;
-    for (final tile in currentPlayer.hand) {
-      CarpetTile rotatedTile = tile;
-      for (int r = 0; r < 4; r++) {
-        if (getValidPositions(rotatedTile).isNotEmpty) {
-          canMakeMove = true;
-          break;
-        }
-        rotatedTile = rotatedTile.rotateClockwise();
-      }
-      if (canMakeMove) break;
-    }
-
-    if (!canMakeMove) {
-      _message = "${currentPlayer.name} cannot play - skipping turn";
-      _nextTurn();
-    }
   }
 
   /// Undo the last placement.
@@ -900,22 +670,26 @@ class GameState extends ChangeNotifier {
     _history.clear();
     _minRow = _maxRow = _minCol = _maxCol = 0;
 
-    // Reset geometric shapes tracking
-    _completedShapeTypes.clear();
-    _detectedShapes = [];
-
     score.reset();
     for (final ps in playerScores) {
       ps.reset();
     }
 
     _nextTileId = 0;
-    _tilePool.clear();
 
-    // Deal new tiles based on mode
-    if (mode == GameMode.geometricShapes) {
-      _targetGridSize = 3; // Use 3x3 grid
-      // Give all 36 build tiles for geometric shapes
+    // Mode-specific restart
+    if (mode == GameMode.regularFlow) {
+      _currentLevel = 1;
+      _availablePieces = CarpetTile.getBuildTiles()
+          .map((t) => t.copyWithId('tile_${_nextTileId++}'))
+          .toList();
+      _initLevel(1);
+    } else if (mode == GameMode.shapeFlow) {
+      _completedShapeTypes.clear();
+      _detectedShapes = [];
+      _shapeFlowLevel = 1;
+
+      // Reset tiles
       for (final player in players) {
         player.hand.clear();
       }
@@ -923,23 +697,21 @@ class GameState extends ChangeNotifier {
       for (final tile in buildTiles) {
         players[0].addTile(tile.copyWithId('tile_${_nextTileId++}'));
       }
-      _message = ShapeDetector.getNextShapeHint(_completedShapeTypes);
-    } else {
-      final tilesPerPlayer = mode == GameMode.colorDominoes ? 6 : 8;
-      for (final player in players) {
-        player.hand.clear();
-        for (int i = 0; i < tilesPerPlayer; i++) {
-          player.addTile(CarpetTile.generateRandom('tile_${_nextTileId++}'));
-        }
-      }
+
+      _targetGridSize = 2;
+      _selectNextTargetShape();
+      _updatePositions();
     }
 
-    if (mode != GameMode.colorDominoes) {
-      _refillTilePool();
-    }
-
-    _updatePositions();
     notifyListeners();
+  }
+
+  /// Skip to a specific level (for testing/debugging).
+  void skipToLevel(int level) {
+    if (mode != GameMode.regularFlow) return;
+    if (level < 1 || level > totalRegularFlowLevels) return;
+
+    _initLevel(level);
   }
 }
 

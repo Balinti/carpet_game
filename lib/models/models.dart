@@ -7,3 +7,4 @@ export 'game_mode.dart';
 export 'score_system.dart';
 export 'challenge.dart';
 export 'progression.dart';
+export 'level_config.dart';
