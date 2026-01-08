@@ -5,15 +5,13 @@ import '../models/models.dart';
 import '../widgets/game_board.dart';
 import '../widgets/player_hand.dart';
 
-/// Main game screen supporting all game modes.
+/// Main game screen supporting Regular Flow and Shape Flow modes.
 class GameScreen extends StatefulWidget {
   final GameMode mode;
-  final int playerCount;
 
   const GameScreen({
     super.key,
     required this.mode,
-    this.playerCount = 2,
   });
 
   @override
@@ -38,35 +36,11 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   void _initGameState() {
     switch (widget.mode) {
-      case GameMode.colorDominoes:
-        _gameState = GameState.newColorDominoes(widget.playerCount);
+      case GameMode.regularFlow:
+        _gameState = GameState.newRegularFlow();
         break;
-      case GameMode.freePlay:
-        _gameState = GameState.newFreePlay(playerCount: widget.playerCount);
-        break;
-      case GameMode.guidedLearning:
-        _gameState = GameState.newGuidedLearning(playerCount: widget.playerCount);
-        break;
-      case GameMode.cooperative:
-        _gameState = GameState.newCooperative(widget.playerCount);
-        break;
-      case GameMode.starterPuzzle:
-        _gameState = GameState.newFreePlay(playerCount: 1);
-        break;
-      case GameMode.square2x2:
-        _gameState = GameState.newSquare2x2();
-        break;
-      case GameMode.square3x3:
-        _gameState = GameState.newSquare3x3();
-        break;
-      case GameMode.square4x4:
-        _gameState = GameState.newSquare4x4();
-        break;
-      case GameMode.squareProgression:
-        _gameState = GameState.newSquareProgression();
-        break;
-      case GameMode.geometricShapes:
-        _gameState = GameState.newGeometricShapes();
+      case GameMode.shapeFlow:
+        _gameState = GameState.newShapeFlow();
         break;
     }
   }
@@ -124,32 +98,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.undo();
   }
 
-  void _drawTile() {
-    _gameState.drawTile();
-  }
-
   String _getModeTitle(AppLocalizations l10n) {
     switch (widget.mode) {
-      case GameMode.colorDominoes:
-        return l10n.colorDominoes;
-      case GameMode.freePlay:
-        return l10n.freePlay;
-      case GameMode.guidedLearning:
-        return l10n.learningMode;
-      case GameMode.cooperative:
-        return l10n.buildTogether;
-      case GameMode.starterPuzzle:
-        return l10n.starterPuzzle;
-      case GameMode.square2x2:
-        return '2×2 Square';
-      case GameMode.square3x3:
-        return '3×3 Square';
-      case GameMode.square4x4:
-        return '4×4 Square';
-      case GameMode.squareProgression:
-        return 'Progression';
-      case GameMode.geometricShapes:
-        return 'Geometric Shapes';
+      case GameMode.regularFlow:
+        return 'Level ${_gameState.currentLevel}';
+      case GameMode.shapeFlow:
+        return 'Shape Flow (${_gameState.completedShapeTypes.length}/7)';
     }
   }
 
@@ -159,7 +113,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('${_getModeTitle(l10n)} - ${l10n.rules}'),
+        title: Text('${widget.mode.displayName} - ${l10n.rules}'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,103 +133,29 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
 
   List<Widget> _getRulesContent(AppLocalizations l10n) {
     switch (widget.mode) {
-      case GameMode.colorDominoes:
+      case GameMode.regularFlow:
         return [
-          Text(l10n.howToPlay, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Regular Flow', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(l10n.rule1Tiles),
+          const Text('• Complete 12 levels of increasing difficulty'),
           const SizedBox(height: 4),
-          Text(l10n.rule2Turns),
+          const Text('• Fill the grid with tiles'),
           const SizedBox(height: 4),
-          Text(l10n.rule3Match),
-          const SizedBox(height: 4),
-          Text(l10n.rule4Win),
-          const SizedBox(height: 16),
-          Text(l10n.specialRules, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(l10n.solidTileExtra),
+          const Text('• Try to match all edge colors!'),
+          const SizedBox(height: 12),
+          const Text('Level Progression:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('• Levels 1-3: 2×2 (same 36 pieces)'),
+          const Text('• Levels 4-5: 3×3 (reset, then continue)'),
+          const Text('• Levels 6-8: 3×3 (reset, use 3 times)'),
+          const Text('• Levels 9-10: 4×4 (reset, then continue)'),
+          const Text('• Level 11: 5×5'),
+          const Text('• Level 12: 6×6 (all 36 pieces!)'),
         ];
-      case GameMode.freePlay:
+      case GameMode.shapeFlow:
         return [
-          Text(l10n.freePlayMode, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Shape Flow Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(l10n.noRulesPlace),
-          const SizedBox(height: 4),
-          Text(l10n.createPatterns),
-          const SizedBox(height: 4),
-          Text(l10n.earnPointsMatching),
-          const SizedBox(height: 4),
-          Text(l10n.drawMoreTiles),
-          const SizedBox(height: 4),
-          Text(l10n.useUndoExperiment),
-        ];
-      case GameMode.guidedLearning:
-        return [
-          Text(l10n.learningModeTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(l10n.placeAnywhere),
-          const SizedBox(height: 4),
-          Text(l10n.greenEdgesMatch),
-          const SizedBox(height: 4),
-          Text(l10n.orangeEdgesDont),
-          const SizedBox(height: 4),
-          Text(l10n.earnMoreMatching),
-          const SizedBox(height: 4),
-          Text(l10n.learnNoPressure),
-        ];
-      case GameMode.cooperative:
-        return [
-          Text(l10n.buildTogetherTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(l10n.workAsTeam),
-          const SizedBox(height: 4),
-          Text(l10n.takeTurnsPlacing),
-          const SizedBox(height: 4),
-          Text(l10n.tilesMustMatch),
-          const SizedBox(height: 4),
-          Text(l10n.goalBuild20),
-          const SizedBox(height: 4),
-          Text(l10n.everyoneShares),
-        ];
-      case GameMode.starterPuzzle:
-        return [
-          Text(l10n.starterPuzzleRules, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(l10n.rule1Place9),
-          const SizedBox(height: 4),
-          Text(l10n.rule2MatchColors),
-          const SizedBox(height: 4),
-          Text(l10n.rule3Rotate),
-          const SizedBox(height: 4),
-          Text(l10n.rule4Timer),
-        ];
-      case GameMode.square2x2:
-      case GameMode.square3x3:
-      case GameMode.square4x4:
-        return [
-          const Text('Square Building', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text('• Place tiles to form a complete square'),
-          const SizedBox(height: 4),
-          const Text('• Tiles must be next to each other'),
-          const SizedBox(height: 4),
-          const Text('• Complete the square to win!'),
-        ];
-      case GameMode.squareProgression:
-        return [
-          const Text('Progression Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text('• Build a 2×2 square first'),
-          const SizedBox(height: 4),
-          const Text('• Then build a 3×3 square'),
-          const SizedBox(height: 4),
-          const Text('• Finally build a 4×4 square to win!'),
-        ];
-      case GameMode.geometricShapes:
-        return [
-          const Text('Geometric Shapes Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text('Build 7 shapes in a 3×3 grid by matching edge colors:'),
+          const Text('Build 7 shapes AND fill the entire grid:'),
           const SizedBox(height: 8),
           const Text('Diamonds:', style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 2 tiles with matching seam'),
@@ -292,8 +172,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           const Text('Arrows:', style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• 3+ tiles forming a pointed shape'),
           const SizedBox(height: 8),
-          const Text('Board resets after each shape!', style: TextStyle(fontStyle: FontStyle.italic)),
-          const Text('Complete all 7 to win!', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Small shapes use 2×2 grid, large shapes use 3×3!',
+              style: TextStyle(fontStyle: FontStyle.italic)),
         ];
     }
   }
@@ -307,19 +187,12 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         title: Text(_getModeTitle(l10n)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          // Undo button (non-competitive modes)
-          if (widget.mode != GameMode.colorDominoes && _gameState.canUndo)
+          // Undo button
+          if (_gameState.canUndo)
             IconButton(
               icon: const Icon(Icons.undo),
               onPressed: _undo,
               tooltip: l10n.undo,
-            ),
-          // Draw tile button (non-competitive modes)
-          if (widget.mode != GameMode.colorDominoes)
-            IconButton(
-              icon: const Icon(Icons.add_box_outlined),
-              onPressed: _drawTile,
-              tooltip: l10n.drawTile,
             ),
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -337,8 +210,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         children: [
           Column(
             children: [
-              // Score bar
-              _buildScoreBar(l10n),
+              // Info bar
+              _buildInfoBar(l10n),
 
               // Message bar
               if (_gameState.message != null) _buildMessageBar(),
@@ -363,37 +236,17 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               // Divider
               const Divider(height: 1),
 
-              // Player hands
+              // Player hand
               Expanded(
                 flex: 2,
                 child: Container(
                   color: Theme.of(context).colorScheme.surfaceContainerLow,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(12),
-                    child: Column(
-                      children: [
-                        PlayerHand(
-                          player: _gameState.currentPlayer,
-                          isCurrentPlayer: true,
-                          onTileTap: _rotateHandTile,
-                        ),
-                        if (_gameState.players.length > 1) ...[
-                          const SizedBox(height: 12),
-                          ...List.generate(_gameState.players.length, (index) {
-                            if (index == _gameState.currentPlayerIndex) {
-                              return const SizedBox.shrink();
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: PlayerHand(
-                                player: _gameState.players[index],
-                                isCurrentPlayer: false,
-                                tileSize: 50,
-                              ),
-                            );
-                          }),
-                        ],
-                      ],
+                    child: PlayerHand(
+                      player: _gameState.currentPlayer,
+                      isCurrentPlayer: true,
+                      onTileTap: _rotateHandTile,
                     ),
                   ),
                 ),
@@ -417,7 +270,7 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildScoreBar(AppLocalizations l10n) {
+  Widget _buildInfoBar(AppLocalizations l10n) {
     final score = _gameState.currentScore;
 
     return Container(
@@ -426,51 +279,72 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Stars
-          Row(
-            children: [
-              ...List.generate(
-                score.stars.clamp(0, 5),
-                (i) => const Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(Icons.star, color: Colors.amber, size: 24),
-                ),
+          // Mode-specific info
+          if (widget.mode == GameMode.regularFlow) ...[
+            // Level info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
               ),
-              if (score.stars == 0)
-                Icon(Icons.star_border,
-                    color: Colors.grey.shade400, size: 24),
-            ],
-          ),
-          // Points
-          Row(
-            children: [
-              Text(
-                '${score.points}',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              child: Text(
+                'Level ${_gameState.currentLevel}/12',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
               ),
-              const SizedBox(width: 4),
-              Text(
-                l10n.points,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
+            ),
+            // Grid size
+            Text(
+              '${_gameState.targetGridSize}×${_gameState.targetGridSize}',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            // Pieces remaining
+            Row(
+              children: [
+                const Icon(Icons.inventory_2_outlined, size: 18),
+                const SizedBox(width: 4),
+                Text(
+                  '${_gameState.currentPlayer.hand.length}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ] else ...[
+            // Shape Flow info
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${_gameState.completedShapeTypes.length}/7 Shapes',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onTertiaryContainer,
                     ),
               ),
-            ],
-          ),
-          // Tiles placed
-          Row(
-            children: [
-              const Icon(Icons.grid_view, size: 20),
-              const SizedBox(width: 4),
+            ),
+            // Current target
+            if (_gameState.currentTargetShape != null)
               Text(
-                '${score.tilesPlaced}',
-                style: Theme.of(context).textTheme.titleMedium,
+                _gameState.currentTargetShape!.displayName,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                    ),
               ),
-            ],
-          ),
+            // Grid size
+            Text(
+              '${_gameState.targetGridSize}×${_gameState.targetGridSize}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
         ],
       ),
     );

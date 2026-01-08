@@ -3,7 +3,6 @@ import '../l10n/l10n.dart';
 import '../main.dart';
 import '../models/game_mode.dart';
 import 'game_screen.dart';
-import 'starter_puzzle_screen.dart';
 
 /// Home screen with game mode selection.
 class HomeScreen extends StatelessWidget {
@@ -66,54 +65,39 @@ class HomeScreen extends StatelessWidget {
                                     .withOpacity(0.8),
                               ),
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 48),
 
-                        // Square Building modes - ONLY these 5 modes
+                        // Game modes section
                         _SectionHeader(
-                          title: 'Square Building',
-                          icon: Icons.crop_square,
+                          title: 'Choose Your Mode',
+                          icon: Icons.play_circle_outline,
                           color: Colors.deepPurple,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 20),
+
+                        // Regular Flow
                         _GameModeCard(
-                          title: '2×2 Square',
-                          subtitle: 'Build a 2×2 square!',
-                          icon: Icons.grid_3x3,
-                          iconColor: Colors.purple,
-                          onTap: () => _startGame(context, GameMode.square2x2, 1),
-                        ),
-                        const SizedBox(height: 12),
-                        _GameModeCard(
-                          title: '3×3 Square',
-                          subtitle: 'Build a 3×3 square!',
-                          icon: Icons.grid_4x4,
-                          iconColor: Colors.deepPurple,
-                          onTap: () => _startGame(context, GameMode.square3x3, 1),
-                        ),
-                        const SizedBox(height: 12),
-                        _GameModeCard(
-                          title: '4×4 Square',
-                          subtitle: 'Build a 4×4 square!',
-                          icon: Icons.grid_on,
-                          iconColor: Colors.indigo,
-                          onTap: () => _startGame(context, GameMode.square4x4, 1),
-                        ),
-                        const SizedBox(height: 12),
-                        _GameModeCard(
-                          title: 'Progression',
-                          subtitle: '2×2 → 3×3 → 4×4 in sequence!',
+                          title: 'Regular Flow',
+                          subtitle: '12 levels of increasing challenge!\n2×2 → 3×3 → 4×4 → 5×5 → 6×6',
                           icon: Icons.trending_up,
                           iconColor: Colors.blue,
-                          onTap: () => _startGame(context, GameMode.squareProgression, 1),
+                          onTap: () => _startGame(context, GameMode.regularFlow),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
+
+                        // Shape Flow
                         _GameModeCard(
-                          title: 'Geometric Shapes',
-                          subtitle: 'Build squares, rectangles, and more!',
+                          title: 'Shape Flow',
+                          subtitle: 'Build 7 shapes while completing the grid!\nDiamonds, triangles, rectangles & arrows',
                           icon: Icons.category,
                           iconColor: Colors.teal,
-                          onTap: () => _startGame(context, GameMode.geometricShapes, 1),
+                          onTap: () => _startGame(context, GameMode.shapeFlow),
                         ),
+
+                        const SizedBox(height: 32),
+
+                        // Level guide
+                        _buildLevelGuide(context),
                       ],
                     ),
                   ),
@@ -126,61 +110,83 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  void _startGame(BuildContext context, GameMode mode, int playerCount) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => GameScreen(
-          mode: mode,
-          playerCount: playerCount,
-        ),
+  Widget _buildLevelGuide(BuildContext context) {
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 20, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Regular Flow Levels',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _levelRow(context, '1-3', '2×2', 'Same pieces across 3 levels'),
+          _levelRow(context, '4-5', '3×3', 'Reset, then continue'),
+          _levelRow(context, '6-8', '3×3', 'Reset, use pieces 3 times'),
+          _levelRow(context, '9-10', '4×4', 'Reset, then continue'),
+          _levelRow(context, '11', '5×5', 'Full 36 pieces'),
+          _levelRow(context, '12', '6×6', 'Use all 36 pieces!'),
+        ],
       ),
     );
   }
 
-  void _startStarterPuzzle(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const StarterPuzzleScreen(),
-      ),
-    );
-  }
-
-  void _showPlayerCountDialog(BuildContext context, GameMode mode) {
-    final l10n = AppLocalizations.of(context);
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.howManyPlayers),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const CircleAvatar(child: Text('3')),
-              title: Text(l10n.threePlayers),
-              onTap: () {
-                Navigator.pop(dialogContext);
-                _startGame(context, mode, 3);
-              },
+  Widget _levelRow(BuildContext context, String levels, String grid, String note) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 40,
+            child: Text(
+              levels,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
             ),
-            ListTile(
-              leading: const CircleAvatar(child: Text('4')),
-              title: Text(l10n.fourPlayers),
-              onTap: () {
-                Navigator.pop(dialogContext);
-                _startGame(context, mode, 4);
-              },
+          ),
+          SizedBox(
+            width: 40,
+            child: Text(
+              grid,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(l10n.cancel),
+          ),
+          Expanded(
+            child: Text(
+              note,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _startGame(BuildContext context, GameMode mode) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameScreen(mode: mode),
       ),
     );
   }
@@ -293,19 +299,19 @@ class _GameModeCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          width: 320,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  size: 28,
+                  size: 36,
                   color: iconColor,
                 ),
               ),
@@ -320,6 +326,7 @@ class _GameModeCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
