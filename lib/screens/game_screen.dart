@@ -98,6 +98,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     _gameState.undo();
   }
 
+  void _goToPreviousLevel() {
+    _gameState.goToPreviousLevel();
+  }
+
   String _getModeTitle(AppLocalizations l10n) {
     switch (widget.mode) {
       case GameMode.regularFlow:
@@ -187,6 +191,13 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         title: Text(_getModeTitle(l10n)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Previous level button
+          if (_gameState.canGoToPreviousLevel)
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _goToPreviousLevel,
+              tooltip: 'Previous Level',
+            ),
           // Undo button
           if (_gameState.canUndo)
             IconButton(
