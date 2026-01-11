@@ -35,6 +35,11 @@ class GameState extends ChangeNotifier {
   // === Regular Flow specific ===
   int _currentLevel = 1;
   List<CarpetTile> _availablePieces = []; // Pieces available across levels
+  bool _levelCompleted = false;
+
+  // Track pieces used in current level for revert functionality
+  List<CarpetTile> _previousLevelPieces = []; // Snapshot of pieces before current level
+  int _previousLevel = 0; // Previous level number (0 = none)
 
   // === Shape Flow specific ===
   final Set<GeometricShapeType> _completedShapeTypes = {};
@@ -76,6 +81,8 @@ class GameState extends ChangeNotifier {
   // Regular Flow getters
   int get currentLevel => _currentLevel;
   int get availablePiecesCount => _availablePieces.length;
+  bool get levelCompleted => _levelCompleted;
+  bool get canGoToPreviousLevel => _previousLevel > 0 && mode == GameMode.regularFlow;
 
   // Shape Flow getters
   Set<GeometricShapeType> get completedShapeTypes => _completedShapeTypes;
@@ -125,8 +132,15 @@ class GameState extends ChangeNotifier {
   }
 
   /// Initialize a specific level for Regular Flow.
-  void _initLevel(int level) {
+  void _initLevel(int level, {bool savePreviousState = true}) {
+    // Save current state before moving to new level (for revert functionality)
+    if (savePreviousState && _currentLevel > 0 && level > _currentLevel) {
+      _previousLevel = _currentLevel;
+      _previousLevelPieces = List<CarpetTile>.from(_availablePieces);
+    }
+
     _currentLevel = level;
+    _levelCompleted = false;
     final config = getLevelConfig(level);
     _targetGridSize = config.gridSize;
 
@@ -135,6 +149,9 @@ class GameState extends ChangeNotifier {
       _availablePieces = CarpetTile.getBuildTiles()
           .map((t) => t.copyWithId('tile_${_nextTileId++}'))
           .toList();
+      // When pieces are reset, we can't go back to previous level
+      _previousLevel = 0;
+      _previousLevelPieces = [];
     }
 
     // Clear board
@@ -169,6 +186,27 @@ class GameState extends ChangeNotifier {
     _availablePieces.removeWhere((t) => usedPieceIds.contains(t.id));
 
     _initLevel(_currentLevel + 1);
+  }
+
+  /// Go back to the previous level to change pieces.
+  /// This restores the pieces that were available before the current level.
+  void goToPreviousLevel() {
+    if (!canGoToPreviousLevel) return;
+
+    // Restore the pieces from before the current level
+    _availablePieces = List<CarpetTile>.from(_previousLevelPieces);
+
+    // Go back to previous level
+    final targetLevel = _previousLevel;
+
+    // Clear previous state (can't go back further)
+    _previousLevel = 0;
+    _previousLevelPieces = [];
+
+    // Initialize the previous level with restored pieces
+    _initLevel(targetLevel, savePreviousState: false);
+    _message = 'Back to Level $targetLevel. Choose different pieces!';
+    notifyListeners();
   }
 
   /// Select the next target shape for Shape Flow.
@@ -526,19 +564,24 @@ class GameState extends ChangeNotifier {
     final tilesNeeded = target - tilesPlaced;
 
     if (tilesNeeded <= 0) {
-      // Level complete!
+      // Grid is full - check if all edges match
       final mismatches = _countMismatches();
       if (mismatches == 0) {
+        // Level complete! Perfect match - advance to next level
         _message = 'Level $_currentLevel complete! Perfect match!';
-      } else {
-        _message = 'Level $_currentLevel complete! $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
-      }
+        _levelCompleted = true;
 
-      // Advance to next level after a short delay
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        _advanceToNextLevel();
-      });
+        // Advance to next level after a short delay
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          _advanceToNextLevel();
+        });
+      } else {
+        // Grid is full but has mismatches - cannot advance!
+        _message = 'Grid full but $mismatches mismatch${mismatches == 1 ? '' : 'es'}! Fix to continue.';
+        _levelCompleted = false;
+      }
     } else {
+      _levelCompleted = false;
       final mismatches = _countMismatches();
       if (mismatches > 0) {
         _message = '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
@@ -680,10 +723,13 @@ class GameState extends ChangeNotifier {
     // Mode-specific restart
     if (mode == GameMode.regularFlow) {
       _currentLevel = 1;
+      _levelCompleted = false;
+      _previousLevel = 0;
+      _previousLevelPieces = [];
       _availablePieces = CarpetTile.getBuildTiles()
           .map((t) => t.copyWithId('tile_${_nextTileId++}'))
           .toList();
-      _initLevel(1);
+      _initLevel(1, savePreviousState: false);
     } else if (mode == GameMode.shapeFlow) {
       _completedShapeTypes.clear();
       _detectedShapes = [];
@@ -711,7 +757,10 @@ class GameState extends ChangeNotifier {
     if (mode != GameMode.regularFlow) return;
     if (level < 1 || level > totalRegularFlowLevels) return;
 
-    _initLevel(level);
+    // Clear previous level tracking when skipping
+    _previousLevel = 0;
+    _previousLevelPieces = [];
+    _initLevel(level, savePreviousState: false);
   }
 }
 
