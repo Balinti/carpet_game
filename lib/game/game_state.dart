@@ -538,7 +538,31 @@ class GameState extends ChangeNotifier {
         } else {
           _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
         }
+      } else {
+        // Grid is full - check if level can now be completed (after fixing mismatches)
+        _checkLevelCompletion();
       }
+    }
+  }
+
+  /// Check if the current level is complete (grid full with 0 mismatches).
+  void _checkLevelCompletion() {
+    if (mode != GameMode.regularFlow) return;
+    if (_levelCompleted) return; // Already completed, don't re-trigger
+
+    final mismatches = _countMismatches();
+    if (mismatches == 0) {
+      // Level complete! Perfect match - advance to next level
+      _message = 'Level $_currentLevel complete! Perfect match!';
+      _levelCompleted = true;
+
+      // Advance to next level after a short delay
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        _advanceToNextLevel();
+      });
+    } else {
+      // Still has mismatches
+      _message = 'Grid full but $mismatches mismatch${mismatches == 1 ? '' : 'es'}! Fix to continue.';
     }
   }
 
@@ -564,22 +588,8 @@ class GameState extends ChangeNotifier {
     final tilesNeeded = target - tilesPlaced;
 
     if (tilesNeeded <= 0) {
-      // Grid is full - check if all edges match
-      final mismatches = _countMismatches();
-      if (mismatches == 0) {
-        // Level complete! Perfect match - advance to next level
-        _message = 'Level $_currentLevel complete! Perfect match!';
-        _levelCompleted = true;
-
-        // Advance to next level after a short delay
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          _advanceToNextLevel();
-        });
-      } else {
-        // Grid is full but has mismatches - cannot advance!
-        _message = 'Grid full but $mismatches mismatch${mismatches == 1 ? '' : 'es'}! Fix to continue.';
-        _levelCompleted = false;
-      }
+      // Grid is full - check if level is complete
+      _checkLevelCompletion();
     } else {
       _levelCompleted = false;
       final mismatches = _countMismatches();
