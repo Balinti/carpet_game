@@ -877,11 +877,18 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         break;
     }
 
+    // Constrain the row width so exactly 9 tiles fit per row.
+    const double spacing = 12;
+    final double rowWidth = 9 * tileSize + 8 * spacing + 1;
+
     return SingleChildScrollView(
-      child: Center(
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
+      scrollDirection: Axis.horizontal,
+      child: SingleChildScrollView(
+        child: SizedBox(
+          width: rowWidth,
+          child: Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
           alignment: WrapAlignment.center,
           children: List.generate(_availableTiles.length, (index) {
           // Get fresh reference to tile at this index
@@ -986,6 +993,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
             ),
           );
         }).toList(),
+          ),
         ),
       ),
     );
