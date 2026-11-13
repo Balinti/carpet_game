@@ -231,7 +231,16 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
               Expanded(
                 flex: 3,
                 child: Container(
-                  color: Theme.of(context).colorScheme.surface,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).colorScheme.primaryContainer,
+                        Theme.of(context).colorScheme.secondaryContainer,
+                      ],
+                    ),
+                  ),
                   child: GameBoard(
                     gameState: _gameState,
                     onPositionTap: _placeTile,

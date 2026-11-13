@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/carpet_tile.dart';
 import '../models/score_system.dart';
@@ -25,14 +24,11 @@ class TilePainter extends CustomPainter {
     final bottomLeft = Offset(0, size.height);
     final bottomRight = Offset(size.width, size.height);
 
-    // Draw the four triangular sections with soft shading for a woven look
+    // Draw the four triangular sections
     _drawTriangle(canvas, [topLeft, topRight, center], tile.top.toColor());
     _drawTriangle(canvas, [topRight, bottomRight, center], tile.right.toColor());
     _drawTriangle(canvas, [bottomRight, bottomLeft, center], tile.bottom.toColor());
     _drawTriangle(canvas, [bottomLeft, topLeft, center], tile.left.toColor());
-
-    // Decorative center diamond ornament to give a carpet-like motif
-    _drawCenterDiamond(canvas, size, center);
 
     // Draw edge match feedback if provided
     if (edgeStatus != null) {
@@ -143,55 +139,11 @@ class TilePainter extends CustomPainter {
       ..lineTo(points[2].dx, points[2].dy)
       ..close();
 
-    // Shade from a lighter outer edge toward a slightly darker center,
-    // giving each section a subtle plush, hand-woven appearance.
-    final hsl = HSLColor.fromColor(color);
-    final lighter = hsl
-        .withLightness((hsl.lightness + 0.08).clamp(0.0, 1.0))
-        .toColor();
-    final darker = hsl
-        .withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0))
-        .toColor();
-
-    final outerMid = Offset(
-      (points[0].dx + points[1].dx) / 2,
-      (points[0].dy + points[1].dy) / 2,
-    );
-
     final paint = Paint()
-      ..shader = ui.Gradient.linear(
-        outerMid,
-        points[2], // center of the tile
-        [lighter, darker],
-      )
+      ..color = color
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(path, paint);
-  }
-
-  /// Draws a small diamond motif in the center of the tile.
-  void _drawCenterDiamond(Canvas canvas, Size size, Offset center) {
-    final r = size.shortestSide * 0.16;
-    final diamond = Path()
-      ..moveTo(center.dx, center.dy - r)
-      ..lineTo(center.dx + r, center.dy)
-      ..lineTo(center.dx, center.dy + r)
-      ..lineTo(center.dx - r, center.dy)
-      ..close();
-
-    canvas.drawPath(
-      diamond,
-      Paint()
-        ..color = Colors.white.withOpacity(0.22)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawPath(
-      diamond,
-      Paint()
-        ..color = Colors.black.withOpacity(0.35)
-        ..strokeWidth = 1.2
-        ..style = PaintingStyle.stroke,
-    );
   }
 
   @override
