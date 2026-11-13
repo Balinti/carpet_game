@@ -74,7 +74,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
         builder: (context, child) {
           return Directionality(
             textDirection: _localeProvider.textDirection,
-            child: child!,
+            child: _RotatePhoneGate(child: child!),
           );
         },
         home: HomeScreen(key: ValueKey(_localeProvider.language)),
@@ -103,5 +103,53 @@ class LocaleProviderScope extends InheritedWidget {
     // Always notify - the parent setState already triggered a rebuild,
     // and we need dependents to update with the new language
     return true;
+  }
+}
+
+/// On phones held upright, covers the game with a "turn your phone sideways"
+/// message. Browsers ignore orientation locks, so this is the web fallback.
+/// The game stays mounted underneath, so no progress is lost.
+class _RotatePhoneGate extends StatelessWidget {
+  final Widget child;
+
+  const _RotatePhoneGate({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isPhonePortrait =
+        size.height > size.width && size.shortestSide < 600;
+    final colors = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        child,
+        if (isPhonePortrait)
+          Positioned.fill(
+            child: Material(
+              color: colors.surface,
+              child: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.screen_rotation,
+                            size: 96, color: colors.primary),
+                        const SizedBox(height: 24),
+                        Text(
+                          AppLocalizations.of(context).rotatePhone,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
