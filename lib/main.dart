@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
-import 'screens/home_screen.dart';
+import 'screens/registration_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +77,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
             child: _RotatePhoneGate(child: child!),
           );
         },
-        home: HomeScreen(key: ValueKey(_localeProvider.language)),
+        home: RegistrationScreen(key: ValueKey(_localeProvider.language)),
       ),
     );
   }
