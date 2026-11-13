@@ -38,6 +38,7 @@ class AppLocalizations {
   // App title and general
   String get appTitle => _t('Carpet Game', 'Juego de Alfombra', 'משחק השטיח');
   String get rotatePhone => _t('Turn your phone sideways to play', 'Gira tu teléfono de lado para jugar', 'סובבו את הטלפון לרוחב כדי לשחק');
+  String get playAnyway => _t('Play anyway', 'Jugar de todos modos', 'לשחק בכל זאת');
   String get appSubtitle => _t('Tile Matching Fun!', '¡Diversión con Azulejos!', '!כיף עם אריחים');
 
   // Section headers

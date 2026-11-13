@@ -109,20 +109,28 @@ class LocaleProviderScope extends InheritedWidget {
 /// On phones held upright, covers the game with a "turn your phone sideways"
 /// message. Browsers ignore orientation locks, so this is the web fallback.
 /// The game stays mounted underneath, so no progress is lost.
-class _RotatePhoneGate extends StatelessWidget {
+class _RotatePhoneGate extends StatefulWidget {
   final Widget child;
 
   const _RotatePhoneGate({required this.child});
 
   @override
+  State<_RotatePhoneGate> createState() => _RotatePhoneGateState();
+}
+
+class _RotatePhoneGateState extends State<_RotatePhoneGate> {
+  // Lets players with rotation lock on (or browsers that don't rotate) get in.
+  bool _dismissed = false;
+
+  @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isPhonePortrait =
-        size.height > size.width && size.shortestSide < 600;
+        !_dismissed && size.height > size.width && size.shortestSide < 600;
     final colors = Theme.of(context).colorScheme;
     return Stack(
       children: [
-        child,
+        widget.child,
         if (isPhonePortrait)
           Positioned.fill(
             child: Material(
@@ -141,6 +149,11 @@ class _RotatePhoneGate extends StatelessWidget {
                           AppLocalizations.of(context).rotatePhone,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 32),
+                        TextButton(
+                          onPressed: () => setState(() => _dismissed = true),
+                          child: Text(AppLocalizations.of(context).playAnyway),
                         ),
                       ],
                     ),
