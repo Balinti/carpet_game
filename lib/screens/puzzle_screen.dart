@@ -877,9 +877,10 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         break;
     }
 
-    // Constrain the row width so exactly 9 tiles fit per row.
+    // Constrain the row width so exactly 12 tiles fit per row.
+    const int tilesPerRow = 12;
     const double spacing = 12;
-    final double rowWidth = 9 * tileSize + 8 * spacing + 1;
+    final double rowWidth = tilesPerRow * tileSize + (tilesPerRow - 1) * spacing + 1;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
