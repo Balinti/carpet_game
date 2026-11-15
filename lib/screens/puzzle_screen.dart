@@ -877,23 +877,53 @@ class _PuzzleScreenState extends State<PuzzleScreen>
         break;
     }
 
-    // Constrain the row width so exactly 12 tiles fit per row.
-    const int tilesPerRow = 12;
     const double spacing = 12;
-    final double rowWidth = tilesPerRow * tileSize + (tilesPerRow - 1) * spacing + 1;
+
+    // Arrange the tiles in rows: the first 2 rows hold 18 tiles each,
+    // the remaining rows hold 12 tiles each.
+    final rowSizes = <int>[];
+    var remaining = _availableTiles.length;
+    for (var i = 0; remaining > 0; i++) {
+      final cap = i < 2 ? 18 : 12;
+      final take = remaining < cap ? remaining : cap;
+      rowSizes.add(take);
+      remaining -= take;
+    }
+
+    var startIndex = 0;
+    final rows = <Widget>[];
+    for (var r = 0; r < rowSizes.length; r++) {
+      final count = rowSizes[r];
+      final rowTiles = <Widget>[];
+      for (var c = 0; c < count; c++) {
+        if (c > 0) rowTiles.add(const SizedBox(width: spacing));
+        rowTiles.add(_buildTileWidget(startIndex + c, tileSize));
+      }
+      startIndex += count;
+      if (r > 0) rows.add(const SizedBox(height: spacing));
+      rows.add(Row(mainAxisSize: MainAxisSize.min, children: rowTiles));
+    }
+
+    // Width of the widest possible row (18 tiles).
+    final double rowWidth = 18 * tileSize + 17 * spacing + 1;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
         child: SizedBox(
           width: rowWidth,
-          child: Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          alignment: WrapAlignment.center,
-          children: List.generate(_availableTiles.length, (index) {
-          // Get fresh reference to tile at this index
-          final tile = _availableTiles[index];
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: rows,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTileWidget(int index, double tileSize) {
+    // Get fresh reference to tile at this index
+    final tile = _availableTiles[index];
           final isSelected = _selectedTile?.id == tile.id;
           // Create a unique key that changes with rotation
           final tileKey = '${tile.id}_${tile.top.index}${tile.right.index}${tile.bottom.index}${tile.left.index}';
@@ -993,10 +1023,5 @@ class _PuzzleScreenState extends State<PuzzleScreen>
               ),
             ),
           );
-        }).toList(),
-          ),
-        ),
-      ),
-    );
   }
 }
