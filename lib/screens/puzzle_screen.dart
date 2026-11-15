@@ -879,13 +879,12 @@ class _PuzzleScreenState extends State<PuzzleScreen>
 
     const double spacing = 12;
 
-    // Arrange the tiles in rows: the first 2 rows hold 18 tiles each,
-    // the remaining rows hold 12 tiles each.
+    // Arrange the tiles in rows of 12 tiles each (three rows for 36 tiles).
+    const int perRow = 12;
     final rowSizes = <int>[];
     var remaining = _availableTiles.length;
-    for (var i = 0; remaining > 0; i++) {
-      final cap = i < 2 ? 18 : 12;
-      final take = remaining < cap ? remaining : cap;
+    while (remaining > 0) {
+      final take = remaining < perRow ? remaining : perRow;
       rowSizes.add(take);
       remaining -= take;
     }
@@ -904,8 +903,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       rows.add(Row(mainAxisSize: MainAxisSize.min, children: rowTiles));
     }
 
-    // Width of the widest possible row (18 tiles).
-    final double rowWidth = 18 * tileSize + 17 * spacing + 1;
+    // Width of a full row (12 tiles).
+    final double rowWidth = perRow * tileSize + (perRow - 1) * spacing + 1;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
