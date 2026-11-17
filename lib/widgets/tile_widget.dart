@@ -12,6 +12,10 @@ class TileWidget extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDoubleTap;
 
+  /// Drag of this piece started / ended without being accepted.
+  final VoidCallback? onDragStarted;
+  final VoidCallback? onDragCanceled;
+
   const TileWidget({
     super.key,
     required this.tile,
@@ -21,6 +25,8 @@ class TileWidget extends StatelessWidget {
     this.isDraggable = false,
     this.onTap,
     this.onDoubleTap,
+    this.onDragStarted,
+    this.onDragCanceled,
   });
 
   @override
@@ -41,6 +47,9 @@ class TileWidget extends StatelessWidget {
     if (isDraggable) {
       return Draggable<CarpetTile>(
         data: tile,
+        onDragStarted: onDragStarted,
+        onDraggableCanceled:
+            onDragCanceled == null ? null : (_, __) => onDragCanceled!(),
         feedback: Material(
           color: Colors.transparent,
           elevation: 8,

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../assessment/assessment_recorder.dart';
 import '../models/models.dart';
 import 'shape_detector.dart';
 
@@ -34,6 +35,37 @@ class GameState extends ChangeNotifier {
 
   // === Regular Flow specific ===
   int _currentLevel = 1;
+
+  /// Optional metrics recorder (assessment mode). Null in normal play.
+  AssessmentRecorder? recorder;
+
+  bool _recordedFull = false;
+  bool _recordedSolved = false;
+
+  /// Tell the recorder about grid-full / solved transitions.
+  void _recordBoardState() {
+    final r = recorder;
+    if (r == null) return;
+    if (isGridFull && !_recordedFull) {
+      _recordedFull = true;
+      r.onGridFull(_countMismatches());
+    }
+    if (isSolved && !_recordedSolved) {
+      _recordedSolved = true;
+      r.onSolved();
+    }
+  }
+
+  /// A tray piece started being dragged (for pick-to-place timing).
+  void pickUpTile(CarpetTile tile) => recorder?.onPick(tile.id);
+
+  /// A drag of a tray piece ended without a drop.
+  void dropCancelled(CarpetTile tile) {
+    if (_selectedTile?.id != tile.id) recorder?.onPickCancelled(tile.id);
+  }
+
+  /// The help screen was opened.
+  void recordHelpOpened() => recorder?.onHelpOpened();
 
   /// Id of the placed piece selected on the board (red frame + rotate buttons).
   String? _selectedBoardTileId;
@@ -156,6 +188,8 @@ class GameState extends ChangeNotifier {
   void _initPractice() {
     final size = _practiceGridSize!;
     _targetGridSize = size;
+    _recordedFull = false;
+    _recordedSolved = false;
     _levelCompleted = false;
     _gameOver = false;
     _selectedTile = null;
@@ -314,6 +348,11 @@ class GameState extends ChangeNotifier {
 
   /// Select a tile from the current player's hand.
   void selectTile(CarpetTile? tile) {
+    if (tile != null) {
+      recorder?.onPick(tile.id);
+    } else if (_selectedTile != null) {
+      recorder?.onPickCancelled(_selectedTile!.id);
+    }
     _selectedTile = tile;
     if (tile != null) _selectedBoardTileId = null;
     _message = null;
@@ -331,6 +370,7 @@ class GameState extends ChangeNotifier {
       final rotated = _selectedTile!.rotateClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
+      recorder?.onRotate();
       _updatePositions();
       notifyListeners();
     }
@@ -345,6 +385,7 @@ class GameState extends ChangeNotifier {
       final rotated = _selectedTile!.rotateCounterClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
+      recorder?.onRotate(counterClockwise: true);
       _updatePositions();
       notifyListeners();
     }
@@ -356,6 +397,7 @@ class GameState extends ChangeNotifier {
     if (index >= 0) {
       final rotated = tile.rotateClockwise();
       currentPlayer.hand[index] = rotated;
+      recorder?.onRotate();
       notifyListeners();
     }
   }
@@ -543,6 +585,8 @@ class GameState extends ChangeNotifier {
 
     _selectedTile = null;
     _updatePositions();
+    recorder?.onPlace(tile.id);
+    _recordBoardState();
     notifyListeners();
     return true;
   }
@@ -555,9 +599,11 @@ class GameState extends ChangeNotifier {
     board[position] = counterClockwise
         ? tile.rotateCounterClockwise()
         : tile.rotateClockwise();
+    recorder?.onRotate(counterClockwise: counterClockwise);
 
     // Update message with current status
     _updateStatusMessage();
+    _recordBoardState();
 
     notifyListeners();
   }
@@ -580,8 +626,10 @@ class GameState extends ChangeNotifier {
       board.remove(from);
       board[to] = fromTile;
     }
+    recorder?.onBoardMove();
 
     _updateStatusMessage();
+    _recordBoardState();
     notifyListeners();
   }
 
@@ -590,6 +638,7 @@ class GameState extends ChangeNotifier {
   void returnTileToHand(BoardPosition position) {
     final tile = board.remove(position);
     if (tile == null) return;
+    recorder?.onBackToBuilder();
     currentPlayer.addTile(tile);
     _history.removeWhere((a) => a.tile.id == tile.id);
     _levelCompleted = false;
@@ -616,9 +665,11 @@ class GameState extends ChangeNotifier {
 
     // Clear selection
     _selectedTile = null;
+    recorder?.onPlace(handTile.id, replacement: true);
 
     _updateStatusMessage();
     _updatePositions();
+    _recordBoardState();
     notifyListeners();
   }
 

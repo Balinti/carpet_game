@@ -19,6 +19,10 @@ class PlayerHand extends StatelessWidget {
   /// Called when a piece is dragged from the board back onto the tray.
   final void Function(BoardPosition)? onReturnFromBoard;
 
+  /// A tray piece started being dragged / was dropped nowhere.
+  final void Function(CarpetTile)? onTileDragStart;
+  final void Function(CarpetTile)? onTileDragCancel;
+
   const PlayerHand({
     super.key,
     required this.player,
@@ -29,6 +33,8 @@ class PlayerHand extends StatelessWidget {
     this.onRotateLeft,
     this.onRotateRight,
     this.onReturnFromBoard,
+    this.onTileDragStart,
+    this.onTileDragCancel,
   });
 
   @override
@@ -119,6 +125,10 @@ class PlayerHand extends StatelessWidget {
       isSelected: selected,
       isDraggable: true,
       onTap: () => onTileTap?.call(tile),
+      onDragStarted:
+          onTileDragStart == null ? null : () => onTileDragStart!(tile),
+      onDragCanceled:
+          onTileDragCancel == null ? null : () => onTileDragCancel!(tile),
     );
     return widget;
   }

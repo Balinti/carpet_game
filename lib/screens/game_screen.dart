@@ -14,10 +14,24 @@ class GameScreen extends StatefulWidget {
   /// When set, play a single practice grid of this size (1-6).
   final int? practiceGridSize;
 
+  /// Externally owned game (e.g. an assessment round). When set, the screen
+  /// plays this state instead of creating its own, and does not dispose it.
+  /// Swapping in a new instance (next round) is supported.
+  final GameState? gameState;
+
+  /// Called once each time the grid becomes solved (after the chime starts).
+  final VoidCallback? onSolved;
+
+  /// Show the restart icon (hidden in assessment so rounds can't be reset).
+  final bool showRestart;
+
   const GameScreen({
     super.key,
     required this.mode,
     this.practiceGridSize,
+    this.gameState,
+    this.onSolved,
+    this.showRestart = true,
   });
 
   @override
@@ -41,7 +55,23 @@ class _GameScreenState extends State<GameScreen>
     _gameState.addListener(_onGameStateChanged);
   }
 
+  @override
+  void didUpdateWidget(covariant GameScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.gameState != null && widget.gameState != oldWidget.gameState) {
+      _gameState.removeListener(_onGameStateChanged);
+      if (oldWidget.gameState == null) _gameState.dispose();
+      _gameState = widget.gameState!;
+      _wasSolved = _gameState.isSolved;
+      _gameState.addListener(_onGameStateChanged);
+    }
+  }
+
   void _initGameState() {
+    if (widget.gameState != null) {
+      _gameState = widget.gameState!;
+      return;
+    }
     if (widget.practiceGridSize != null) {
       _gameState = GameState.newPractice(widget.practiceGridSize!);
       return;
@@ -59,6 +89,7 @@ class _GameScreenState extends State<GameScreen>
   @override
   void dispose() {
     _gameState.removeListener(_onGameStateChanged);
+    if (widget.gameState == null) _gameState.dispose();
     _celebrationController.dispose();
     super.dispose();
   }
@@ -70,7 +101,10 @@ class _GameScreenState extends State<GameScreen>
 
     // Success: chime + buzz once when the grid becomes full and all-matching.
     final solved = _gameState.isSolved;
-    if (solved && !_wasSolved) playSuccess();
+    if (solved && !_wasSolved) {
+      playSuccess();
+      widget.onSolved?.call();
+    }
     _wasSolved = solved;
 
     // Trigger celebration animation for achievements
@@ -136,6 +170,7 @@ class _GameScreenState extends State<GameScreen>
 
   void _showRulesDialog() {
     final l10n = AppLocalizations.of(context);
+    _gameState.recordHelpOpened();
 
     showDialog(
       context: context,
@@ -250,7 +285,8 @@ class _GameScreenState extends State<GameScreen>
                   if (_gameState.canGoToPreviousLevel)
                     smallIcon(Icons.skip_previous, _goToPreviousLevel),
                   smallIcon(Icons.help_outline, _showRulesDialog),
-                  smallIcon(Icons.refresh, _restartGame),
+                  if (widget.showRestart)
+                    smallIcon(Icons.refresh, _restartGame),
                 ],
               ),
               Expanded(
@@ -280,6 +316,8 @@ class _GameScreenState extends State<GameScreen>
                     onTileTap: _selectHandTile,
                     selectedTileId: _gameState.selectedTile?.id,
                     onReturnFromBoard: _gameState.returnTileToHand,
+                    onTileDragStart: _gameState.pickUpTile,
+                    onTileDragCancel: _gameState.dropCancelled,
                   ),
                 ),
               ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../main.dart';
 import '../models/game_mode.dart';
+import '../widgets/visual_style.dart';
+import 'assessment_screen.dart';
 import 'game_screen.dart';
 
 /// Home screen with game mode selection.
@@ -66,6 +68,10 @@ class HomeScreen extends StatelessWidget {
                               ),
                         ),
                         const SizedBox(height: 32),
+
+                        // Assessment: 2×2, 3×3, 3×3 with metrics.
+                        const _AssessmentButton(),
+                        const SizedBox(height: 16),
 
                         // Quick grids: 2x2 .. 6x6
                         Wrap(
@@ -370,6 +376,63 @@ class _GameModeCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.outline,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Soft 3D style entry button for the assessment.
+class _AssessmentButton extends StatelessWidget {
+  const _AssessmentButton();
+
+  @override
+  Widget build(BuildContext context) {
+    const st = VisualStyle.soft3d;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [st.boardFrame, st.boardBackground[1]],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('assessment_button'),
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AssessmentScreen()),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.assignment_turned_in_outlined,
+                    color: Colors.white, size: 28),
+                SizedBox(width: 10),
+                Text(
+                  'Assessment',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
