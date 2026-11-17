@@ -216,24 +216,20 @@ class _GameScreenState extends State<GameScreen>
             IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: _goToPreviousLevel,
-              tooltip: 'Previous Level',
             ),
           // Undo button
           if (_gameState.canUndo)
             IconButton(
               icon: const Icon(Icons.undo),
               onPressed: _undo,
-              tooltip: l10n.undo,
             ),
           IconButton(
             icon: const Icon(Icons.help_outline),
             onPressed: _showRulesDialog,
-            tooltip: l10n.rules,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _restartGame,
-            tooltip: l10n.newGame,
           ),
         ],
       ),
@@ -309,16 +305,14 @@ class _GameScreenState extends State<GameScreen>
           }),
 
           // Celebration overlay
-          if (_showCelebration) _buildCelebrationOverlay(),
         ],
       ),
 
       // Game over button
       floatingActionButton: _gameState.gameOver
-          ? FloatingActionButton.extended(
+          ? FloatingActionButton(
               onPressed: _restartGame,
-              icon: const Icon(Icons.replay),
-              label: Text(l10n.playAgain),
+              child: const Icon(Icons.replay),
             )
           : null,
     );
