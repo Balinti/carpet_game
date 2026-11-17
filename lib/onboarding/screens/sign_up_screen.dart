@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
 import '../onboarding_strings.dart';
+import 'google_button.dart';
 import '../validators.dart';
 import 'onboarding_ui.dart';
 
@@ -32,11 +33,15 @@ class SignUpScreen extends StatefulWidget {
     super.key,
     required this.onSubmit,
     this.onSignInInstead,
+    this.onGoogle,
     this.completeProfileEmail,
   });
 
   final Future<void> Function(SignUpData data) onSubmit;
   final VoidCallback? onSignInInstead;
+
+  /// Shows "Continue with Google" above the form when set.
+  final Future<void> Function()? onGoogle;
   final String? completeProfileEmail;
 
   @override
@@ -208,6 +213,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ],
                       ),
                       const SizedBox(height: 10),
+                      if (!_profileOnly && widget.onGoogle != null)
+                        GoogleSignInBlock(
+                          onGoogle: widget.onGoogle!,
+                          disabled: _busy,
+                          onError: (c) => setState(() => _error = c),
+                        ),
                       fields,
                       if (_error != null)
                         InlineMessage(s.authError(_error!))

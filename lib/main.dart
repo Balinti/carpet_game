@@ -2,16 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
-import 'screens/home_screen.dart';
 import 'widgets/visual_style.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'app_gate.dart';
+import 'firebase_web_register_stub.dart'
+    if (dart.library.js_interop) 'firebase_web_register_web.dart';
 import 'fullscreen_stub.dart'
     if (dart.library.js_interop) 'fullscreen_web.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ensureFirebaseWebPlugins();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const CarpetGameApp());
 }

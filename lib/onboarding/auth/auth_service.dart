@@ -56,6 +56,10 @@ abstract class AuthService {
   Future<AuthUser> signIn(String email, String password);
 
   Future<void> signOut();
+
+  /// Sign in (or create the account) with Google. Google accounts come
+  /// with a confirmed email, so no verification step is needed.
+  Future<AuthUser> signInWithGoogle();
 }
 
 /// In-memory auth so the flow runs before Firebase exists.
@@ -106,6 +110,17 @@ class FakeAuthService implements AuthService {
     if (password.length < 6) throw const AuthException('weak-password');
     final acc = _FakeAccount('fake-uid-${_nextUid++}', email.trim(), password);
     _accounts[key] = acc;
+    _current = acc;
+    _emit();
+    return acc.toUser();
+  }
+
+  @override
+  Future<AuthUser> signInWithGoogle() async {
+    const email = 'google.user@example.com';
+    final acc = _accounts.putIfAbsent(
+        email, () => _FakeAccount('fake-uid-${_nextUid++}', email, ''));
+    acc.verified = true;
     _current = acc;
     _emit();
     return acc.toUser();

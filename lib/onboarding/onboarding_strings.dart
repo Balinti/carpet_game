@@ -19,6 +19,8 @@ class OnboardingStrings {
   String get password => _t('Password', 'Contraseña', 'סיסמה');
   String get age => _t('Age', 'Edad', 'גיל');
   String get createAccount => _t('Create account', 'Crear cuenta', 'יצירת חשבון');
+  String get continueWithGoogle => _t('Continue with Google', 'Continuar con Google', 'המשך עם Google');
+  String get orUseEmail => _t('or use email', 'o usa tu correo', 'או עם אימייל');
   String get haveAccount => _t('I already have an account', 'Ya tengo una cuenta', 'יש לי כבר חשבון');
   String get kidHint => _t('Under 13? A parent can help fill this in.',
       '¿Menor de 13? Un adulto puede ayudar.', 'מתחת לגיל 13? הורה יכול לעזור למלא.');

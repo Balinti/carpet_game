@@ -14,6 +14,7 @@
 // to localized messages.
 
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'auth_service.dart';
 
@@ -87,4 +88,14 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<void> signOut() => _auth.signOut();
+
+  @override
+  Future<AuthUser> signInWithGoogle() => _wrap(() async {
+        final provider = fb.GoogleAuthProvider()
+          ..setCustomParameters({'prompt': 'select_account'});
+        final cred = kIsWeb
+            ? await _auth.signInWithPopup(provider)
+            : await _auth.signInWithProvider(provider);
+        return _map(cred.user)!;
+      });
 }

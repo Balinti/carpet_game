@@ -144,6 +144,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     await _afterVerified(user.uid);
   }
 
+  Future<void> _onGoogle() async {
+    _profile = null;
+    final user = await _auth.signInWithGoogle();
+    await _afterVerified(user.uid);
+  }
+
   Future<bool> _onCheckVerified() async {
     final ok = await _auth.reloadAndCheckVerified();
     if (ok) {
@@ -186,12 +192,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         return SignUpScreen(
           key: const ValueKey('step_signup'),
           onSubmit: _onSignUp,
+          onGoogle: _onGoogle,
           onSignInInstead: () => _go(OnboardingStep.signIn),
         );
       case OnboardingStep.signIn:
         return SignInScreen(
           key: const ValueKey('step_signin'),
           initialErrorCode: _error,
+          onGoogle: _onGoogle,
           onSubmit: (e, p) {
             _error = null;
             return _onSignIn(e, p);

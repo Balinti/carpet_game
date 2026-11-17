@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
 import '../onboarding_strings.dart';
+import 'google_button.dart';
 import '../validators.dart';
 import 'onboarding_ui.dart';
 
@@ -11,12 +12,16 @@ class SignInScreen extends StatefulWidget {
     super.key,
     required this.onSubmit,
     this.onCreateAccount,
+    this.onGoogle,
     this.initialErrorCode,
   });
 
   /// Throws [AuthException] on failure.
   final Future<void> Function(String email, String password) onSubmit;
   final VoidCallback? onCreateAccount;
+
+  /// Shows "Continue with Google" above the form when set.
+  final Future<void> Function()? onGoogle;
 
   /// Auth error code to show when the screen opens (e.g. a failed resume).
   final String? initialErrorCode;
@@ -106,6 +111,12 @@ class _SignInScreenState extends State<SignInScreen> {
                     children: [
                       OnboardingTitle(s.signInTitle),
                       const SizedBox(height: 12),
+                      if (widget.onGoogle != null)
+                        GoogleSignInBlock(
+                          onGoogle: widget.onGoogle!,
+                          disabled: _busy,
+                          onError: (c) => setState(() => _error = c),
+                        ),
                       wide
                           ? Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
