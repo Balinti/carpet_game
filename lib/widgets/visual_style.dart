@@ -65,11 +65,12 @@ class VisualStyle {
   static const soft3d = VisualStyle(
     id: 1,
     name: 'Soft 3D',
+    // Pure, clearly different colors (Shemer: no gold, no washed tones).
     palette: [
-      Color(0xFFFF4D5E),
-      Color(0xFF2ECC71),
-      Color(0xFF3D8BFF),
-      Color(0xFFFFC233),
+      Color(0xFFF21D1D), // red
+      Color(0xFF12B83A), // green
+      Color(0xFF1463FF), // blue
+      Color(0xFFFFE100), // yellow
     ],
     boardBackground: [Color(0xFF1B1F3B), Color(0xFF2B1F4D), Color(0xFF14172B)],
     trayBackground: Color(0xFF12152A),

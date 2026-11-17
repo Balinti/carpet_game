@@ -132,8 +132,9 @@ class TilePainter extends CustomPainter {
         case 3: // clay: soft, nearly flat
           colors = [Color.lerp(base, Colors.white, 0.12)!, base];
         default: // soft 3D: light edge, richer center
-          colors = [Color.lerp(base, Colors.white, 0.25)!,
-              Color.lerp(base, Colors.black, 0.18)!];
+          // Very light shading so colors stay true.
+          colors = [Color.lerp(base, Colors.white, 0.06)!,
+              Color.lerp(base, Colors.black, 0.06)!];
       }
       canvas.drawPath(
         path,
@@ -149,7 +150,7 @@ class TilePainter extends CustomPainter {
       ..color = switch (st.id) {
         2 => Colors.white.withOpacity(0.55),
         3 => Colors.white.withOpacity(0.85),
-        _ => Colors.black.withOpacity(0.18),
+        _ => Colors.black.withOpacity(0.25),
       };
     canvas.drawLine(tl, br, seam);
     canvas.drawLine(tr, bl, seam);
@@ -163,7 +164,7 @@ class TilePainter extends CustomPainter {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.white.withOpacity(st.id == 2 ? 0.18 : 0.32),
+              Colors.white.withOpacity(st.id == 2 ? 0.18 : 0.10),
               Colors.white.withOpacity(0),
             ],
           ).createShader(rect),
