@@ -79,7 +79,6 @@ class PlayerHand extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (isCurrentPlayer) _buildRotateBar(context),
           if (isCurrentPlayer)
             // Rows of 12 tiles (36 tiles = 3 rows of 12). Tiles shrink so a
             // full row always fits the width.
@@ -100,13 +99,7 @@ class PlayerHand extends StatelessWidget {
                   children: [
                     for (var i = start; i < end; i++) ...[
                       if (i > start) const SizedBox(width: spacing),
-                      TileWidget(
-                        tile: hand[i],
-                        size: size,
-                        isSelected: hand[i].id == selectedTileId,
-                        isDraggable: true,
-                        onTap: () => onTileTap?.call(hand[i]),
-                      ),
+                      _buildHandTile(hand[i], size),
                     ],
                   ],
                 ));
@@ -155,43 +148,48 @@ class PlayerHand extends StatelessWidget {
     );
   }
 
-  /// Selected piece shown large between two rotate buttons.
-  Widget _buildRotateBar(BuildContext context) {
-    CarpetTile? selected;
-    for (final t in player.hand) {
-      if (t.id == selectedTileId) selected = t;
-    }
-    if (selected == null) return const SizedBox.shrink();
-    final colors = Theme.of(context).colorScheme;
-    final style = IconButton.styleFrom(
-      backgroundColor: colors.primary,
-      foregroundColor: colors.onPrimary,
-      minimumSize: const Size(56, 56),
+  /// A tray tile; the selected one gets a red frame and two rotate
+  /// buttons drawn inside the piece (left = counter-clockwise, right = clockwise).
+  Widget _buildHandTile(CarpetTile tile, double size) {
+    final selected = tile.id == selectedTileId;
+    final widget = TileWidget(
+      tile: tile,
+      size: size,
+      isSelected: selected,
+      isDraggable: true,
+      onTap: () => onTileTap?.call(tile),
     );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+    if (!selected) return widget;
+    final btn = size * 0.42;
+    Widget rotate(IconData icon, VoidCallback? onTap) => GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Container(
+            width: btn,
+            height: btn,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 3)],
+            ),
+            child: Icon(icon, size: btn * 0.75, color: Colors.red),
+          ),
+        );
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
         children: [
-          IconButton.filled(
-            onPressed: onRotateLeft,
-            icon: const Icon(Icons.rotate_left, size: 32),
-            tooltip: 'Rotate left',
-            style: style,
+          widget,
+          Positioned(
+            left: size * 0.06,
+            bottom: size * 0.06,
+            child: rotate(Icons.rotate_left, onRotateLeft),
           ),
-          const SizedBox(width: 16),
-          TileWidget(
-            tile: selected,
-            size: 72,
-            isSelected: true,
-            isDraggable: true,
-          ),
-          const SizedBox(width: 16),
-          IconButton.filled(
-            onPressed: onRotateRight,
-            icon: const Icon(Icons.rotate_right, size: 32),
-            tooltip: 'Rotate right',
-            style: style,
+          Positioned(
+            right: size * 0.06,
+            bottom: size * 0.06,
+            child: rotate(Icons.rotate_right, onRotateRight),
           ),
         ],
       ),
