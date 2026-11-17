@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'screens/home_screen.dart';
+import 'widgets/visual_style.dart';
 
 void main() {
   runApp(const CarpetGameApp());
@@ -42,21 +43,28 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
         key: ValueKey(_localeProvider.language),
         title: 'Carpet Game',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6750A4),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6750A4),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        themeMode: ThemeMode.system,
+        theme: VisualStyle.current.isClassic
+            ? ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color(0xFF6750A4),
+                  brightness: Brightness.light,
+                ),
+                useMaterial3: true,
+              )
+            : _styledTheme(Brightness.light),
+        darkTheme: VisualStyle.current.isClassic
+            ? ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: const Color(0xFF6750A4),
+                  brightness: Brightness.dark,
+                ),
+                useMaterial3: true,
+              )
+            : _styledTheme(Brightness.dark),
+        // Modern styles carry their own light/dark look.
+        themeMode: VisualStyle.current.isClassic
+            ? ThemeMode.system
+            : (VisualStyle.current.id == 3 ? ThemeMode.light : ThemeMode.dark),
         locale: _localeProvider.locale,
         supportedLocales: AppLanguage.values.map((l) => l.locale),
         localizationsDelegates: [
@@ -127,4 +135,29 @@ class _RotatePhoneGate extends StatelessWidget {
       ),
     );
   }
+}
+
+/// App-wide theme for the modern looks (app bar, info bar and tray follow it).
+ThemeData _styledTheme(Brightness brightness) {
+  final st = VisualStyle.current;
+  final scheme = ColorScheme.fromSeed(
+    seedColor: st.boardFrame,
+    brightness: brightness,
+  ).copyWith(
+    surface: st.trayBackground,
+    surfaceContainerHighest: st.trayCard,
+    surfaceContainerLow: st.trayBackground,
+    surfaceContainerHigh: st.trayBackground,
+    inversePrimary: st.boardBackground.first,
+    onSurface: st.onTray,
+  );
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: st.trayBackground,
+    appBarTheme: AppBarTheme(
+      backgroundColor: st.boardBackground.first,
+      foregroundColor: st.onTray,
+    ),
+  );
 }

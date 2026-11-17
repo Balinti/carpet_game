@@ -3,6 +3,7 @@ import '../game/game_state.dart';
 import '../l10n/l10n.dart';
 import '../models/models.dart';
 import '../widgets/game_board.dart';
+import '../widgets/visual_style.dart';
 import '../widgets/player_hand.dart';
 
 /// Main game screen supporting Regular Flow and Shape Flow modes.
@@ -245,10 +246,12 @@ class _GameScreenState extends State<GameScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Theme.of(context).colorScheme.primaryContainer,
-                    Theme.of(context).colorScheme.secondaryContainer,
-                  ],
+                  colors: VisualStyle.current.isClassic
+                      ? [
+                          Theme.of(context).colorScheme.primaryContainer,
+                          Theme.of(context).colorScheme.secondaryContainer,
+                        ]
+                      : VisualStyle.current.boardBackground,
                 ),
               ),
               child: GameBoard(
@@ -266,7 +269,9 @@ class _GameScreenState extends State<GameScreen>
               ),
             );
             final handPane = Container(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              color: VisualStyle.current.isClassic
+                  ? Theme.of(context).colorScheme.surfaceContainerLow
+                  : VisualStyle.current.trayBackground,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(12),
                 child: PlayerHand(
@@ -291,14 +296,14 @@ class _GameScreenState extends State<GameScreen>
                     child: Row(
                       children: [
                         Expanded(flex: 3, child: boardPane),
-                        const VerticalDivider(width: 1),
+                        _buildControlStrip(vertical: true),
                         Expanded(flex: 2, child: handPane),
                       ],
                     ),
                   )
                 else ...[
                   Expanded(flex: 3, child: boardPane),
-                  const Divider(height: 1),
+                  _buildControlStrip(vertical: false),
                   Expanded(flex: 2, child: handPane),
                 ],
               ],
@@ -316,6 +321,47 @@ class _GameScreenState extends State<GameScreen>
               child: const Icon(Icons.replay),
             )
           : null,
+    );
+  }
+
+  /// Big finger-size buttons acting on the red (selected) board piece:
+  /// rotate left, rotate right, back to the Builder.
+  Widget _buildControlStrip({required bool vertical}) {
+    final pos = _gameState.selectedBoardPosition;
+    final enabled = pos != null;
+    final style = VisualStyle.current;
+    final bg = style.isClassic
+        ? Theme.of(context).colorScheme.surfaceContainerHigh
+        : style.trayBackground;
+    Widget button(IconData icon, VoidCallback onTap) => Padding(
+          padding: const EdgeInsets.all(6),
+          child: Material(
+            color: enabled ? Colors.red : Colors.grey.withOpacity(0.35),
+            shape: const CircleBorder(),
+            elevation: enabled ? 4 : 0,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: enabled ? onTap : null,
+              child: SizedBox(
+                width: 56,
+                height: 56,
+                child: Icon(icon, size: 32, color: Colors.white),
+              ),
+            ),
+          ),
+        );
+    final buttons = [
+      button(Icons.rotate_left,
+          () => _gameState.rotatePlacedTile(pos!, counterClockwise: true)),
+      button(Icons.rotate_right, () => _gameState.rotatePlacedTile(pos!)),
+      button(Icons.undo, () => _gameState.returnTileToHand(pos!)),
+    ];
+    return Container(
+      color: bg,
+      padding: const EdgeInsets.all(4),
+      child: vertical
+          ? Column(mainAxisAlignment: MainAxisAlignment.center, children: buttons)
+          : Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
     );
   }
 

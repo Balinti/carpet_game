@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/l10n.dart';
 import '../models/models.dart';
 import 'tile_widget.dart';
+import 'visual_style.dart';
 
 /// Widget that displays a player's hand of tiles.
 class PlayerHand extends StatelessWidget {
@@ -51,7 +52,9 @@ class PlayerHand extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isCurrentPlayer
+        color: !VisualStyle.current.isClassic
+            ? VisualStyle.current.trayCard
+            : isCurrentPlayer
             ? Theme.of(context).colorScheme.primaryContainer
             : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
@@ -59,7 +62,9 @@ class PlayerHand extends StatelessWidget {
             ? Border.all(color: Colors.green, width: 4)
             : isCurrentPlayer
             ? Border.all(
-                color: Theme.of(context).colorScheme.primary,
+                color: VisualStyle.current.isClassic
+                    ? Theme.of(context).colorScheme.primary
+                    : VisualStyle.current.boardFrame.withOpacity(0.5),
                 width: 2,
               )
             : null,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/carpet_tile.dart';
 import '../models/score_system.dart';
+import '../models/tile_color.dart';
+import 'visual_style.dart';
 
 /// Custom painter that draws a carpet tile with 4 triangular sections.
 class TilePainter extends CustomPainter {
@@ -18,6 +20,11 @@ class TilePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final style = VisualStyle.current;
+    if (!style.isClassic) {
+      _paintStyled(canvas, size, style);
+      return;
+    }
     final center = Offset(size.width / 2, size.height / 2);
     final topLeft = Offset.zero;
     final topRight = Offset(size.width, 0);
@@ -68,6 +75,131 @@ class TilePainter extends CustomPainter {
       canvas.drawRect(
         Rect.fromLTWH(2, 2, size.width - 4, size.height - 4),
         selectionPaint,
+      );
+    }
+  }
+
+  Color _c(VisualStyle st, TileColor c) => st.palette[c.index];
+
+  /// Modern looks: rounded piece, shaded triangles, depth and gloss.
+  void _paintStyled(Canvas canvas, Size size, VisualStyle st) {
+    final w = size.width, h = size.height;
+    final inset = w * 0.04;
+    final rect = Rect.fromLTWH(inset, inset, w - 2 * inset, h - 2 * inset);
+    final radius = Radius.circular(w * (st.id == 3 ? 0.18 : 0.12));
+    final rrect = RRect.fromRectAndRadius(rect, radius);
+    final c = rect.center;
+    final tl = rect.topLeft, tr = rect.topRight;
+    final bl = rect.bottomLeft, br = rect.bottomRight;
+
+    // Depth: drop shadow (neon: colored glow instead).
+    if (st.id == 2) {
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = (isSelected ? Colors.red : _c(st, tile.top)).withOpacity(0.55)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.08),
+      );
+    } else {
+      canvas.drawRRect(
+        rrect.shift(Offset(0, w * (st.id == 3 ? 0.06 : 0.05))),
+        Paint()
+          ..color = Colors.black.withOpacity(st.id == 3 ? 0.18 : 0.45)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.05),
+      );
+    }
+
+    canvas.save();
+    canvas.clipRRect(rrect);
+
+    final sides = [
+      ([tl, tr, c], tile.top, Offset(c.dx, rect.top)),
+      ([tr, br, c], tile.right, Offset(rect.right, c.dy)),
+      ([br, bl, c], tile.bottom, Offset(c.dx, rect.bottom)),
+      ([bl, tl, c], tile.left, Offset(rect.left, c.dy)),
+    ];
+    for (final (pts, color, edgeMid) in sides) {
+      final base = _c(st, color);
+      final path = Path()
+        ..moveTo(pts[0].dx, pts[0].dy)
+        ..lineTo(pts[1].dx, pts[1].dy)
+        ..lineTo(pts[2].dx, pts[2].dy)
+        ..close();
+      final List<Color> colors;
+      switch (st.id) {
+        case 2: // neon: deep at the center, bright at the edge
+          colors = [base, Color.lerp(base, Colors.black, 0.4)!];
+        case 3: // clay: soft, nearly flat
+          colors = [Color.lerp(base, Colors.white, 0.12)!, base];
+        default: // soft 3D: light edge, richer center
+          colors = [Color.lerp(base, Colors.white, 0.25)!,
+              Color.lerp(base, Colors.black, 0.18)!];
+      }
+      canvas.drawPath(
+        path,
+        Paint()..shader = LinearGradient(colors: colors)
+            .createShader(Rect.fromPoints(edgeMid, c)),
+      );
+    }
+
+    // Seams between the four triangles.
+    final seam = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * (st.id == 3 ? 0.035 : 0.015)
+      ..color = switch (st.id) {
+        2 => Colors.white.withOpacity(0.55),
+        3 => Colors.white.withOpacity(0.85),
+        _ => Colors.black.withOpacity(0.18),
+      };
+    canvas.drawLine(tl, br, seam);
+    canvas.drawLine(tr, bl, seam);
+
+    // Gloss on the upper half (soft 3D and neon).
+    if (st.id != 3) {
+      canvas.drawRect(
+        Rect.fromLTWH(rect.left, rect.top, rect.width, rect.height * 0.5),
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.white.withOpacity(st.id == 2 ? 0.18 : 0.32),
+              Colors.white.withOpacity(0),
+            ],
+          ).createShader(rect),
+      );
+    }
+    canvas.restore();
+
+    // Bevel / rim.
+    final rim = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.025;
+    if (st.id == 2) {
+      rim.color = Colors.white.withOpacity(0.7);
+      canvas.drawRRect(rrect.deflate(w * 0.01), rim);
+    } else {
+      rim.shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withOpacity(st.id == 3 ? 0.9 : 0.55),
+          Colors.black.withOpacity(st.id == 3 ? 0.10 : 0.35),
+        ],
+      ).createShader(rect);
+      canvas.drawRRect(rrect.deflate(w * 0.012), rim);
+    }
+
+    if (isHighlighted) {
+      canvas.drawRRect(rrect, Paint()..color = Colors.white.withOpacity(0.3));
+    }
+    if (isSelected) {
+      canvas.drawRRect(
+        rrect.inflate(w * 0.015),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w * 0.07
+          ..color = Colors.red,
       );
     }
   }

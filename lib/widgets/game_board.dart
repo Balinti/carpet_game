@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../game/game_state.dart';
 import 'tile_widget.dart';
+import 'visual_style.dart';
 import 'tile_painter.dart';
 
 /// Widget that displays the game board with placed tiles.
@@ -121,10 +122,13 @@ class GameBoard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
+              color: VisualStyle.current.isClassic
+                  ? Theme.of(context).colorScheme.primary
+                  : VisualStyle.current.boardFrame,
               width: 3,
             ),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius:
+                BorderRadius.circular(VisualStyle.current.isClassic ? 8 : 18),
           ),
           padding: const EdgeInsets.all(4),
           child: Column(
@@ -241,49 +245,8 @@ class GameBoard extends StatelessWidget {
   /// For the selected placed piece, draw rotate-left / rotate-right buttons
   /// inside the piece.
   Widget _withRotateButtons(BoardPosition position, double size, Widget tile) {
-    if (gameState.selectedBoardPosition != position) return tile;
-    final btn = size * 0.36;
-    Widget button(IconData icon, VoidCallback onTap) => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            width: btn,
-            height: btn,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 3)],
-            ),
-            child: Icon(icon, size: btn * 0.75, color: Colors.red),
-          ),
-        );
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        children: [
-          tile,
-          Positioned(
-            left: size * 0.06,
-            bottom: size * 0.06,
-            child: button(Icons.rotate_left,
-                () => onSelectedRotate?.call(position, true)),
-          ),
-          Positioned(
-            right: size * 0.06,
-            bottom: size * 0.06,
-            child: button(Icons.rotate_right,
-                () => onSelectedRotate?.call(position, false)),
-          ),
-          // Top middle: back to the Builder tray.
-          Positioned(
-            top: size * 0.06,
-            left: (size - btn) / 2,
-            child: button(Icons.undo, () => onSelectedReturn?.call(position)),
-          ),
-        ],
-      ),
-    );
+    // Rotate / back buttons live in the big strip next to the board.
+    return tile;
   }
 
   Widget _buildFixedGridSlot(BuildContext context, BoardPosition position, double slotSize) {
@@ -310,14 +273,19 @@ class GameBoard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isHovering2
                       ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      : (VisualStyle.current.isClassic
+                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          : VisualStyle.current.emptySlot),
                   border: Border.all(
                     color: gameState.selectedTile != null || isHovering2
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        : (VisualStyle.current.isClassic
+                            ? Theme.of(context).colorScheme.outline.withOpacity(0.3)
+                            : VisualStyle.current.emptySlotBorder),
                     width: gameState.selectedTile != null || isHovering2 ? 2 : 1,
                   ),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(
+                      VisualStyle.current.isClassic ? 4 : 10),
                 ),
                 child: gameState.selectedTile != null
                     ? Icon(
