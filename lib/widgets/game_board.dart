@@ -116,17 +116,32 @@ class GameBoard extends StatelessWidget {
     final calculatedTileSize =
         ((shortest - 26) / gridSize - 4).clamp(24.0, 160.0);
 
-    return Center(
+    final solved = gameState.isSolved;
+    final full = gameState.isGridFull;
+    return _Pulse(
+      active: full,
+      builder: (pulse) => Center(
       child: Container(
         padding: const EdgeInsets.all(6),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: VisualStyle.current.isClassic
-                  ? Theme.of(context).colorScheme.primary
-                  : VisualStyle.current.boardFrame,
-              width: 3,
+              color: solved
+                  ? Colors.greenAccent
+                  : VisualStyle.current.isClassic
+                      ? Theme.of(context).colorScheme.primary
+                      : VisualStyle.current.boardFrame,
+              width: solved ? 3 + 3 * pulse : 3,
             ),
+            boxShadow: solved
+                ? [
+                    BoxShadow(
+                      color: Colors.greenAccent.withOpacity(0.35 + 0.45 * pulse),
+                      blurRadius: 12 + 24 * pulse,
+                      spreadRadius: 2 + 6 * pulse,
+                    ),
+                  ]
+                : null,
             borderRadius:
                 BorderRadius.circular(VisualStyle.current.isClassic ? 8 : 18),
           ),
@@ -144,7 +159,13 @@ class GameBoard extends StatelessWidget {
                     // Show placed tile - tap to rotate, drag to swap
                     return Padding(
                       padding: const EdgeInsets.all(2),
-                      child: _buildPlacedTile(context, tile, position, calculatedTileSize),
+                      child: _withMismatchMarks(
+                        position,
+                        tile,
+                        calculatedTileSize,
+                        full && !solved ? pulse : null,
+                        _buildPlacedTile(context, tile, position, calculatedTileSize),
+                      ),
                     );
                   } else {
                     return Padding(
@@ -158,6 +179,7 @@ class GameBoard extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
     });
   }
@@ -350,4 +372,96 @@ class GameBoard extends StatelessWidget {
       },
     );
   }
+}
+
+extension _MismatchMarks on GameBoard {
+  /// On a full grid that isn't solved, mark edges that don't match in red
+  /// (blinking with [pulse]).
+  Widget _withMismatchMarks(BoardPosition position, CarpetTile tile,
+      double size, double? pulse, Widget child) {
+    if (pulse == null) return child;
+    final status = gameState.getEdgeMatchStatus(tile, position);
+    final bad = {
+      for (final e in status.entries)
+        if (e.value == EdgeMatchStatus.mismatched) e.key
+    };
+    if (bad.isEmpty) return child;
+    return Stack(
+      children: [
+        child,
+        IgnorePointer(
+          child: CustomPaint(
+            size: Size(size, size),
+            painter: _MismatchPainter(bad, 0.35 + 0.65 * pulse),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MismatchPainter extends CustomPainter {
+  final Set<int> edges; // 0 top, 1 right, 2 bottom, 3 left
+  final double opacity;
+  _MismatchPainter(this.edges, this.opacity);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width * 0.09;
+    final p = Paint()
+      ..color = Colors.red.withOpacity(opacity)
+      ..strokeWidth = w
+      ..strokeCap = StrokeCap.round;
+    final a = w / 2, b = size.width - w / 2, h = size.height - w / 2;
+    if (edges.contains(0)) canvas.drawLine(Offset(a, a), Offset(b, a), p);
+    if (edges.contains(1)) canvas.drawLine(Offset(b, a), Offset(b, h), p);
+    if (edges.contains(2)) canvas.drawLine(Offset(a, h), Offset(b, h), p);
+    if (edges.contains(3)) canvas.drawLine(Offset(a, a), Offset(a, h), p);
+  }
+
+  @override
+  bool shouldRepaint(_MismatchPainter old) =>
+      old.opacity != opacity || old.edges != edges;
+}
+
+/// Rebuilds with a 0..1..0 value while [active]; 0 otherwise.
+class _Pulse extends StatefulWidget {
+  final bool active;
+  final Widget Function(double pulse) builder;
+  const _Pulse({required this.active, required this.builder});
+
+  @override
+  State<_Pulse> createState() => _PulseState();
+}
+
+class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.active) _c.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(_Pulse old) {
+    super.didUpdateWidget(old);
+    if (widget.active && !_c.isAnimating) _c.repeat(reverse: true);
+    if (!widget.active && _c.isAnimating) _c.stop();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _c,
+        builder: (_, __) => widget.builder(widget.active ? _c.value : 0),
+      );
 }

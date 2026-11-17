@@ -4,6 +4,7 @@ import '../l10n/l10n.dart';
 import '../models/models.dart';
 import '../widgets/game_board.dart';
 import '../widgets/visual_style.dart';
+import '../sound_stub.dart' if (dart.library.js_interop) '../sound_web.dart';
 import '../widgets/player_hand.dart';
 
 /// Main game screen supporting Regular Flow and Shape Flow modes.
@@ -62,8 +63,15 @@ class _GameScreenState extends State<GameScreen>
     super.dispose();
   }
 
+  bool _wasSolved = false;
+
   void _onGameStateChanged() {
     setState(() {});
+
+    // Success: chime + buzz once when the grid becomes full and all-matching.
+    final solved = _gameState.isSolved;
+    if (solved && !_wasSolved) playSuccess();
+    _wasSolved = solved;
 
     // Trigger celebration animation for achievements
     if (_gameState.lastPlacementResult?.hasAchievements == true) {

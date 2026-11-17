@@ -57,6 +57,13 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Every square of the target grid has a piece.
+  bool get isGridFull =>
+      _targetGridSize > 0 && board.length >= _targetGridSize * _targetGridSize;
+
+  /// Full grid with every touching edge matching.
+  bool get isSolved => isGridFull && _countMismatches() == 0;
+
   /// When set, a single free-practice grid of this size (1-6) with all 36 pieces.
   int? _practiceGridSize;
   int? get practiceGridSize => _practiceGridSize;
