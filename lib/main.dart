@@ -126,15 +126,24 @@ class LocaleProviderScope extends InheritedWidget {
 /// rotate (and iPhones with rotation lock never do), so when the screen is
 /// portrait we turn the whole app 90° ourselves: the player just holds the
 /// phone sideways.
+/// When false (sign-up and questionnaire), portrait stays portrait so typing
+/// is comfortable; the game screens turn it back on.
+final ValueNotifier<bool> forceLandscape = ValueNotifier<bool>(true);
+
 class _RotatePhoneGate extends StatelessWidget {
   final Widget child;
 
   const _RotatePhoneGate({required this.child});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: forceLandscape,
+        builder: (context, on, _) => _build(context, on),
+      );
+
+  Widget _build(BuildContext context, bool on) {
     final mq = MediaQuery.of(context);
-    if (mq.size.height <= mq.size.width) return child;
+    if (!on || mq.size.height <= mq.size.width) return child;
     final p = mq.padding;
     return RotatedBox(
       quarterTurns: 1,

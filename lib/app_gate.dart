@@ -8,6 +8,7 @@ import 'screens/assessment_screen.dart';
 import 'screens/home_screen.dart';
 import 'admin/dashboard_screen.dart';
 import 'telemetry.dart';
+import 'main.dart' show forceLandscape;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// App flow: sign up / sign in → confirm email → EF questionnaire (by age)
@@ -55,6 +56,12 @@ class _AppGateState extends State<AppGate> {
 
   @override
   Widget build(BuildContext context) {
+    // Forms are typed upright; the game is landscape.
+    final landscape = _stage != _Stage.onboarding;
+    if (forceLandscape.value != landscape) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => forceLandscape.value = landscape);
+    }
     switch (_stage) {
       case _Stage.onboarding:
         return OnboardingFlow(
