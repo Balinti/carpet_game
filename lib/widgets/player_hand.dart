@@ -72,20 +72,39 @@ class PlayerHand extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (isCurrentPlayer)
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ...player.hand.map((tile) {
-                  return TileWidget(
-                    tile: tile,
-                    size: tileSize,
-                    isDraggable: true,
-                    onTap: () => onTileTap?.call(tile),
-                  );
-                }),
-              ],
-            )
+            // Rows of 12 tiles (36 tiles = 3 rows of 12). Tiles shrink so a
+            // full row always fits the width.
+            LayoutBuilder(builder: (context, constraints) {
+              const int perRow = 12;
+              const double spacing = 8;
+              final fit = (constraints.maxWidth - (perRow - 1) * spacing) / perRow;
+              final size = fit < tileSize ? fit : tileSize;
+              final hand = player.hand;
+              final rows = <Widget>[];
+              for (var start = 0; start < hand.length; start += perRow) {
+                final end =
+                    start + perRow < hand.length ? start + perRow : hand.length;
+                if (start > 0) rows.add(const SizedBox(height: spacing));
+                rows.add(Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var i = start; i < end; i++) ...[
+                      if (i > start) const SizedBox(width: spacing),
+                      TileWidget(
+                        tile: hand[i],
+                        size: size,
+                        isDraggable: true,
+                        onTap: () => onTileTap?.call(hand[i]),
+                      ),
+                    ],
+                  ],
+                ));
+              }
+              return SizedBox(
+                width: constraints.maxWidth,
+                child: Column(children: rows),
+              );
+            })
           else
             // Show face-down tiles for other players
             Wrap(
