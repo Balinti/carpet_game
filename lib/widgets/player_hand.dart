@@ -104,8 +104,8 @@ class PlayerHand extends StatelessWidget {
             // full row always fits the width.
             LayoutBuilder(builder: (context, constraints) {
               // 12 per row when there is room (landscape), 6 when narrow.
-              final int perRow = constraints.maxWidth >= 700 ? 12 : 6;
-              const double spacing = 8;
+              final int perRow = constraints.maxWidth >= 700 ? 12 : 8;
+              const double spacing = 4;
               final fit = (constraints.maxWidth - (perRow - 1) * spacing) / perRow;
               final size = fit < tileSize ? fit : tileSize;
               final hand = player.hand;
@@ -154,15 +154,6 @@ class PlayerHand extends StatelessWidget {
                 ),
               ),
             ),
-          if (isCurrentPlayer) ...[
-            const SizedBox(height: 8),
-            Text(
-              l10n.tapRotateDragPlace,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-            ),
-          ],
         ],
       ),
     );

@@ -17,6 +17,9 @@ class GameBoard extends StatelessWidget {
 
   /// Rotate the selected placed piece; `true` = counter-clockwise.
   final void Function(BoardPosition, bool counterClockwise)? onSelectedRotate;
+
+  /// Send the selected placed piece back to the Builder tray.
+  final Function(BoardPosition)? onSelectedReturn;
   final Function(BoardPosition, BoardPosition)? onTileSwap;
   final Function(CarpetTile, BoardPosition)? onTileReplace;
   final bool showMatchFeedback;
@@ -30,6 +33,7 @@ class GameBoard extends StatelessWidget {
     this.onTileRotate,
     this.onTileSelect,
     this.onSelectedRotate,
+    this.onSelectedReturn,
     this.onTileSwap,
     this.onTileReplace,
     this.showMatchFeedback = false,
@@ -239,9 +243,9 @@ class GameBoard extends StatelessWidget {
   Widget _withRotateButtons(BoardPosition position, double size, Widget tile) {
     if (gameState.selectedBoardPosition != position) return tile;
     final btn = size * 0.36;
-    Widget rotate(IconData icon, bool ccw) => GestureDetector(
+    Widget button(IconData icon, VoidCallback onTap) => GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => onSelectedRotate?.call(position, ccw),
+          onTap: onTap,
           child: Container(
             width: btn,
             height: btn,
@@ -262,12 +266,20 @@ class GameBoard extends StatelessWidget {
           Positioned(
             left: size * 0.06,
             bottom: size * 0.06,
-            child: rotate(Icons.rotate_left, true),
+            child: button(Icons.rotate_left,
+                () => onSelectedRotate?.call(position, true)),
           ),
           Positioned(
             right: size * 0.06,
             bottom: size * 0.06,
-            child: rotate(Icons.rotate_right, false),
+            child: button(Icons.rotate_right,
+                () => onSelectedRotate?.call(position, false)),
+          ),
+          // Top middle: back to the Builder tray.
+          Positioned(
+            top: size * 0.06,
+            left: (size - btn) / 2,
+            child: button(Icons.undo, () => onSelectedReturn?.call(position)),
           ),
         ],
       ),

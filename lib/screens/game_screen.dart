@@ -257,6 +257,7 @@ class _GameScreenState extends State<GameScreen>
                 onTileDrop: _dropTile,
                 onTileRotate: _rotatePlacedTile,
                 onTileSelect: _gameState.selectBoardTile,
+                onSelectedReturn: _gameState.returnTileToHand,
                 onSelectedRotate: (pos, ccw) =>
                     _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
                 onTileSwap: _swapTiles,
@@ -289,9 +290,9 @@ class _GameScreenState extends State<GameScreen>
                   Expanded(
                     child: Row(
                       children: [
-                        Expanded(flex: 1, child: boardPane),
+                        Expanded(flex: 3, child: boardPane),
                         const VerticalDivider(width: 1),
-                        Expanded(flex: 1, child: handPane),
+                        Expanded(flex: 2, child: handPane),
                       ],
                     ),
                   )
