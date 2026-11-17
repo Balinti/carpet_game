@@ -118,12 +118,12 @@ class VisualStyle {
 
   static const all = [classic, soft3d, neon, clay];
 
-  /// The style in use. Default: classic, overridable with `?style=N`.
+  /// The style in use. Default: Soft 3D, overridable with `?style=N`.
   static final VisualStyle current = _fromUrl();
 
   static VisualStyle _fromUrl() {
     final n = int.tryParse(Uri.base.queryParameters['style'] ?? '');
     if (n != null && n >= 0 && n < all.length) return all[n];
-    return classic;
+    return soft3d;
   }
 }

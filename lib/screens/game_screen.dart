@@ -254,7 +254,10 @@ class _GameScreenState extends State<GameScreen>
                       : VisualStyle.current.boardBackground,
                 ),
               ),
-              child: GameBoard(
+              // Red buttons sit on the board side, to the right of the grid.
+              child: Row(
+                children: [
+                  Expanded(child: GameBoard(
                 gameState: _gameState,
                 onPositionTap: _placeTile,
                 onTileDrop: _dropTile,
@@ -265,7 +268,9 @@ class _GameScreenState extends State<GameScreen>
                     _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
                 onTileSwap: _swapTiles,
                 onTileReplace: _replaceTile,
-                showMatchFeedback: widget.mode.showMatchFeedback,
+                showMatchFeedback: widget.mode.showMatchFeedback)),
+                  _buildControlStrip(vertical: true),
+                ],
               ),
             );
             final handPane = Container(
@@ -296,14 +301,12 @@ class _GameScreenState extends State<GameScreen>
                     child: Row(
                       children: [
                         Expanded(flex: 3, child: boardPane),
-                        _buildControlStrip(vertical: true),
                         Expanded(flex: 2, child: handPane),
                       ],
                     ),
                   )
                 else ...[
                   Expanded(flex: 3, child: boardPane),
-                  _buildControlStrip(vertical: false),
                   Expanded(flex: 2, child: handPane),
                 ],
               ],
@@ -357,7 +360,6 @@ class _GameScreenState extends State<GameScreen>
       button(Icons.undo, () => _gameState.returnTileToHand(pos!)),
     ];
     return Container(
-      color: bg,
       padding: const EdgeInsets.all(4),
       child: vertical
           ? Column(mainAxisAlignment: MainAxisAlignment.center, children: buttons)
