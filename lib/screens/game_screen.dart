@@ -9,16 +9,21 @@ import '../widgets/player_hand.dart';
 class GameScreen extends StatefulWidget {
   final GameMode mode;
 
+  /// When set, play a single practice grid of this size (1-6).
+  final int? practiceGridSize;
+
   const GameScreen({
     super.key,
     required this.mode,
+    this.practiceGridSize,
   });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateMixin {
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin {
   late GameState _gameState;
   late AnimationController _celebrationController;
   bool _showCelebration = false;
@@ -35,6 +40,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   }
 
   void _initGameState() {
+    if (widget.practiceGridSize != null) {
+      _gameState = GameState.newPractice(widget.practiceGridSize!);
+      return;
+    }
     switch (widget.mode) {
       case GameMode.regularFlow:
         _gameState = GameState.newRegularFlow();
@@ -66,8 +75,10 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     }
   }
 
-  void _rotateHandTile(CarpetTile tile) {
-    _gameState.rotateHandTile(tile);
+  // Tap selects a piece (red frame); tap again to deselect.
+  void _selectHandTile(CarpetTile tile) {
+    final already = _gameState.selectedTile?.id == tile.id;
+    _gameState.selectTile(already ? null : tile);
   }
 
   void _placeTile(BoardPosition position) {
@@ -105,6 +116,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
   String _getModeTitle(AppLocalizations l10n) {
     switch (widget.mode) {
       case GameMode.regularFlow:
+        if (widget.practiceGridSize != null) {
+          return '${widget.practiceGridSize}×${widget.practiceGridSize}';
+        }
         return 'Level ${_gameState.currentLevel}';
       case GameMode.shapeFlow:
         return 'Shape Flow (${_gameState.completedShapeTypes.length}/7)';
@@ -139,7 +153,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
     switch (widget.mode) {
       case GameMode.regularFlow:
         return [
-          const Text('Regular Flow', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Regular Flow',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('• Complete 12 levels of increasing difficulty'),
           const SizedBox(height: 4),
@@ -147,7 +162,8 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
           const SizedBox(height: 4),
           const Text('• Try to match all edge colors!'),
           const SizedBox(height: 12),
-          const Text('Level Progression:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Level Progression:',
+              style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Levels 1-3: 2×2 (same 36 pieces)'),
           const Text('• Levels 4-5: 3×3 (reset, then continue)'),
           const Text('• Levels 6-8: 3×3 (reset, use 3 times)'),
@@ -157,19 +173,23 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
         ];
       case GameMode.shapeFlow:
         return [
-          const Text('Shape Flow Challenge', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Shape Flow Challenge',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text('Build 7 shapes AND fill the entire grid:'),
           const SizedBox(height: 8),
-          const Text('Diamonds:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Diamonds:',
+              style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 2 tiles with matching seam'),
           const Text('• Large: 4 tiles (2×2) with center match'),
           const SizedBox(height: 4),
-          const Text('Triangles:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Triangles:',
+              style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 1 tile with 3-1 color split'),
           const Text('• Large: 3 tiles in L-shape, matching edges'),
           const SizedBox(height: 4),
-          const Text('Rectangles:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Rectangles:',
+              style: TextStyle(fontWeight: FontWeight.w600)),
           const Text('• Small: 2 tiles with color stripe'),
           const Text('• Large: 3 tiles in line with stripe'),
           const SizedBox(height: 4),
@@ -219,60 +239,72 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
       ),
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Info bar
-              _buildInfoBar(l10n),
+          LayoutBuilder(builder: (context, box) {
+            // Short landscape screens (phones on their side): board and
+            // pieces side by side so both get the full height.
+            final sideBySide =
+                box.maxWidth > box.maxHeight && box.maxHeight < 600;
+            final boardPane = Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.primaryContainer,
+                    Theme.of(context).colorScheme.secondaryContainer,
+                  ],
+                ),
+              ),
+              child: GameBoard(
+                gameState: _gameState,
+                onPositionTap: _placeTile,
+                onTileDrop: _dropTile,
+                onTileRotate: _rotatePlacedTile,
+                onTileSwap: _swapTiles,
+                onTileReplace: _replaceTile,
+                showMatchFeedback: widget.mode.showMatchFeedback,
+              ),
+            );
+            final handPane = Container(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(12),
+                child: PlayerHand(
+                  player: _gameState.currentPlayer,
+                  isCurrentPlayer: true,
+                  onTileTap: _selectHandTile,
+                  selectedTileId: _gameState.selectedTile?.id,
+                  onRotateLeft: _gameState.rotateSelectedTileCounterClockwise,
+                  onRotateRight: _gameState.rotateSelectedTile,
+                ),
+              ),
+            );
+            return Column(
+              children: [
+                // Info bar
+                _buildInfoBar(l10n),
 
-              // Message bar
-              if (_gameState.message != null) _buildMessageBar(),
+                // Message bar
+                if (_gameState.message != null) _buildMessageBar(),
 
-              // Game board
-              Expanded(
-                flex: 3,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Theme.of(context).colorScheme.primaryContainer,
-                        Theme.of(context).colorScheme.secondaryContainer,
+                if (sideBySide)
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(flex: 1, child: boardPane),
+                        const VerticalDivider(width: 1),
+                        Expanded(flex: 1, child: handPane),
                       ],
                     ),
-                  ),
-                  child: GameBoard(
-                    gameState: _gameState,
-                    onPositionTap: _placeTile,
-                    onTileDrop: _dropTile,
-                    onTileRotate: _rotatePlacedTile,
-                    onTileSwap: _swapTiles,
-                    onTileReplace: _replaceTile,
-                    showMatchFeedback: widget.mode.showMatchFeedback,
-                  ),
-                ),
-              ),
-
-              // Divider
-              const Divider(height: 1),
-
-              // Player hand
-              Expanded(
-                flex: 2,
-                child: Container(
-                  color: Theme.of(context).colorScheme.surfaceContainerLow,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(12),
-                    child: PlayerHand(
-                      player: _gameState.currentPlayer,
-                      isCurrentPlayer: true,
-                      onTileTap: _rotateHandTile,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                  )
+                else ...[
+                  Expanded(flex: 3, child: boardPane),
+                  const Divider(height: 1),
+                  Expanded(flex: 2, child: handPane),
+                ],
+              ],
+            );
+          }),
 
           // Celebration overlay
           if (_showCelebration) _buildCelebrationOverlay(),
@@ -309,7 +341,9 @@ class _GameScreenState extends State<GameScreen> with SingleTickerProviderStateM
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Level ${_gameState.currentLevel}/12',
+                widget.practiceGridSize != null
+                    ? 'Practice'
+                    : 'Level ${_gameState.currentLevel}/12',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onPrimaryContainer,

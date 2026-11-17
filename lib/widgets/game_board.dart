@@ -96,10 +96,12 @@ class GameBoard extends StatelessWidget {
 
   Widget _buildFixedGrid(BuildContext context, int gridSize) {
     // Calculate tile size to fit the grid nicely on screen
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final availableSize = (screenWidth < screenHeight ? screenWidth : screenHeight) * 0.7;
-    final calculatedTileSize = (availableSize / gridSize).clamp(60.0, 100.0);
+    return LayoutBuilder(builder: (context, box) {
+    // Fit the grid into the space this board actually has.
+    // Overhead: 16 outer padding + 3 border + 4 inner padding per side, 4 per tile.
+    final shortest = box.maxWidth < box.maxHeight ? box.maxWidth : box.maxHeight;
+    final calculatedTileSize =
+        ((shortest - 46) / gridSize - 4).clamp(24.0, 100.0);
 
     return Center(
       child: Container(
@@ -141,6 +143,7 @@ class GameBoard extends StatelessWidget {
         ),
       ),
     );
+    });
   }
 
   /// Build a placed tile that can be rotated (tap), swapped (drag from board), or replaced (drag from hand)

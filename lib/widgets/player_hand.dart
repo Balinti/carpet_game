@@ -10,12 +10,20 @@ class PlayerHand extends StatelessWidget {
   final double tileSize;
   final Function(CarpetTile)? onTileTap;
 
+  /// Id of the selected tile (drawn with a red frame).
+  final String? selectedTileId;
+  final VoidCallback? onRotateLeft;
+  final VoidCallback? onRotateRight;
+
   const PlayerHand({
     super.key,
     required this.player,
     this.isCurrentPlayer = false,
     this.tileSize = 70,
     this.onTileTap,
+    this.selectedTileId,
+    this.onRotateLeft,
+    this.onRotateRight,
   });
 
   @override
@@ -71,11 +79,13 @@ class PlayerHand extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          if (isCurrentPlayer) _buildRotateBar(context),
           if (isCurrentPlayer)
             // Rows of 12 tiles (36 tiles = 3 rows of 12). Tiles shrink so a
             // full row always fits the width.
             LayoutBuilder(builder: (context, constraints) {
-              const int perRow = 12;
+              // 12 per row when there is room (landscape), 6 when narrow.
+              final int perRow = constraints.maxWidth >= 700 ? 12 : 6;
               const double spacing = 8;
               final fit = (constraints.maxWidth - (perRow - 1) * spacing) / perRow;
               final size = fit < tileSize ? fit : tileSize;
@@ -93,6 +103,7 @@ class PlayerHand extends StatelessWidget {
                       TileWidget(
                         tile: hand[i],
                         size: size,
+                        isSelected: hand[i].id == selectedTileId,
                         isDraggable: true,
                         onTap: () => onTileTap?.call(hand[i]),
                       ),
@@ -139,6 +150,49 @@ class PlayerHand extends StatelessWidget {
                   ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Selected piece shown large between two rotate buttons.
+  Widget _buildRotateBar(BuildContext context) {
+    CarpetTile? selected;
+    for (final t in player.hand) {
+      if (t.id == selectedTileId) selected = t;
+    }
+    if (selected == null) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    final style = IconButton.styleFrom(
+      backgroundColor: colors.primary,
+      foregroundColor: colors.onPrimary,
+      minimumSize: const Size(56, 56),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton.filled(
+            onPressed: onRotateLeft,
+            icon: const Icon(Icons.rotate_left, size: 32),
+            tooltip: 'Rotate left',
+            style: style,
+          ),
+          const SizedBox(width: 16),
+          TileWidget(
+            tile: selected,
+            size: 72,
+            isSelected: true,
+            isDraggable: true,
+          ),
+          const SizedBox(width: 16),
+          IconButton.filled(
+            onPressed: onRotateRight,
+            icon: const Icon(Icons.rotate_right, size: 32),
+            tooltip: 'Rotate right',
+            style: style,
+          ),
         ],
       ),
     );

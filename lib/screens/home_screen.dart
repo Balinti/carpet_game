@@ -65,7 +65,35 @@ class HomeScreen extends StatelessWidget {
                                     .withOpacity(0.8),
                               ),
                         ),
-                        const SizedBox(height: 48),
+                        const SizedBox(height: 32),
+
+                        // Quick grids: 1x1 .. 6x6
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            for (var n = 1; n <= 6; n++)
+                              FilledButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => GameScreen(
+                                      mode: GameMode.regularFlow,
+                                      practiceGridSize: n,
+                                    ),
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size(72, 56),
+                                  textStyle: const TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold),
+                                ),
+                                child: Text('$n×$n'),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 40),
 
                         // Game modes section
                         _SectionHeader(

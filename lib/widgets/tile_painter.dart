@@ -37,7 +37,7 @@ class TilePainter extends CustomPainter {
 
     // Draw outer border
     final outerBorderPaint = Paint()
-      ..color = isSelected ? Colors.white : Colors.black87
+      ..color = isSelected ? Colors.red : Colors.black87
       ..strokeWidth = isSelected ? 3.0 : 2.0
       ..style = PaintingStyle.stroke;
 
@@ -61,7 +61,7 @@ class TilePainter extends CustomPainter {
     // Draw selection indicator
     if (isSelected) {
       final selectionPaint = Paint()
-        ..color = Colors.white
+        ..color = Colors.red
         ..strokeWidth = 4.0
         ..style = PaintingStyle.stroke;
 

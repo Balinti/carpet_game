@@ -34,6 +34,10 @@ class GameState extends ChangeNotifier {
 
   // === Regular Flow specific ===
   int _currentLevel = 1;
+
+  /// When set, a single free-practice grid of this size (1-6) with all 36 pieces.
+  int? _practiceGridSize;
+  int? get practiceGridSize => _practiceGridSize;
   List<CarpetTile> _availablePieces = []; // Pieces available across levels
   bool _levelCompleted = false;
 
@@ -82,7 +86,7 @@ class GameState extends ChangeNotifier {
   int get currentLevel => _currentLevel;
   int get availablePiecesCount => _availablePieces.length;
   bool get levelCompleted => _levelCompleted;
-  bool get canGoToPreviousLevel => _previousLevel > 0 && mode == GameMode.regularFlow;
+  bool get canGoToPreviousLevel => _previousLevel > 0 && mode == GameMode.regularFlow && _practiceGridSize == null;
 
   // Shape Flow getters
   Set<GeometricShapeType> get completedShapeTypes => _completedShapeTypes;
@@ -109,6 +113,37 @@ class GameState extends ChangeNotifier {
     state._initLevel(1);
 
     return state;
+  }
+
+  /// Initialize a single practice grid (1x1 .. 6x6) with all 36 pieces.
+  static GameState newPractice(int gridSize) {
+    final players = [Player(id: 'player_0', name: 'Builder')];
+    final state = GameState(mode: GameMode.regularFlow, players: players);
+    state._practiceGridSize = gridSize;
+    state._initPractice();
+    return state;
+  }
+
+  void _initPractice() {
+    final size = _practiceGridSize!;
+    _targetGridSize = size;
+    _levelCompleted = false;
+    _gameOver = false;
+    _selectedTile = null;
+    _availablePieces = CarpetTile.getBuildTiles()
+        .map((t) => t.copyWithId('tile_${_nextTileId++}'))
+        .toList();
+    board.clear();
+    _history.clear();
+    _recalculateBoundaries();
+    currentPlayer.hand.clear();
+    final pieces = List<CarpetTile>.from(_availablePieces)..shuffle();
+    for (final tile in pieces) {
+      currentPlayer.addTile(tile);
+    }
+    _message = 'Fill the $size×$size grid!';
+    _updatePositions();
+    notifyListeners();
   }
 
   /// Initialize a new Shape Flow game.
@@ -264,6 +299,20 @@ class GameState extends ChangeNotifier {
     final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
     if (index >= 0) {
       final rotated = _selectedTile!.rotateClockwise();
+      currentPlayer.hand[index] = rotated;
+      _selectedTile = rotated;
+      _updatePositions();
+      notifyListeners();
+    }
+  }
+
+  /// Rotate the selected tile counter-clockwise.
+  void rotateSelectedTileCounterClockwise() {
+    if (_selectedTile == null) return;
+
+    final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
+    if (index >= 0) {
+      final rotated = _selectedTile!.rotateCounterClockwise();
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
       _updatePositions();
@@ -553,8 +602,13 @@ class GameState extends ChangeNotifier {
     final mismatches = _countMismatches();
     if (mismatches == 0) {
       // Level complete! Perfect match - advance to next level
-      _message = 'Level $_currentLevel complete! Perfect match!';
       _levelCompleted = true;
+      if (_practiceGridSize != null) {
+        _gameOver = true;
+        _message = '$_targetGridSize×$_targetGridSize complete! Perfect match!';
+        return;
+      }
+      _message = 'Level $_currentLevel complete! Perfect match!';
 
       // Advance to next level after a short delay
       Future.delayed(const Duration(milliseconds: 1500), () {
@@ -731,7 +785,9 @@ class GameState extends ChangeNotifier {
     _nextTileId = 0;
 
     // Mode-specific restart
-    if (mode == GameMode.regularFlow) {
+    if (_practiceGridSize != null) {
+      _initPractice();
+    } else if (mode == GameMode.regularFlow) {
       _currentLevel = 1;
       _levelCompleted = false;
       _previousLevel = 0;
