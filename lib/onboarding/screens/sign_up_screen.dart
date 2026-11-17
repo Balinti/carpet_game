@@ -34,6 +34,7 @@ class SignUpScreen extends StatefulWidget {
     required this.onSubmit,
     this.onSignInInstead,
     this.onGoogle,
+    this.initialName,
     this.completeProfileEmail,
   });
 
@@ -43,6 +44,9 @@ class SignUpScreen extends StatefulWidget {
   /// Shows "Continue with Google" above the form when set.
   final Future<void> Function()? onGoogle;
   final String? completeProfileEmail;
+
+  /// Pre-fills the name field (e.g. the Google account name).
+  final String? initialName;
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -54,6 +58,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _age = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialName != null) _name.text = widget.initialName!;
+  }
   bool _busy = false;
   bool _submitted = false;
   String? _error;

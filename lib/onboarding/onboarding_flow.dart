@@ -213,6 +213,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         return SignUpScreen(
           key: const ValueKey('step_complete_profile'),
           completeProfileEmail: _auth.currentUser?.email ?? '',
+          initialName: _auth.currentUser?.displayName,
           onSubmit: _onCompleteProfile,
         );
       case OnboardingStep.verify:
