@@ -554,6 +554,21 @@ class GameState extends ChangeNotifier {
   }
 
   /// Replace a tile on the board with a tile from hand.
+  /// Take a placed piece off the board and put it back in the builder tray.
+  void returnTileToHand(BoardPosition position) {
+    final tile = board.remove(position);
+    if (tile == null) return;
+    currentPlayer.addTile(tile);
+    _history.removeWhere((a) => a.tile.id == tile.id);
+    _levelCompleted = false;
+    _selectedTile = null;
+    _lastPlacementResult = null;
+    _recalculateBoundaries();
+    _updateStatusMessage();
+    _updatePositions();
+    notifyListeners();
+  }
+
   void replaceTile(CarpetTile handTile, BoardPosition position) {
     final boardTile = board[position];
     if (boardTile == null) return;

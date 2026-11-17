@@ -68,7 +68,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
         builder: (context, child) {
           return Directionality(
             textDirection: _localeProvider.textDirection,
-            child: child!,
+            child: _RotatePhoneGate(child: child!),
           );
         },
         home: HomeScreen(key: ValueKey(_localeProvider.language)),
@@ -97,5 +97,51 @@ class LocaleProviderScope extends InheritedWidget {
     // Always notify - the parent setState already triggered a rebuild,
     // and we need dependents to update with the new language
     return true;
+  }
+}
+
+/// The game is played in landscape only: a portrait screen is covered by a
+/// "turn your phone sideways" message. The game stays mounted underneath.
+class _RotatePhoneGate extends StatelessWidget {
+  final Widget child;
+
+  const _RotatePhoneGate({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isPortrait = size.height > size.width;
+    final colors = Theme.of(context).colorScheme;
+    return Stack(
+      children: [
+        child,
+        if (isPortrait)
+          Positioned.fill(
+            child: Material(
+              color: colors.surface,
+              child: SafeArea(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.screen_rotation,
+                            size: 96, color: colors.primary),
+                        const SizedBox(height: 24),
+                        Text(
+                          AppLocalizations.of(context).rotatePhone,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }

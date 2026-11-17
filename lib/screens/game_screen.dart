@@ -276,6 +276,7 @@ class _GameScreenState extends State<GameScreen>
                   selectedTileId: _gameState.selectedTile?.id,
                   onRotateLeft: _gameState.rotateSelectedTileCounterClockwise,
                   onRotateRight: _gameState.rotateSelectedTile,
+                  onReturnFromBoard: _gameState.returnTileToHand,
                 ),
               ),
             );

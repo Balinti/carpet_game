@@ -15,6 +15,9 @@ class PlayerHand extends StatelessWidget {
   final VoidCallback? onRotateLeft;
   final VoidCallback? onRotateRight;
 
+  /// Called when a piece is dragged from the board back onto the tray.
+  final void Function(BoardPosition)? onReturnFromBoard;
+
   const PlayerHand({
     super.key,
     required this.player,
@@ -24,12 +27,27 @@ class PlayerHand extends StatelessWidget {
     this.selectedTileId,
     this.onRotateLeft,
     this.onRotateRight,
+    this.onReturnFromBoard,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    // Drag a placed piece from the board onto the tray to take it back.
+    return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
+      onWillAcceptWithDetails: (_) => isCurrentPlayer,
+      onAcceptWithDetails: (d) => onReturnFromBoard?.call(d.data.value),
+      builder: (context, candidates, _) => _buildBody(
+        context,
+        l10n,
+        hovering: candidates.isNotEmpty,
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, AppLocalizations l10n,
+      {required bool hovering}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -37,7 +55,9 @@ class PlayerHand extends StatelessWidget {
             ? Theme.of(context).colorScheme.primaryContainer
             : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: isCurrentPlayer
+        border: hovering
+            ? Border.all(color: Colors.green, width: 4)
+            : isCurrentPlayer
             ? Border.all(
                 color: Theme.of(context).colorScheme.primary,
                 width: 2,
