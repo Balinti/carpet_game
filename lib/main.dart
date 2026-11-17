@@ -4,10 +4,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'screens/home_screen.dart';
 import 'widgets/visual_style.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'app_gate.dart';
 import 'fullscreen_stub.dart'
     if (dart.library.js_interop) 'fullscreen_web.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const CarpetGameApp());
 }
 
@@ -86,7 +91,7 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
             ),
           );
         },
-        home: HomeScreen(key: ValueKey(_localeProvider.language)),
+        home: AppGate(key: ValueKey(_localeProvider.language)),
       ),
     );
   }

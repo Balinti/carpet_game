@@ -8,7 +8,10 @@ import 'game_screen.dart';
 
 /// Home screen with game mode selection.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  /// Shown as a small logout icon (top-left) when set.
+  final VoidCallback? onSignOut;
+
+  const HomeScreen({super.key, this.onSignOut});
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +38,15 @@ class HomeScreen extends StatelessWidget {
                 right: 8,
                 child: _LanguageButton(),
               ),
+              if (onSignOut != null)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: onSignOut,
+                  ),
+                ),
               // Main content
               SingleChildScrollView(
                 child: Center(

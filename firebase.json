@@ -1,1 +1,34 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"carpet-game-ubotika","appId":"1:252443013181:android:4f95f8c83efe4cf0fbba54","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"carpet-game-ubotika","appId":"1:252443013181:ios:9b0225ec696931f3fbba54","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"carpet-game-ubotika","configurations":{"android":"1:252443013181:android:4f95f8c83efe4cf0fbba54","ios":"1:252443013181:ios:9b0225ec696931f3fbba54","web":"1:252443013181:web:90ee84819ec4a28dfbba54"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "carpet-game-ubotika",
+          "appId": "1:252443013181:android:4f95f8c83efe4cf0fbba54",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "carpet-game-ubotika",
+          "appId": "1:252443013181:ios:9b0225ec696931f3fbba54",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "carpet-game-ubotika",
+          "configurations": {
+            "android": "1:252443013181:android:4f95f8c83efe4cf0fbba54",
+            "ios": "1:252443013181:ios:9b0225ec696931f3fbba54",
+            "web": "1:252443013181:web:90ee84819ec4a28dfbba54"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
