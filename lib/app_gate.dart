@@ -6,6 +6,9 @@ import 'onboarding/auth/firebase_auth_service.dart';
 import 'onboarding/onboarding.dart';
 import 'screens/assessment_screen.dart';
 import 'screens/home_screen.dart';
+import 'admin/dashboard_screen.dart';
+import 'telemetry.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// App flow: sign up / sign in → confirm email → EF questionnaire (by age)
 /// → first assessment (2×2, 3×3, 3×3) → home screen.
@@ -26,7 +29,17 @@ class _AppGateState extends State<AppGate> {
   _Stage _stage = _Stage.onboarding;
   String? _uid;
 
+  bool _isAdmin = false;
+
   Future<void> _afterOnboarding(UserProfile profile, QuestionnaireResult _) async {
+    Telemetry.log('session_start', {'ageGroup': profile.ageGroup.name});
+    FirebaseFirestore.instance
+        .collection('admins')
+        .doc(profile.uid)
+        .get()
+        .then((d) {
+      if (mounted && d.exists) setState(() => _isAdmin = true);
+    }, onError: (_) {});
     setState(() {
       _uid = profile.uid;
       _stage = _Stage.checking;
@@ -60,6 +73,12 @@ class _AppGateState extends State<AppGate> {
         );
       case _Stage.home:
         return HomeScreen(
+          onOpenDashboard: _isAdmin
+              ? () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  )
+              : null,
           onSignOut: () async {
             await AppGate.auth.signOut();
             if (mounted) setState(() => _stage = _Stage.onboarding);

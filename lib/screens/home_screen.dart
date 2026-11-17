@@ -11,7 +11,10 @@ class HomeScreen extends StatelessWidget {
   /// Shown as a small logout icon (top-left) when set.
   final VoidCallback? onSignOut;
 
-  const HomeScreen({super.key, this.onSignOut});
+  /// Shown as a small chart icon (admins only).
+  final VoidCallback? onOpenDashboard;
+
+  const HomeScreen({super.key, this.onSignOut, this.onOpenDashboard});
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +48,15 @@ class HomeScreen extends StatelessWidget {
                   child: IconButton(
                     icon: const Icon(Icons.logout),
                     onPressed: onSignOut,
+                  ),
+                ),
+              if (onOpenDashboard != null)
+                Positioned(
+                  top: 8,
+                  left: 56,
+                  child: IconButton(
+                    icon: const Icon(Icons.insights),
+                    onPressed: onOpenDashboard,
                   ),
                 ),
               // Main content

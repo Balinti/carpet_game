@@ -4,6 +4,7 @@ import '../l10n/l10n.dart';
 import '../models/models.dart';
 import '../widgets/game_board.dart';
 import '../widgets/visual_style.dart';
+import '../telemetry.dart';
 import '../sound_stub.dart' if (dart.library.js_interop) '../sound_web.dart';
 import '../widgets/player_hand.dart';
 
@@ -73,6 +74,7 @@ class _GameScreenState extends State<GameScreen>
       return;
     }
     if (widget.practiceGridSize != null) {
+      Telemetry.log('practice_start', {'grid': widget.practiceGridSize});
       _gameState = GameState.newPractice(widget.practiceGridSize!);
       return;
     }
@@ -103,6 +105,10 @@ class _GameScreenState extends State<GameScreen>
     final solved = _gameState.isSolved;
     if (solved && !_wasSolved) {
       playSuccess();
+      Telemetry.log('grid_solved', {
+        'grid': _gameState.targetGridSize,
+        'mode': widget.practiceGridSize != null ? 'practice' : (widget.gameState != null ? 'assessment' : widget.mode.name),
+      });
       widget.onSolved?.call();
     }
     _wasSolved = solved;

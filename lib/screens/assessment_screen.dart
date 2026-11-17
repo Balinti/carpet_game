@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../telemetry.dart';
+
 import '../assessment/assessment.dart';
 import '../game/game_state.dart';
 import '../models/models.dart';
@@ -66,6 +68,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   GameState _newRound(int index) {
     final size = widget.rounds[index];
     _recorder.startRound(size);
+    Telemetry.log('assessment_round_start', {'grid': size});
     return GameState.newPractice(size)..recorder = _recorder;
   }
 
@@ -101,6 +104,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     } catch (_) {
       // Never interrupt the child with errors; result is still shown.
     }
+    Telemetry.log('assessment_done', {
+      'rounds': result.rounds.length,
+      'totalMs': result.rounds.fold<int>(0, (s, m) => s + (m.durationMs ?? 0)),
+    });
     widget.onComplete?.call(result);
   }
 
