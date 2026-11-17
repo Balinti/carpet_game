@@ -179,40 +179,6 @@ class PlayerHand extends StatelessWidget {
       isDraggable: true,
       onTap: () => onTileTap?.call(tile),
     );
-    if (!selected) return widget;
-    final btn = size * 0.42;
-    Widget rotate(IconData icon, VoidCallback? onTap) => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTap,
-          child: Container(
-            width: btn,
-            height: btn,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 3)],
-            ),
-            child: Icon(icon, size: btn * 0.75, color: Colors.red),
-          ),
-        );
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        children: [
-          widget,
-          Positioned(
-            left: size * 0.06,
-            bottom: size * 0.06,
-            child: rotate(Icons.rotate_left, onRotateLeft),
-          ),
-          Positioned(
-            right: size * 0.06,
-            bottom: size * 0.06,
-            child: rotate(Icons.rotate_right, onRotateRight),
-          ),
-        ],
-      ),
-    );
+    return widget;
   }
 }

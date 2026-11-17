@@ -260,6 +260,9 @@ class _GameScreenState extends State<GameScreen>
                 onPositionTap: _placeTile,
                 onTileDrop: _dropTile,
                 onTileRotate: _rotatePlacedTile,
+                onTileSelect: _gameState.selectBoardTile,
+                onSelectedRotate: (pos, ccw) =>
+                    _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
                 onTileSwap: _swapTiles,
                 onTileReplace: _replaceTile,
                 showMatchFeedback: widget.mode.showMatchFeedback,
@@ -285,8 +288,6 @@ class _GameScreenState extends State<GameScreen>
                 // Info bar
                 _buildInfoBar(l10n),
 
-                // Message bar
-                if (_gameState.message != null) _buildMessageBar(),
 
                 if (sideBySide)
                   Expanded(

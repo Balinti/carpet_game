@@ -11,6 +11,12 @@ class GameBoard extends StatelessWidget {
   final Function(BoardPosition)? onPositionTap;
   final Function(CarpetTile, BoardPosition)? onTileDrop;
   final Function(BoardPosition)? onTileRotate;
+
+  /// Tap on a placed piece (select / deselect it).
+  final Function(BoardPosition)? onTileSelect;
+
+  /// Rotate the selected placed piece; `true` = counter-clockwise.
+  final void Function(BoardPosition, bool counterClockwise)? onSelectedRotate;
   final Function(BoardPosition, BoardPosition)? onTileSwap;
   final Function(CarpetTile, BoardPosition)? onTileReplace;
   final bool showMatchFeedback;
@@ -22,6 +28,8 @@ class GameBoard extends StatelessWidget {
     this.onPositionTap,
     this.onTileDrop,
     this.onTileRotate,
+    this.onTileSelect,
+    this.onSelectedRotate,
     this.onTileSwap,
     this.onTileReplace,
     this.showMatchFeedback = false,
@@ -194,7 +202,9 @@ class GameBoard extends StatelessWidget {
                 ),
               ),
               child: GestureDetector(
-                onTap: () => onTileRotate?.call(position),
+                onTap: () => onTileSelect != null
+                    ? onTileSelect!(position)
+                    : onTileRotate?.call(position),
                 child: Container(
                   decoration: isHovering
                       ? BoxDecoration(
@@ -204,9 +214,16 @@ class GameBoard extends StatelessWidget {
                           ),
                         )
                       : null,
-                  child: CustomPaint(
-                    size: Size(slotSize, slotSize),
-                    painter: TilePainter(tile: tile),
+                  child: _withRotateButtons(
+                    position,
+                    slotSize,
+                    CustomPaint(
+                      size: Size(slotSize, slotSize),
+                      painter: TilePainter(
+                        tile: tile,
+                        isSelected: gameState.selectedBoardPosition == position,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -214,6 +231,46 @@ class GameBoard extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  /// For the selected placed piece, draw rotate-left / rotate-right buttons
+  /// inside the piece.
+  Widget _withRotateButtons(BoardPosition position, double size, Widget tile) {
+    if (gameState.selectedBoardPosition != position) return tile;
+    final btn = size * 0.36;
+    Widget rotate(IconData icon, bool ccw) => GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onSelectedRotate?.call(position, ccw),
+          child: Container(
+            width: btn,
+            height: btn,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 3)],
+            ),
+            child: Icon(icon, size: btn * 0.75, color: Colors.red),
+          ),
+        );
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          tile,
+          Positioned(
+            left: size * 0.06,
+            bottom: size * 0.06,
+            child: rotate(Icons.rotate_left, true),
+          ),
+          Positioned(
+            right: size * 0.06,
+            bottom: size * 0.06,
+            child: rotate(Icons.rotate_right, false),
+          ),
+        ],
+      ),
     );
   }
 

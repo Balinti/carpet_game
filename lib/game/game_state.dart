@@ -35,6 +35,28 @@ class GameState extends ChangeNotifier {
   // === Regular Flow specific ===
   int _currentLevel = 1;
 
+  /// Id of the placed piece selected on the board (red frame + rotate buttons).
+  String? _selectedBoardTileId;
+
+  /// Board position of the selected placed piece, if any.
+  BoardPosition? get selectedBoardPosition {
+    if (_selectedBoardTileId == null) return null;
+    for (final e in board.entries) {
+      if (e.value.id == _selectedBoardTileId) return e.key;
+    }
+    return null;
+  }
+
+  /// Tap on a placed piece: select it, or deselect if already selected.
+  void selectBoardTile(BoardPosition position) {
+    final tile = board[position];
+    if (tile == null) return;
+    _selectedBoardTileId = _selectedBoardTileId == tile.id ? null : tile.id;
+    _selectedTile = null;
+    _updatePositions();
+    notifyListeners();
+  }
+
   /// When set, a single free-practice grid of this size (1-6) with all 36 pieces.
   int? _practiceGridSize;
   int? get practiceGridSize => _practiceGridSize;
@@ -286,6 +308,7 @@ class GameState extends ChangeNotifier {
   /// Select a tile from the current player's hand.
   void selectTile(CarpetTile? tile) {
     _selectedTile = tile;
+    if (tile != null) _selectedBoardTileId = null;
     _message = null;
     _lastPlacementResult = null;
     _updatePositions();
@@ -518,11 +541,13 @@ class GameState extends ChangeNotifier {
   }
 
   /// Rotate a tile that is already placed on the board.
-  void rotatePlacedTile(BoardPosition position) {
+  void rotatePlacedTile(BoardPosition position, {bool counterClockwise = false}) {
     final tile = board[position];
     if (tile == null) return;
 
-    board[position] = tile.rotateClockwise();
+    board[position] = counterClockwise
+        ? tile.rotateCounterClockwise()
+        : tile.rotateClockwise();
 
     // Update message with current status
     _updateStatusMessage();

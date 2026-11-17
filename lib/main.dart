@@ -100,8 +100,10 @@ class LocaleProviderScope extends InheritedWidget {
   }
 }
 
-/// The game is played in landscape only: a portrait screen is covered by a
-/// "turn your phone sideways" message. The game stays mounted underneath.
+/// The game is played in landscape only. Phone browsers can't be forced to
+/// rotate (and iPhones with rotation lock never do), so when the screen is
+/// portrait we turn the whole app 90° ourselves: the player just holds the
+/// phone sideways.
 class _RotatePhoneGate extends StatelessWidget {
   final Widget child;
 
@@ -109,39 +111,20 @@ class _RotatePhoneGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final isPortrait = size.height > size.width;
-    final colors = Theme.of(context).colorScheme;
-    return Stack(
-      children: [
-        child,
-        if (isPortrait)
-          Positioned.fill(
-            child: Material(
-              color: colors.surface,
-              child: SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.screen_rotation,
-                            size: 96, color: colors.primary),
-                        const SizedBox(height: 24),
-                        Text(
-                          AppLocalizations.of(context).rotatePhone,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    final mq = MediaQuery.of(context);
+    if (mq.size.height <= mq.size.width) return child;
+    final p = mq.padding;
+    return RotatedBox(
+      quarterTurns: 1,
+      child: MediaQuery(
+        data: mq.copyWith(
+          size: Size(mq.size.height, mq.size.width),
+          // Clockwise turn: old left edge becomes the top, and so on.
+          padding: EdgeInsets.fromLTRB(p.bottom, p.left, p.top, p.right),
+          viewPadding: EdgeInsets.zero,
+        ),
+        child: child,
+      ),
     );
   }
 }
