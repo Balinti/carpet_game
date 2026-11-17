@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCEE5qFahcCyvZhD1XH9lpFC8jiay9sRkA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>252443013181</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ubotika.carpetGame</string>
+	<key>PROJECT_ID</key>
+	<string>carpet-game-ubotika</string>
+	<key>STORAGE_BUCKET</key>
+	<string>carpet-game-ubotika.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:252443013181:ios:9b0225ec696931f3fbba54</string>
+</dict>
+</plist>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252443013181",
+    "project_id": "carpet-game-ubotika",
+    "storage_bucket": "carpet-game-ubotika.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252443013181:android:4f95f8c83efe4cf0fbba54",
+        "android_client_info": {
+          "package_name": "com.ubotika.carpet_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSXKAt-tdqFEsqJqVCo-nTuXZm3idr8Zs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
