@@ -67,13 +67,13 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 32),
 
-                        // Quick grids: 1x1 .. 6x6
+                        // Quick grids: 2x2 .. 6x6
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
                           alignment: WrapAlignment.center,
                           children: [
-                            for (var n = 1; n <= 6; n++)
+                            for (var n = 2; n <= 6; n++)
                               FilledButton(
                                 onPressed: () => Navigator.push(
                                   context,
