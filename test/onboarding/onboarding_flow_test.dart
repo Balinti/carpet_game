@@ -81,6 +81,7 @@ void main() {
       },
     )));
     await tester.pumpAndSettle();
+    await _tap(tester, const ValueKey('welcome_create'));
     expect(find.text('Create your account'), findsOneWidget);
 
     // Empty submit shows inline validation errors.
@@ -163,6 +164,7 @@ void main() {
       lang: AppLanguage.hebrew,
     ));
     await tester.pumpAndSettle();
+    await _tap(tester, const ValueKey('welcome_create'));
     await _enter(tester, const ValueKey('signup_name'), 'נועה');
     await _enter(tester, const ValueKey('signup_age'), '13');
     await _enter(tester, const ValueKey('signup_email'), 'noa@example.com');
@@ -195,7 +197,7 @@ void main() {
       onDone: (_, __) {},
     )));
     await tester.pumpAndSettle();
-    await _tap(tester, const ValueKey('signup_go_signin'));
+    await _tap(tester, const ValueKey('welcome_signin'));
     expect(find.text('Welcome back'), findsOneWidget);
     await _enter(tester, const ValueKey('signin_email'), 'old@example.com');
     await _enter(tester, const ValueKey('signin_password'), 'wrong!!');
@@ -226,6 +228,7 @@ void main() {
       onDone: (_, __) {},
     )));
     await tester.pumpAndSettle();
+    await _tap(tester, const ValueKey('welcome_create'));
     await _enter(tester, const ValueKey('signup_name'), 'X');
     await _enter(tester, const ValueKey('signup_age'), '30');
     await _enter(tester, const ValueKey('signup_email'), 'taken@example.com');

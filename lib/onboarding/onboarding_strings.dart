@@ -30,6 +30,9 @@ class OnboardingStrings {
   String get continueLabel => _t('Continue', 'Continuar', 'המשך');
 
   // Sign in
+  String get welcomeTitle => _t('Carpet Game', 'Juego de Alfombra', 'משחק השטיח');
+  String get welcomeSignIn => _t('Sign in', 'Iniciar sesión', 'כניסה');
+  String get welcomeCreate => _t('Create account', 'Crear cuenta', 'יצירת חשבון');
   String get signInTitle => _t('Welcome back', 'Bienvenido de nuevo', 'ברוכים השבים');
   String get signIn => _t('Sign in', 'Iniciar sesión', 'כניסה');
   String get newAccount => _t('Create a new account', 'Crear una cuenta nueva', 'יצירת חשבון חדש');

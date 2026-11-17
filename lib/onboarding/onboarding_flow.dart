@@ -10,6 +10,7 @@ import 'screens/questionnaire_screen.dart';
 import 'screens/sign_in_screen.dart';
 import 'screens/sign_up_screen.dart';
 import 'screens/verify_email_screen.dart';
+import 'screens/welcome_screen.dart';
 
 /// Sign up (or sign in) -> verify email -> EF questionnaire, then [onDone].
 ///
@@ -44,7 +45,7 @@ class OnboardingFlow extends StatefulWidget {
   State<OnboardingFlow> createState() => _OnboardingFlowState();
 }
 
-enum OnboardingStep { loading, signUp, signIn, verify, completeProfile, questionnaire, done }
+enum OnboardingStep { loading, welcome, signUp, signIn, verify, completeProfile, questionnaire, done }
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
   OnboardingStep _step = OnboardingStep.loading;
@@ -58,7 +59,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     super.initState();
     final user = _auth.currentUser;
     if (user == null) {
-      _step = OnboardingStep.signUp;
+      _step = OnboardingStep.welcome;
     } else {
       _resume(user);
     }
@@ -187,6 +188,12 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           child: Center(
             child: CircularProgressIndicator(color: onboardingStyle.boardFrame),
           ),
+        );
+      case OnboardingStep.welcome:
+        return WelcomeScreen(
+          key: const ValueKey('step_welcome'),
+          onSignIn: () => _go(OnboardingStep.signIn),
+          onCreateAccount: () => _go(OnboardingStep.signUp),
         );
       case OnboardingStep.signUp:
         return SignUpScreen(
