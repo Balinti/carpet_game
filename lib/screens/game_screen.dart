@@ -205,119 +205,80 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final st = VisualStyle.current;
+    final bgColors = st.isClassic
+        ? [
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.secondaryContainer,
+          ]
+        : st.boardBackground;
+    final iconColor =
+        st.isClassic ? Theme.of(context).colorScheme.onPrimaryContainer : st.onTray;
+
+    // Landscape, full screen: no app bar or info bar. Left: small
+    // back/help/restart icons. Middle: the board and the big red buttons.
+    // Right: the Builder with every piece visible.
+    Widget smallIcon(IconData icon, VoidCallback onTap) => IconButton(
+          icon: Icon(icon, color: iconColor),
+          onPressed: onTap,
+        );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getModeTitle(l10n)),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          // Previous level button
-          if (_gameState.canGoToPreviousLevel)
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: _goToPreviousLevel,
-            ),
-          // Undo button
-          if (_gameState.canUndo)
-            IconButton(
-              icon: const Icon(Icons.undo),
-              onPressed: _undo,
-            ),
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: _showRulesDialog,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: bgColors,
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _restartGame,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          LayoutBuilder(builder: (context, box) {
-            // Short landscape screens (phones on their side): board and
-            // pieces side by side so both get the full height.
-            final sideBySide =
-                box.maxWidth > box.maxHeight && box.maxHeight < 600;
-            final boardPane = Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: VisualStyle.current.isClassic
-                      ? [
-                          Theme.of(context).colorScheme.primaryContainer,
-                          Theme.of(context).colorScheme.secondaryContainer,
-                        ]
-                      : VisualStyle.current.boardBackground,
-                ),
-              ),
-              // Red buttons sit on the board side, to the right of the grid.
-              child: Row(
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Expanded(child: GameBoard(
-                gameState: _gameState,
-                onPositionTap: _placeTile,
-                onTileDrop: _dropTile,
-                onTileRotate: _rotatePlacedTile,
-                onTileSelect: _gameState.selectBoardTile,
-                onSelectedReturn: _gameState.returnTileToHand,
-                onSelectedRotate: (pos, ccw) =>
-                    _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
-                onTileSwap: _swapTiles,
-                onTileReplace: _replaceTile,
-                showMatchFeedback: widget.mode.showMatchFeedback)),
-                  _buildControlStrip(vertical: true),
+                  smallIcon(Icons.arrow_back, () => Navigator.maybePop(context)),
+                  if (_gameState.canGoToPreviousLevel)
+                    smallIcon(Icons.skip_previous, _goToPreviousLevel),
+                  smallIcon(Icons.help_outline, _showRulesDialog),
+                  smallIcon(Icons.refresh, _restartGame),
                 ],
               ),
-            );
-            final handPane = Container(
-              color: VisualStyle.current.isClassic
-                  ? Theme.of(context).colorScheme.surfaceContainerLow
-                  : VisualStyle.current.trayBackground,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(12),
-                child: PlayerHand(
-                  player: _gameState.currentPlayer,
-                  isCurrentPlayer: true,
-                  onTileTap: _selectHandTile,
-                  selectedTileId: _gameState.selectedTile?.id,
-                  onRotateLeft: _gameState.rotateSelectedTileCounterClockwise,
-                  onRotateRight: _gameState.rotateSelectedTile,
-                  onReturnFromBoard: _gameState.returnTileToHand,
+              Expanded(
+                flex: 3,
+                child: GameBoard(
+                  gameState: _gameState,
+                  onPositionTap: _placeTile,
+                  onTileDrop: _dropTile,
+                  onTileRotate: _rotatePlacedTile,
+                  onTileSelect: _gameState.selectBoardTile,
+                  onSelectedReturn: _gameState.returnTileToHand,
+                  onSelectedRotate: (pos, ccw) =>
+                      _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
+                  onTileSwap: _swapTiles,
+                  onTileReplace: _replaceTile,
+                  showMatchFeedback: widget.mode.showMatchFeedback,
                 ),
               ),
-            );
-            return Column(
-              children: [
-                // Info bar
-                _buildInfoBar(l10n),
-
-
-                if (sideBySide)
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(flex: 3, child: boardPane),
-                        Expanded(flex: 2, child: handPane),
-                      ],
-                    ),
-                  )
-                else ...[
-                  Expanded(flex: 3, child: boardPane),
-                  Expanded(flex: 2, child: handPane),
-                ],
-              ],
-            );
-          }),
-
-          // Celebration overlay
-        ],
+              _buildControlStrip(vertical: true),
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: PlayerHand(
+                    player: _gameState.currentPlayer,
+                    isCurrentPlayer: true,
+                    onTileTap: _selectHandTile,
+                    selectedTileId: _gameState.selectedTile?.id,
+                    onReturnFromBoard: _gameState.returnTileToHand,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-
-      // Game over button
       floatingActionButton: _gameState.gameOver
           ? FloatingActionButton(
               onPressed: _restartGame,
@@ -336,6 +297,10 @@ class _GameScreenState extends State<GameScreen>
     final bg = style.isClassic
         ? Theme.of(context).colorScheme.surfaceContainerHigh
         : style.trayBackground;
+    // Biggest round buttons that fit 3 high (max 72px).
+    final screenH = MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).vertical;
+    final size = ((screenH - 8) / 3 - 12).clamp(36.0, 72.0);
     Widget button(IconData icon, VoidCallback onTap) => Padding(
           padding: const EdgeInsets.all(6),
           child: Material(
@@ -346,9 +311,9 @@ class _GameScreenState extends State<GameScreen>
               customBorder: const CircleBorder(),
               onTap: enabled ? onTap : null,
               child: SizedBox(
-                width: 56,
-                height: 56,
-                child: Icon(icon, size: 32, color: Colors.white),
+                width: size,
+                height: size,
+                child: Icon(icon, size: size * 0.58, color: Colors.white),
               ),
             ),
           ),

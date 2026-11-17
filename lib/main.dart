@@ -4,6 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/l10n.dart';
 import 'screens/home_screen.dart';
 import 'widgets/visual_style.dart';
+import 'fullscreen_stub.dart'
+    if (dart.library.js_interop) 'fullscreen_web.dart';
 
 void main() {
   runApp(const CarpetGameApp());
@@ -76,7 +78,12 @@ class _CarpetGameAppState extends State<CarpetGameApp> {
         builder: (context, child) {
           return Directionality(
             textDirection: _localeProvider.textDirection,
-            child: _RotatePhoneGate(child: child!),
+            child: Listener(
+              // First touch anywhere: go full screen (browsers only allow
+              // it after a tap).
+              onPointerUp: (_) => requestFullscreen(),
+              child: _RotatePhoneGate(child: child!),
+            ),
           );
         },
         home: HomeScreen(key: ValueKey(_localeProvider.language)),

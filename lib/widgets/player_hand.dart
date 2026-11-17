@@ -49,118 +49,63 @@ class PlayerHand extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, AppLocalizations l10n,
       {required bool hovering}) {
+    final st = VisualStyle.current;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: !VisualStyle.current.isClassic
-            ? VisualStyle.current.trayCard
-            : isCurrentPlayer
+        color: st.isClassic
             ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
+            : st.trayCard,
         borderRadius: BorderRadius.circular(12),
         border: hovering
             ? Border.all(color: Colors.green, width: 4)
-            : isCurrentPlayer
-            ? Border.all(
-                color: VisualStyle.current.isClassic
+            : Border.all(
+                color: st.isClassic
                     ? Theme.of(context).colorScheme.primary
-                    : VisualStyle.current.boardFrame.withOpacity(0.5),
+                    : st.boardFrame.withOpacity(0.5),
                 width: 2,
-              )
-            : null,
+              ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      // All pieces always visible: pick the number per row that gives the
+      // biggest piece that still fits both the width and the height.
+      child: LayoutBuilder(builder: (context, c) {
+        const double spacing = 4;
+        final hand = player.hand;
+        final n = hand.isEmpty ? 1 : hand.length;
+        var bestPerRow = 1;
+        var best = 0.0;
+        for (var perRow = 1; perRow <= n; perRow++) {
+          final rowsNeeded = (n + perRow - 1) ~/ perRow;
+          final w = (c.maxWidth - (perRow - 1) * spacing) / perRow;
+          final h = (c.maxHeight - (rowsNeeded - 1) * spacing) / rowsNeeded;
+          final size = w < h ? w : h;
+          if (size > best) {
+            best = size;
+            bestPerRow = perRow;
+          }
+        }
+        final size = (best < tileSize * 1.6 ? best : tileSize * 1.6)
+            .floorToDouble();
+        final rows = <Widget>[];
+        for (var start = 0; start < hand.length; start += bestPerRow) {
+          final end = start + bestPerRow < hand.length
+              ? start + bestPerRow
+              : hand.length;
+          if (start > 0) rows.add(const SizedBox(height: spacing));
+          rows.add(Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  if (isCurrentPlayer)
-                    Container(
-                      width: 12,
-                      height: 12,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  Text(
-                    player.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight:
-                              isCurrentPlayer ? FontWeight.bold : FontWeight.normal,
-                        ),
-                  ),
-                ],
-              ),
-              Text(
-                l10n.tilesCount(player.tileCount),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              for (var i = start; i < end; i++) ...[
+                if (i > start) const SizedBox(width: spacing),
+                _buildHandTile(hand[i], size),
+              ],
             ],
-          ),
-          const SizedBox(height: 12),
-          if (isCurrentPlayer)
-            // Rows of 12 tiles (36 tiles = 3 rows of 12). Tiles shrink so a
-            // full row always fits the width.
-            LayoutBuilder(builder: (context, constraints) {
-              // 12 per row when there is room (landscape), 6 when narrow.
-              final int perRow = constraints.maxWidth >= 700 ? 12 : 8;
-              const double spacing = 4;
-              final fit = (constraints.maxWidth - (perRow - 1) * spacing) / perRow;
-              final size = fit < tileSize ? fit : tileSize;
-              final hand = player.hand;
-              final rows = <Widget>[];
-              for (var start = 0; start < hand.length; start += perRow) {
-                final end =
-                    start + perRow < hand.length ? start + perRow : hand.length;
-                if (start > 0) rows.add(const SizedBox(height: spacing));
-                rows.add(Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (var i = start; i < end; i++) ...[
-                      if (i > start) const SizedBox(width: spacing),
-                      _buildHandTile(hand[i], size),
-                    ],
-                  ],
-                ));
-              }
-              return SizedBox(
-                width: constraints.maxWidth,
-                child: Column(children: rows),
-              );
-            })
-          else
-            // Show face-down tiles for other players
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: List.generate(
-                player.tileCount,
-                (index) => Container(
-                  width: tileSize * 0.8,
-                  height: tileSize * 0.8,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade700,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: Colors.grey.shade500),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.grid_view,
-                      color: Colors.white54,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+          ));
+        }
+        return Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: rows),
+        );
+      }),
     );
   }
 

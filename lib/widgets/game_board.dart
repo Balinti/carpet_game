@@ -114,11 +114,11 @@ class GameBoard extends StatelessWidget {
     // Overhead: 16 outer padding + 3 border + 4 inner padding per side, 4 per tile.
     final shortest = box.maxWidth < box.maxHeight ? box.maxWidth : box.maxHeight;
     final calculatedTileSize =
-        ((shortest - 46) / gridSize - 4).clamp(24.0, 100.0);
+        ((shortest - 26) / gridSize - 4).clamp(24.0, 160.0);
 
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(6),
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(
