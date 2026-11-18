@@ -10,15 +10,41 @@ import '../widgets/visual_style.dart';
 /// show a correct and a wrong example; the green button starts.
 class AssessmentIntro extends StatefulWidget {
   final VoidCallback onStart;
-  const AssessmentIntro({super.key, required this.onStart});
+
+  /// Starts by itself after this long (the green button starts sooner).
+  final Duration autoStart;
+  const AssessmentIntro({
+    super.key,
+    required this.onStart,
+    this.autoStart = const Duration(seconds: 12),
+  });
 
   @override
   State<AssessmentIntro> createState() => _AssessmentIntroState();
 }
 
-class _AssessmentIntroState extends State<AssessmentIntro> {
-  /// null = no example yet, true = correct, false = wrong.
-  bool? _example;
+class _AssessmentIntroState extends State<AssessmentIntro>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _countdown =
+      AnimationController(vsync: this, duration: widget.autoStart)
+        ..addStatusListener((s) {
+          if (s == AnimationStatus.completed) _go();
+        })
+        ..forward();
+  bool _started = false;
+
+  void _go() {
+    if (_started || !mounted) return;
+    _started = true;
+    _countdown.stop();
+    widget.onStart();
+  }
+
+  @override
+  void dispose() {
+    _countdown.dispose();
+    super.dispose();
+  }
 
   static const _he = 'לפנייך משטח. עלייך לגרור את החלקים ולמלא אותו.\n'
       'עלייך לשמור על חוק הצבעים: מחברים צבע לצבע.';
@@ -87,29 +113,6 @@ class _AssessmentIntroState extends State<AssessmentIntro> {
                             height: 1.45,
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 10,
-                          children: [
-                            _exampleButton(
-                              key: const ValueKey('intro_good'),
-                              icon: Icons.check_circle,
-                              color: Colors.greenAccent.shade700,
-                              label: he ? 'דוגמה נכונה' : 'Correct example',
-                              selected: _example == true,
-                              onTap: () => setState(() => _example = true),
-                            ),
-                            _exampleButton(
-                              key: const ValueKey('intro_bad'),
-                              icon: Icons.cancel,
-                              color: Colors.redAccent,
-                              label: he ? 'דוגמה שגויה' : 'Wrong example',
-                              selected: _example == false,
-                              onTap: () => setState(() => _example = false),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -118,12 +121,18 @@ class _AssessmentIntroState extends State<AssessmentIntro> {
                 Expanded(
                   flex: 4,
                   child: LayoutBuilder(
-                    builder: (context, c) => _exampleView(
-                      st,
-                      ((c.maxWidth - 40) / 2)
-                          .clamp(48.0, c.maxHeight * 0.55)
-                          .clamp(48.0, 130.0),
-                    ),
+                    builder: (context, c) {
+                      final size = ((c.maxWidth - 110) / 2)
+                          .clamp(36.0, (c.maxHeight - 60) / 2)
+                          .clamp(36.0, 110.0);
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _exampleView(st, size, true),
+                          _exampleView(st, size, false),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 Padding(
@@ -135,12 +144,32 @@ class _AssessmentIntroState extends State<AssessmentIntro> {
                     elevation: 6,
                     child: InkWell(
                       customBorder: const CircleBorder(),
-                      onTap: widget.onStart,
-                      child: const SizedBox(
+                      onTap: _go,
+                      child: SizedBox(
                         width: 76,
                         height: 76,
-                        child: Icon(Icons.play_arrow_rounded,
-                            size: 50, color: Colors.white),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Ring that fills up until the board starts.
+                            AnimatedBuilder(
+                              animation: _countdown,
+                              builder: (_, __) => SizedBox(
+                                width: 70,
+                                height: 70,
+                                child: CircularProgressIndicator(
+                                  value: _countdown.value,
+                                  strokeWidth: 5,
+                                  color: Colors.white,
+                                  backgroundColor:
+                                      Colors.white.withOpacity(0.25),
+                                ),
+                              ),
+                            ),
+                            const Icon(Icons.play_arrow_rounded,
+                                size: 46, color: Colors.white),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -153,61 +182,14 @@ class _AssessmentIntroState extends State<AssessmentIntro> {
     );
   }
 
-  Widget _exampleButton({
-    required Key key,
-    required IconData icon,
-    required Color color,
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) =>
-      Material(
-        key: key,
-        color:
-            selected ? color.withOpacity(0.3) : Colors.white.withOpacity(0.08),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: color, width: selected ? 3 : 2),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 30),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-  Widget _exampleView(VisualStyle st, double size) {
-    final ex = _example;
-    if (ex == null) {
-      return Center(
-        child: Icon(Icons.touch_app_rounded,
-            size: 64, color: st.onTray.withOpacity(0.35)),
-      );
-    }
+  Widget _exampleView(VisualStyle st, double size, bool ex) {
     final color = ex ? Colors.greenAccent : Colors.redAccent;
     Widget tile(CarpetTile t) => CustomPaint(
           size: Size(size, size),
           painter: TilePainter(tile: t),
         );
     return Center(
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
@@ -229,7 +211,7 @@ class _AssessmentIntroState extends State<AssessmentIntro> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(width: 12),
           Icon(ex ? Icons.check_circle : Icons.cancel, color: color, size: 44),
         ],
       ),

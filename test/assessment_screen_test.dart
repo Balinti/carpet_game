@@ -33,9 +33,8 @@ void main() {
 
     // Instructions first; the play button starts round 1.
     expect(find.byType(GameScreen), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('intro_good')));
-    await tester.pump();
     expect(find.byKey(const ValueKey('intro_example_good')), findsOneWidget);
+    expect(find.byKey(const ValueKey('intro_example_bad')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('intro_start')));
     await tester.pump();
 
