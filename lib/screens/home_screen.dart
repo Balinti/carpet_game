@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'assessment_intro.dart';
 import '../l10n/l10n.dart';
 import '../main.dart';
 import '../models/game_mode.dart';
@@ -111,12 +112,20 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             for (var n = 2; n <= 6; n++)
                               FilledButton(
+                                // Instructions first, then the board.
                                 onPressed: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => GameScreen(
-                                      mode: GameMode.regularFlow,
-                                      practiceGridSize: n,
+                                    builder: (ctx) => AssessmentIntro(
+                                      onStart: () => Navigator.pushReplacement(
+                                        ctx,
+                                        MaterialPageRoute(
+                                          builder: (_) => GameScreen(
+                                            mode: GameMode.regularFlow,
+                                            practiceGridSize: n,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),

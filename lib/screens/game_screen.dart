@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'assessment_intro.dart';
 import '../game/game_state.dart';
 import '../l10n/l10n.dart';
 import '../models/models.dart';
@@ -188,6 +189,18 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  /// Help: the same instructions screen (with examples) as before playing.
+  void _showInstructions() {
+    _gameState.recordHelpOpened();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => AssessmentIntro(onStart: () => Navigator.pop(ctx)),
+      ),
+    );
+  }
+
+  // ignore: unused_element
   void _showRulesDialog() {
     final l10n = AppLocalizations.of(context);
     _gameState.recordHelpOpened();
@@ -306,7 +319,7 @@ class _GameScreenState extends State<GameScreen>
                       Icons.arrow_back, () => Navigator.maybePop(context)),
                   if (_gameState.canGoToPreviousLevel)
                     smallIcon(Icons.skip_previous, _goToPreviousLevel),
-                  smallIcon(Icons.help_outline, _showRulesDialog),
+                  smallIcon(Icons.help_outline, _showInstructions),
                   if (widget.showRestart)
                     smallIcon(Icons.refresh, _restartGame),
                 ],
