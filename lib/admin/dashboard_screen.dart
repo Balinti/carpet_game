@@ -279,6 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: DataTable(
             headingTextStyle: head,
             dataTextStyle: textStyle,
+            showCheckboxColumn: false,
             columns: [
               const DataColumn(label: Text('name')),
               const DataColumn(label: Text('age'), numeric: true),
@@ -292,24 +293,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
             rows: [
               for (final r in _rows)
-                DataRow(cells: [
-                  DataCell(Text(r.name)),
-                  DataCell(Text('${r.age ?? '—'}')),
-                  DataCell(Text(_date(r.result.startedAt))),
-                  for (var i = 0; i < roundLabels.length; i++) ...[
-                    DataCell(Text(i < r.result.rounds.length
-                        ? _secs(r.result.rounds[i].durationMs)
-                        : '—')),
-                    DataCell(Text(i < r.result.rounds.length
-                        ? '${r.result.rounds[i].rotations}'
-                        : '—')),
-                    DataCell(Text(i < r.result.rounds.length
-                        ? '${r.result.rounds[i].backToBuilder}'
-                        : '—')),
-                  ],
-                  DataCell(Text(
-                      '${r.result.rounds.fold<int>(0, (s, m) => s + m.helpOpens)}')),
-                ]),
+                DataRow(
+                    onSelectChanged: (_) => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AssessmentReportScreen(
+                              result: r.result,
+                              title:
+                                  '${r.name} · ${r.age ?? '—'} · ${_date(r.result.startedAt)}',
+                            ),
+                          ),
+                        ),
+                    cells: [
+                      DataCell(Text(r.name)),
+                      DataCell(Text('${r.age ?? '—'}')),
+                      DataCell(Text(_date(r.result.startedAt))),
+                      for (var i = 0; i < roundLabels.length; i++) ...[
+                        DataCell(Text(i < r.result.rounds.length
+                            ? _secs(r.result.rounds[i].durationMs)
+                            : '—')),
+                        DataCell(Text(i < r.result.rounds.length
+                            ? '${r.result.rounds[i].rotations}'
+                            : '—')),
+                        DataCell(Text(i < r.result.rounds.length
+                            ? '${r.result.rounds[i].backToBuilder}'
+                            : '—')),
+                      ],
+                      DataCell(Text(
+                          '${r.result.rounds.fold<int>(0, (s, m) => s + m.helpOpens)}')),
+                    ]),
             ],
           ),
         ),

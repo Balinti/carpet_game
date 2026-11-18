@@ -149,7 +149,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 }
 
-/// Results: one card per round with icons and numbers, and a "done" button.
+/// Results at the end: the performance report and a "done" button.
 class AssessmentResultsView extends StatelessWidget {
   final AssessmentResult result;
   final VoidCallback onDone;
@@ -160,14 +160,7 @@ class AssessmentResultsView extends StatelessWidget {
     required this.onDone,
   });
 
-  static String formatDuration(int? ms) {
-    if (ms == null) return '–';
-    final s = ms / 1000;
-    if (s < 60) return '${s.toStringAsFixed(1)}s';
-    final m = ms ~/ 60000;
-    final rest = ((ms % 60000) / 1000).round();
-    return '$m:${rest.toString().padLeft(2, '0')}';
-  }
+  static String formatDuration(int? ms) => AssessmentReport.formatDuration(ms);
 
   @override
   Widget build(BuildContext context) {
@@ -187,16 +180,9 @@ class AssessmentResultsView extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        for (final r in result.rounds) _roundCard(st, r),
-                      ],
-                    ),
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
+                  child: AssessmentReport(result: result),
                 ),
               ),
               Padding(
@@ -220,69 +206,6 @@ class AssessmentResultsView extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _roundCard(VisualStyle st, RoundMetrics r) {
-    Widget line(IconData icon, String value) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: st.onTray.withOpacity(0.8), size: 24),
-              const SizedBox(width: 10),
-              Text(
-                value,
-                style: TextStyle(
-                  color: st.onTray,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        );
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: st.trayCard,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: st.boardFrame.withOpacity(0.5), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.grid_view_rounded, color: st.boardFrame, size: 26),
-              const SizedBox(width: 8),
-              Text(
-                r.label,
-                style: TextStyle(
-                  color: st.boardFrame,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          line(Icons.timer_outlined, formatDuration(r.durationMs)),
-          line(Icons.rotate_right, '${r.rotations}'),
-          line(Icons.undo, '${r.backToBuilder}'),
-          line(Icons.help_outline, '${r.helpOpens}'),
-        ],
       ),
     );
   }
