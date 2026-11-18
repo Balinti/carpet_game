@@ -99,8 +99,7 @@ class CarpetTile {
   }
 
   @override
-  String toString() =>
-      'CarpetTile($id: T=$top, R=$right, B=$bottom, L=$left)';
+  String toString() => 'CarpetTile($id: T=$top, R=$right, B=$bottom, L=$left)';
 
   @override
   bool operator ==(Object other) =>
@@ -123,7 +122,8 @@ class CarpetTile {
   /// Generates a random solid-colored tile.
   static CarpetTile generateSolid(String id) {
     final color = TileColor.values[_random.nextInt(TileColor.values.length)];
-    return CarpetTile(id: id, top: color, right: color, bottom: color, left: color);
+    return CarpetTile(
+        id: id, top: color, right: color, bottom: color, left: color);
   }
 
   /// Generates a tile with two colors split diagonally.
@@ -209,17 +209,48 @@ class CarpetTile {
   }
 
   /// Returns a unique key representing the current rotation state.
-  String get rotationKey => '${top.index}${right.index}${bottom.index}${left.index}';
+  String get rotationKey =>
+      '${top.index}${right.index}${bottom.index}${left.index}';
 
   /// The 36 specific build tiles (codes: top-right-bottom-left).
   /// Colors: r=red, g=green, b=blue, y=yellow
   static const List<String> buildTileCodes = [
-    'yybr', 'ybbr', 'rbgy', 'gybr', 'byry', 'rbyg',
-    'rrby', 'bbbb', 'bbrb', 'yyry', 'yyyy', 'yggb',
-    'brby', 'rgbb', 'gygb', 'gbby', 'byyy', 'ygyr',
-    'yggy', 'ggbr', 'bgry', 'rggb', 'grgy', 'grbr',
-    'bbgg', 'yggg', 'gggg', 'yrgy', 'rrrr', 'rybr',
-    'gyyb', 'yrgg', 'grbg', 'brgy', 'gryr', 'ybry',
+    'yybr',
+    'ybbr',
+    'rbgy',
+    'gybr',
+    'byry',
+    'rbyg',
+    'rrby',
+    'bbbb',
+    'bbrb',
+    'yyry',
+    'yyyy',
+    'yggb',
+    'brby',
+    'rgbb',
+    'gygb',
+    'gbby',
+    'byyy',
+    'ygyr',
+    'yggy',
+    'ggbr',
+    'bgry',
+    'rggb',
+    'grgy',
+    'grbr',
+    'bbgg',
+    'yggg',
+    'gggg',
+    'yrgy',
+    'rrrr',
+    'rybr',
+    'gyyb',
+    'yrgg',
+    'grbg',
+    'brgy',
+    'gryr',
+    'ybry',
   ];
 
   /// Creates a tile from a 4-character code (top-right-bottom-left).
@@ -227,13 +258,19 @@ class CarpetTile {
   static CarpetTile fromCode(String id, String code) {
     TileColor charToColor(String c) {
       switch (c) {
-        case 'r': return TileColor.red;
-        case 'g': return TileColor.green;
-        case 'b': return TileColor.blue;
-        case 'y': return TileColor.yellow;
-        default: return TileColor.red;
+        case 'r':
+          return TileColor.red;
+        case 'g':
+          return TileColor.green;
+        case 'b':
+          return TileColor.blue;
+        case 'y':
+          return TileColor.yellow;
+        default:
+          return TileColor.red;
       }
     }
+
     return CarpetTile(
       id: id,
       top: charToColor(code[0]),

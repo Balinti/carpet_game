@@ -64,6 +64,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.initState();
     if (widget.initialName != null) _name.text = widget.initialName!;
   }
+
   bool _busy = false;
   bool _submitted = false;
   String? _error;
@@ -165,8 +166,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                          child: Column(
-                              children: [nameField, gap, ageField])),
+                          child: Column(children: [nameField, gap, ageField])),
                       gap,
                       Expanded(
                           child: Column(

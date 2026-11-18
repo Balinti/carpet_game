@@ -101,8 +101,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   s.verifyBody(widget.email),
                   style: TextStyle(color: st.onTray, fontSize: 17, height: 1.3),
                 ),
-                if (_status == _Status.notYet)
-                  InlineMessage(s.notVerifiedYet),
+                if (_status == _Status.notYet) InlineMessage(s.notVerifiedYet),
                 if (_status == _Status.resent)
                   InlineMessage(s.resent, isError: false),
                 if (_status == _Status.error)

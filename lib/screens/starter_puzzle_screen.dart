@@ -276,9 +276,9 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
             Text(
               l10n.congratulations,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
             ),
             const SizedBox(height: 24),
             _buildStatRow(
@@ -335,9 +335,9 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
         Text(
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
         ),
       ],
     );
@@ -409,8 +409,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
             child: Text(
               l10n.matchingColors,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -439,15 +439,15 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
                       Text(
                         l10n.tapToRotate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                       ),
                       const SizedBox(width: 16),
                       Text(
                         l10n.dragToPlace,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
                       ),
                     ],
                   ),
@@ -484,10 +484,10 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
               Text(
                 _formatTime(_elapsedSeconds),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
             ],
           ),
@@ -505,9 +505,9 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
               Text(
                 '$_rotationCount',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
             ],
           ),
@@ -605,7 +605,8 @@ class _StarterPuzzleScreenState extends State<StarterPuzzleScreen> {
           bgColor = Colors.red.withOpacity(0.2);
           borderColor = Colors.red;
           icon = const Icon(Icons.close, color: Colors.red, size: 32);
-        } else if (_selectedTile != null && _canPlaceTile(_selectedTile!, index)) {
+        } else if (_selectedTile != null &&
+            _canPlaceTile(_selectedTile!, index)) {
           bgColor = Colors.green.withOpacity(0.15);
           borderColor = Colors.green.shade300;
           icon = const Icon(Icons.add, color: Colors.green, size: 24);

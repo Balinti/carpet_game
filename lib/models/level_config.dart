@@ -36,34 +36,35 @@ class LevelConfig {
 /// - Level 12: 6x6 grid (36 pieces)
 const List<LevelConfig> regularFlowLevels = [
   // 2x2 series (3 levels from same pool)
-  LevelConfig(level: 1, gridSize: 2, resetPieces: true),   // 36 pieces
-  LevelConfig(level: 2, gridSize: 2, resetPieces: false),  // 32 pieces (36-4)
-  LevelConfig(level: 3, gridSize: 2, resetPieces: false),  // 28 pieces (32-4)
+  LevelConfig(level: 1, gridSize: 2, resetPieces: true), // 36 pieces
+  LevelConfig(level: 2, gridSize: 2, resetPieces: false), // 32 pieces (36-4)
+  LevelConfig(level: 3, gridSize: 2, resetPieces: false), // 28 pieces (32-4)
 
   // 3x3 first series (2 levels from same pool)
-  LevelConfig(level: 4, gridSize: 3, resetPieces: true),   // 36 pieces (reset)
-  LevelConfig(level: 5, gridSize: 3, resetPieces: false),  // 27 pieces (36-9)
+  LevelConfig(level: 4, gridSize: 3, resetPieces: true), // 36 pieces (reset)
+  LevelConfig(level: 5, gridSize: 3, resetPieces: false), // 27 pieces (36-9)
 
   // 3x3 second series (3 levels from same pool)
-  LevelConfig(level: 6, gridSize: 3, resetPieces: true),   // 36 pieces (reset)
-  LevelConfig(level: 7, gridSize: 3, resetPieces: false),  // 27 pieces (36-9)
-  LevelConfig(level: 8, gridSize: 3, resetPieces: false),  // 18 pieces (27-9)
+  LevelConfig(level: 6, gridSize: 3, resetPieces: true), // 36 pieces (reset)
+  LevelConfig(level: 7, gridSize: 3, resetPieces: false), // 27 pieces (36-9)
+  LevelConfig(level: 8, gridSize: 3, resetPieces: false), // 18 pieces (27-9)
 
   // 4x4 series (2 levels from same pool)
-  LevelConfig(level: 9, gridSize: 4, resetPieces: true),   // 36 pieces (reset)
+  LevelConfig(level: 9, gridSize: 4, resetPieces: true), // 36 pieces (reset)
   LevelConfig(level: 10, gridSize: 4, resetPieces: false), // 20 pieces (36-16)
 
   // 5x5 single level
-  LevelConfig(level: 11, gridSize: 5, resetPieces: true),  // 36 pieces (reset)
+  LevelConfig(level: 11, gridSize: 5, resetPieces: true), // 36 pieces (reset)
 
   // 6x6 final level
-  LevelConfig(level: 12, gridSize: 6, resetPieces: true),  // 36 pieces (reset)
+  LevelConfig(level: 12, gridSize: 6, resetPieces: true), // 36 pieces (reset)
 ];
 
 /// Get the level config for a specific level number.
 LevelConfig getLevelConfig(int level) {
   if (level < 1 || level > regularFlowLevels.length) {
-    throw ArgumentError('Invalid level: $level. Must be 1-${regularFlowLevels.length}');
+    throw ArgumentError(
+        'Invalid level: $level. Must be 1-${regularFlowLevels.length}');
   }
   return regularFlowLevels[level - 1];
 }

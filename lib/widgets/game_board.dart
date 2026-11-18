@@ -80,8 +80,10 @@ class GameBoard extends StatelessWidget {
                     final col = minCol + displayCol - colOffset;
                     final position = BoardPosition(row, col);
                     final tile = gameState.board[position];
-                    final isValidDrop = gameState.validPositions.contains(position);
-                    final isAdjacent = gameState.allAdjacentPositions.contains(position);
+                    final isValidDrop =
+                        gameState.validPositions.contains(position);
+                    final isAdjacent =
+                        gameState.allAdjacentPositions.contains(position);
 
                     if (tile != null) {
                       return Padding(
@@ -94,7 +96,8 @@ class GameBoard extends StatelessWidget {
                     } else {
                       return Padding(
                         padding: const EdgeInsets.all(1),
-                        child: _buildDropTarget(context, position, isValidDrop, isAdjacent),
+                        child: _buildDropTarget(
+                            context, position, isValidDrop, isAdjacent),
                       );
                     }
                   }),
@@ -110,82 +113,100 @@ class GameBoard extends StatelessWidget {
   Widget _buildFixedGrid(BuildContext context, int gridSize) {
     // Calculate tile size to fit the grid nicely on screen
     return LayoutBuilder(builder: (context, box) {
-    // Fit the grid into the space this board actually has.
-    // Overhead: 16 outer padding + 3 border + 4 inner padding per side, 4 per tile.
-    final shortest = box.maxWidth < box.maxHeight ? box.maxWidth : box.maxHeight;
-    final calculatedTileSize =
-        ((shortest - 26) / gridSize - 4).clamp(24.0, 160.0);
+      // Fit the grid into the space this board actually has.
+      // Overhead: 16 outer padding + 3 border + 4 inner padding per side, 4 per tile.
+      final boards = gameState.boards;
+      const boardGap = 16.0;
+      final byWidth = ((box.maxWidth - 26 * boards - boardGap * (boards - 1)) /
+              (gridSize * boards)) -
+          4;
+      final byHeight = (box.maxHeight - 26) / gridSize - 4;
+      final calculatedTileSize =
+          (byWidth < byHeight ? byWidth : byHeight).clamp(24.0, 160.0);
 
-    final solved = gameState.isSolved;
-    final full = gameState.isGridFull;
-    return _Pulse(
-      active: full,
-      builder: (pulse) => Center(
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: solved
-                  ? Colors.greenAccent
-                  : VisualStyle.current.isClassic
-                      ? Theme.of(context).colorScheme.primary
-                      : VisualStyle.current.boardFrame,
-              width: solved ? 3 + 3 * pulse : 3,
-            ),
-            boxShadow: solved
-                ? [
-                    BoxShadow(
-                      color: Colors.greenAccent.withOpacity(0.35 + 0.45 * pulse),
-                      blurRadius: 12 + 24 * pulse,
-                      spreadRadius: 2 + 6 * pulse,
-                    ),
-                  ]
-                : null,
-            borderRadius:
-                BorderRadius.circular(VisualStyle.current.isClassic ? 8 : 18),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: Column(
+      final solved = gameState.isSolved;
+      final full = gameState.isGridFull;
+      return _Pulse(
+        active: full,
+        builder: (pulse) => Center(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: List.generate(gridSize, (row) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(gridSize, (col) {
-                  final position = BoardPosition(row, col);
-                  final tile = gameState.board[position];
-
-                  if (tile != null) {
-                    // Show placed tile - tap to rotate, drag to swap
-                    return Padding(
-                      padding: const EdgeInsets.all(2),
-                      child: _withMismatchMarks(
-                        position,
-                        tile,
-                        calculatedTileSize,
-                        full && !solved ? pulse : null,
-                        _buildPlacedTile(context, tile, position, calculatedTileSize),
+            children: [
+              for (var b = 0; b < boards; b++) ...[
+                if (b > 0) const SizedBox(width: boardGap - 12),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: solved
+                            ? Colors.greenAccent
+                            : VisualStyle.current.isClassic
+                                ? Theme.of(context).colorScheme.primary
+                                : VisualStyle.current.boardFrame,
+                        width: solved ? 3 + 3 * pulse : 3,
                       ),
-                    );
-                  } else {
-                    return Padding(
-                      padding: const EdgeInsets.all(2),
-                      child: _buildFixedGridSlot(context, position, calculatedTileSize),
-                    );
-                  }
-                }),
-              );
-            }),
+                      boxShadow: solved
+                          ? [
+                              BoxShadow(
+                                color: Colors.greenAccent
+                                    .withOpacity(0.35 + 0.45 * pulse),
+                                blurRadius: 12 + 24 * pulse,
+                                spreadRadius: 2 + 6 * pulse,
+                              ),
+                            ]
+                          : null,
+                      borderRadius: BorderRadius.circular(
+                          VisualStyle.current.isClassic ? 8 : 18),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(gridSize, (row) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(gridSize, (c) {
+                            final col = b * (gridSize + 1) + c;
+                            final position = BoardPosition(row, col);
+                            final tile = gameState.board[position];
+
+                            if (tile != null) {
+                              // Show placed tile - tap to rotate, drag to swap
+                              return Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: _withMismatchMarks(
+                                  position,
+                                  tile,
+                                  calculatedTileSize,
+                                  full && !solved ? pulse : null,
+                                  _buildPlacedTile(context, tile, position,
+                                      calculatedTileSize),
+                                ),
+                              );
+                            } else {
+                              return Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: _buildFixedGridSlot(
+                                    context, position, calculatedTileSize),
+                              );
+                            }
+                          }),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-      ),
-    ),
-    );
+      );
     });
   }
 
   /// Build a placed tile that can be rotated (tap), swapped (drag from board), or replaced (drag from hand)
-  Widget _buildPlacedTile(BuildContext context, CarpetTile tile, BoardPosition position, double slotSize) {
+  Widget _buildPlacedTile(BuildContext context, CarpetTile tile,
+      BoardPosition position, double slotSize) {
     // Outer DragTarget for tiles from hand (replacement)
     return DragTarget<CarpetTile>(
       onWillAcceptWithDetails: (details) => true,
@@ -226,7 +247,8 @@ class GameBoard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.3),
                   ),
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -271,7 +293,8 @@ class GameBoard extends StatelessWidget {
     return tile;
   }
 
-  Widget _buildFixedGridSlot(BuildContext context, BoardPosition position, double slotSize) {
+  Widget _buildFixedGridSlot(
+      BuildContext context, BoardPosition position, double slotSize) {
     return DragTarget<MapEntry<CarpetTile, BoardPosition>>(
       onWillAcceptWithDetails: (details) => true,
       onAcceptWithDetails: (details) {
@@ -281,7 +304,9 @@ class GameBoard extends StatelessWidget {
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
         return GestureDetector(
-          onTap: gameState.selectedTile != null ? () => onPositionTap?.call(position) : null,
+          onTap: gameState.selectedTile != null
+              ? () => onPositionTap?.call(position)
+              : null,
           child: DragTarget<CarpetTile>(
             onWillAcceptWithDetails: (details) => true,
             onAcceptWithDetails: (details) {
@@ -296,15 +321,21 @@ class GameBoard extends StatelessWidget {
                   color: isHovering2
                       ? Theme.of(context).colorScheme.primaryContainer
                       : (VisualStyle.current.isClassic
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          ? Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
                           : VisualStyle.current.emptySlot),
                   border: Border.all(
                     color: gameState.selectedTile != null || isHovering2
                         ? Theme.of(context).colorScheme.primary
                         : (VisualStyle.current.isClassic
-                            ? Theme.of(context).colorScheme.outline.withOpacity(0.3)
+                            ? Theme.of(context)
+                                .colorScheme
+                                .outline
+                                .withOpacity(0.3)
                             : VisualStyle.current.emptySlotBorder),
-                    width: gameState.selectedTile != null || isHovering2 ? 2 : 1,
+                    width:
+                        gameState.selectedTile != null || isHovering2 ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(
                       VisualStyle.current.isClassic ? 4 : 10),
@@ -339,7 +370,8 @@ class GameBoard extends StatelessWidget {
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
-        final showPreview = isHovering && showMatchFeedback && candidateData.first != null;
+        final showPreview =
+            isHovering && showMatchFeedback && candidateData.first != null;
 
         if (showPreview) {
           // Show preview with edge match feedback
@@ -366,7 +398,8 @@ class GameBoard extends StatelessWidget {
           child: EmptyTileSlot(
             size: tileSize,
             isValidDrop: isValidDrop || isHovering,
-            showHint: isAdjacent && !isValidDrop && gameState.selectedTile != null,
+            showHint:
+                isAdjacent && !isValidDrop && gameState.selectedTile != null,
           ),
         );
       },

@@ -121,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           r.group,
           r.result.startedAt.toUtc().toIso8601String(),
           i + 1,
-          '${m.gridSize}x${m.gridSize}',
+          m.label.replaceAll('×', 'x'),
           _secs(m.durationMs),
           _secs(m.activeDurationMs),
           m.rotations,
@@ -196,7 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return a == null ? '—' : a.toStringAsFixed(1);
     }
 
-    final roundLabels = ['2×2', '3×3 (1)', '3×3 (2)'];
+    final roundLabels = ['2×2', '2×(3×3)'];
     final textStyle = TextStyle(color: on);
     final head = TextStyle(color: on, fontWeight: FontWeight.w800);
 
@@ -228,8 +228,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _tile('adults', '$_adults', on),
           _tile('questionnaires', '$_questionnaires', on),
           _tile('assessments', '${_rows.length}', on),
-          for (final e in (_events7d.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value))))
+          for (final e
+              in (_events7d.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value))))
             _tile('${e.key} (7d)', '${e.value}', on),
         ]),
         const SizedBox(height: 12),
@@ -254,8 +255,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   DataRow(cells: [
                     DataCell(Text(g)),
                     DataCell(Text(roundLabels[i])),
-                    DataCell(Text(avgFor(g, i,
-                        (m) => m.durationMs == null ? null : m.durationMs! / 1000))),
+                    DataCell(Text(avgFor(
+                        g,
+                        i,
+                        (m) => m.durationMs == null
+                            ? null
+                            : m.durationMs! / 1000))),
                     DataCell(Text(avgFor(g, i, (m) => m.rotations))),
                     DataCell(Text(avgFor(g, i, (m) => m.backToBuilder))),
                     DataCell(Text(avgFor(g, i, (m) => m.helpOpens))),
@@ -291,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   DataCell(Text(r.name)),
                   DataCell(Text('${r.age ?? '—'}')),
                   DataCell(Text(_date(r.result.startedAt))),
-                  for (var i = 0; i < 3; i++) ...[
+                  for (var i = 0; i < roundLabels.length; i++) ...[
                     DataCell(Text(i < r.result.rounds.length
                         ? _secs(r.result.rounds[i].durationMs)
                         : '—')),

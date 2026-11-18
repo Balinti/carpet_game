@@ -39,8 +39,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   @override
   Widget build(BuildContext context) {
     final challenges = ChallengeData.getChallengesForSize(widget.gridSize);
-    final completedCount = _progressionManager.getCompletedCountForGrid(widget.gridSize);
-    final totalStars = _progressionManager.getTotalStarsForGrid(widget.gridSize);
+    final completedCount =
+        _progressionManager.getCompletedCountForGrid(widget.gridSize);
+    final totalStars =
+        _progressionManager.getTotalStarsForGrid(widget.gridSize);
     final maxStars = challenges.length * 3;
 
     return Scaffold(
@@ -62,10 +64,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   children: [
                     Text(
                       '$completedCount/${challenges.length}',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                     ),
                     Text(
                       'Completed',
@@ -90,7 +93,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                         const SizedBox(width: 4),
                         Text(
                           '$totalStars/$maxStars',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.amber.shade700,
                               ),
@@ -255,7 +261,10 @@ class _ChallengeCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             challenge.name,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: isUnlocked ? null : Colors.grey,
                                 ),
@@ -274,8 +283,13 @@ class _ChallengeCard extends StatelessWidget {
                           ),
                           child: Text(
                             difficultyText,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: isUnlocked ? difficultyColor : Colors.grey,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: isUnlocked
+                                      ? difficultyColor
+                                      : Colors.grey,
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),

@@ -19,8 +19,8 @@ class AssessmentRecorder {
   bool get inRound => _round != null;
 
   /// Begin recording a new round (discards an unfinished one).
-  void startRound(int gridSize) {
-    _round = _RoundBuilder(gridSize, clock.now());
+  void startRound(int gridSize, {int boards = 1}) {
+    _round = _RoundBuilder(gridSize, clock.now(), boards: boards);
   }
 
   int _ms() => clock.now().difference(_round!.startedAt).inMilliseconds;
@@ -133,6 +133,7 @@ class AssessmentRecorder {
 
 class _RoundBuilder {
   final int gridSize;
+  final int boards;
   final DateTime startedAt;
   int? firstInteractionMs;
   int? solvedMs;
@@ -149,10 +150,11 @@ class _RoundBuilder {
   String? pendingPickId;
   int? pendingPickMs;
 
-  _RoundBuilder(this.gridSize, this.startedAt);
+  _RoundBuilder(this.gridSize, this.startedAt, {this.boards = 1});
 
   RoundMetrics build() => RoundMetrics(
         gridSize: gridSize,
+        boards: boards,
         startedAt: startedAt,
         durationMs: solvedMs,
         firstInteractionMs: firstInteractionMs,

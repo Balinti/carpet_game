@@ -84,8 +84,9 @@ class _SignInScreenState extends State<SignInScreen> {
       label: s.password,
       obscure: true,
       // Don't enforce the sign-up length rule here: just require something.
-      validator: (x) =>
-          (x == null || x.isEmpty) ? s.fieldError(FieldError.passwordTooShort) : null,
+      validator: (x) => (x == null || x.isEmpty)
+          ? s.fieldError(FieldError.passwordTooShort)
+          : null,
       textInputAction: TextInputAction.done,
       onSubmitted: (_) => _submit(),
       autofillHints: const [AutofillHints.password],

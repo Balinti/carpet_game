@@ -33,8 +33,10 @@ class TilePainter extends CustomPainter {
 
     // Draw the four triangular sections
     _drawTriangle(canvas, [topLeft, topRight, center], tile.top.toColor());
-    _drawTriangle(canvas, [topRight, bottomRight, center], tile.right.toColor());
-    _drawTriangle(canvas, [bottomRight, bottomLeft, center], tile.bottom.toColor());
+    _drawTriangle(
+        canvas, [topRight, bottomRight, center], tile.right.toColor());
+    _drawTriangle(
+        canvas, [bottomRight, bottomLeft, center], tile.bottom.toColor());
     _drawTriangle(canvas, [bottomLeft, topLeft, center], tile.left.toColor());
 
     // Draw edge match feedback if provided
@@ -97,7 +99,8 @@ class TilePainter extends CustomPainter {
       canvas.drawRRect(
         rrect,
         Paint()
-          ..color = (isSelected ? Colors.red : _c(st, tile.top)).withOpacity(0.55)
+          ..color =
+              (isSelected ? Colors.red : _c(st, tile.top)).withOpacity(0.55)
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, w * 0.08),
       );
     } else {
@@ -133,13 +136,16 @@ class TilePainter extends CustomPainter {
           colors = [Color.lerp(base, Colors.white, 0.12)!, base];
         default: // soft 3D: light edge, richer center
           // Very light shading so colors stay true.
-          colors = [Color.lerp(base, Colors.white, 0.06)!,
-              Color.lerp(base, Colors.black, 0.06)!];
+          colors = [
+            Color.lerp(base, Colors.white, 0.06)!,
+            Color.lerp(base, Colors.black, 0.06)!
+          ];
       }
       canvas.drawPath(
         path,
-        Paint()..shader = LinearGradient(colors: colors)
-            .createShader(Rect.fromPoints(edgeMid, c)),
+        Paint()
+          ..shader = LinearGradient(colors: colors)
+              .createShader(Rect.fromPoints(edgeMid, c)),
       );
     }
 
@@ -205,7 +211,8 @@ class TilePainter extends CustomPainter {
     }
   }
 
-  void _drawEdgeFeedback(Canvas canvas, Size size, Map<int, EdgeMatchStatus> status) {
+  void _drawEdgeFeedback(
+      Canvas canvas, Size size, Map<int, EdgeMatchStatus> status) {
     const edgeWidth = 6.0;
 
     // Top edge (0)

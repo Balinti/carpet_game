@@ -91,7 +91,26 @@ class GameState extends ChangeNotifier {
 
   /// Every square of the target grid has a piece.
   bool get isGridFull =>
-      _targetGridSize > 0 && board.length >= _targetGridSize * _targetGridSize;
+      _targetGridSize > 0 &&
+      board.length >= _targetGridSize * _targetGridSize * _boards;
+
+  /// Number of separate grids shown side by side (assessment: two 3×3).
+  int _boards = 1;
+  int get boards => _boards;
+
+  /// Columns of the whole board, including the empty gap column between grids.
+  int get gridCols => _targetGridSize * _boards + (_boards - 1);
+
+  /// The empty column that separates two side-by-side grids.
+  bool isGapCol(int col) =>
+      _boards > 1 && col % (_targetGridSize + 1) == _targetGridSize;
+
+  bool _inFixedGrid(BoardPosition p) =>
+      p.row >= 0 &&
+      p.row < _targetGridSize &&
+      p.col >= 0 &&
+      p.col < gridCols &&
+      !isGapCol(p.col);
 
   /// Full grid with every touching edge matching.
   bool get isSolved => isGridFull && _countMismatches() == 0;
@@ -103,7 +122,8 @@ class GameState extends ChangeNotifier {
   bool _levelCompleted = false;
 
   // Track pieces used in current level for revert functionality
-  List<CarpetTile> _previousLevelPieces = []; // Snapshot of pieces before current level
+  List<CarpetTile> _previousLevelPieces =
+      []; // Snapshot of pieces before current level
   int _previousLevel = 0; // Previous level number (0 = none)
 
   // === Shape Flow specific ===
@@ -147,7 +167,10 @@ class GameState extends ChangeNotifier {
   int get currentLevel => _currentLevel;
   int get availablePiecesCount => _availablePieces.length;
   bool get levelCompleted => _levelCompleted;
-  bool get canGoToPreviousLevel => _previousLevel > 0 && mode == GameMode.regularFlow && _practiceGridSize == null;
+  bool get canGoToPreviousLevel =>
+      _previousLevel > 0 &&
+      mode == GameMode.regularFlow &&
+      _practiceGridSize == null;
 
   // Shape Flow getters
   Set<GeometricShapeType> get completedShapeTypes => _completedShapeTypes;
@@ -177,10 +200,11 @@ class GameState extends ChangeNotifier {
   }
 
   /// Initialize a single practice grid (1x1 .. 6x6) with all 36 pieces.
-  static GameState newPractice(int gridSize) {
+  static GameState newPractice(int gridSize, {int boards = 1}) {
     final players = [Player(id: 'player_0', name: 'Builder')];
     final state = GameState(mode: GameMode.regularFlow, players: players);
     state._practiceGridSize = gridSize;
+    state._boards = boards;
     state._initPractice();
     return state;
   }
@@ -265,7 +289,8 @@ class GameState extends ChangeNotifier {
       currentPlayer.addTile(tile);
     }
 
-    _message = 'Level $level: Fill the ${config.gridDescription} grid! (${_availablePieces.length} pieces)';
+    _message =
+        'Level $level: Fill the ${config.gridDescription} grid! (${_availablePieces.length} pieces)';
     _updatePositions();
     notifyListeners();
   }
@@ -340,7 +365,8 @@ class GameState extends ChangeNotifier {
           _targetGridSize = 3;
         }
 
-        _message = 'Build a ${shape.displayName} and fill the ${_targetGridSize}x$_targetGridSize grid!';
+        _message =
+            'Build a ${shape.displayName} and fill the ${_targetGridSize}x$_targetGridSize grid!';
         return;
       }
     }
@@ -365,7 +391,8 @@ class GameState extends ChangeNotifier {
   void rotateSelectedTile() {
     if (_selectedTile == null) return;
 
-    final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
+    final index =
+        currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
     if (index >= 0) {
       final rotated = _selectedTile!.rotateClockwise();
       currentPlayer.hand[index] = rotated;
@@ -380,7 +407,8 @@ class GameState extends ChangeNotifier {
   void rotateSelectedTileCounterClockwise() {
     if (_selectedTile == null) return;
 
-    final index = currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
+    final index =
+        currentPlayer.hand.indexWhere((t) => t.id == _selectedTile!.id);
     if (index >= 0) {
       final rotated = _selectedTile!.rotateCounterClockwise();
       currentPlayer.hand[index] = rotated;
@@ -403,21 +431,23 @@ class GameState extends ChangeNotifier {
   }
 
   /// Check edge match status for a tile at a position.
-  Map<int, EdgeMatchStatus> getEdgeMatchStatus(CarpetTile tile, BoardPosition position) {
+  Map<int, EdgeMatchStatus> getEdgeMatchStatus(
+      CarpetTile tile, BoardPosition position) {
     final status = <int, EdgeMatchStatus>{};
 
     final neighbors = [
-      (position.up, 2, 0),    // top edge
+      (position.up, 2, 0), // top edge
       (position.right, 3, 1), // right edge
-      (position.down, 0, 2),  // bottom edge
-      (position.left, 1, 3),  // left edge
+      (position.down, 0, 2), // bottom edge
+      (position.left, 1, 3), // left edge
     ];
 
     for (final (neighborPos, neighborEdge, ourEdge) in neighbors) {
       final neighbor = board[neighborPos];
       if (neighbor == null) {
         status[ourEdge] = EdgeMatchStatus.noAdjacent;
-      } else if (neighbor.getEdgeColor(neighborEdge) == tile.getEdgeColor(ourEdge)) {
+      } else if (neighbor.getEdgeColor(neighborEdge) ==
+          tile.getEdgeColor(ourEdge)) {
         status[ourEdge] = EdgeMatchStatus.matching;
       } else {
         status[ourEdge] = EdgeMatchStatus.mismatched;
@@ -428,7 +458,8 @@ class GameState extends ChangeNotifier {
   }
 
   /// Count matching edges for a tile at a position.
-  (int matching, int total) countMatchingEdges(CarpetTile tile, BoardPosition position) {
+  (int matching, int total) countMatchingEdges(
+      CarpetTile tile, BoardPosition position) {
     int matching = 0;
     int total = 0;
 
@@ -467,8 +498,7 @@ class GameState extends ChangeNotifier {
 
     // Fixed grid - allow placing anywhere in the grid
     if (_targetGridSize > 0) {
-      return position.row >= 0 && position.row < _targetGridSize &&
-             position.col >= 0 && position.col < _targetGridSize;
+      return _inFixedGrid(position);
     }
 
     return canPlaceTileStrict(tile, position);
@@ -480,9 +510,9 @@ class GameState extends ChangeNotifier {
     if (_targetGridSize > 0) {
       final positions = <BoardPosition>[];
       for (int row = 0; row < _targetGridSize; row++) {
-        for (int col = 0; col < _targetGridSize; col++) {
+        for (int col = 0; col < gridCols; col++) {
           final pos = BoardPosition(row, col);
-          if (!board.containsKey(pos)) {
+          if (_inFixedGrid(pos) && !board.containsKey(pos)) {
             positions.add(pos);
           }
         }
@@ -592,7 +622,8 @@ class GameState extends ChangeNotifier {
   }
 
   /// Rotate a tile that is already placed on the board.
-  void rotatePlacedTile(BoardPosition position, {bool counterClockwise = false}) {
+  void rotatePlacedTile(BoardPosition position,
+      {bool counterClockwise = false}) {
     final tile = board[position];
     if (tile == null) return;
 
@@ -675,15 +706,17 @@ class GameState extends ChangeNotifier {
 
   void _updateStatusMessage() {
     if (_targetGridSize > 0) {
-      final target = _targetGridSize * _targetGridSize;
+      final target = _targetGridSize * _targetGridSize * _boards;
       final tilesPlaced = board.length;
       final tilesNeeded = target - tilesPlaced;
       if (tilesNeeded > 0) {
         final mismatches = _countMismatches();
         if (mismatches > 0) {
-          _message = '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+          _message =
+              '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
         } else {
-          _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+          _message =
+              '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
         }
       } else {
         // Grid is full - check if level can now be completed (after fixing mismatches)
@@ -714,7 +747,8 @@ class GameState extends ChangeNotifier {
       });
     } else {
       // Still has mismatches
-      _message = 'Grid full but $mismatches mismatch${mismatches == 1 ? '' : 'es'}! Fix to continue.';
+      _message =
+          'Grid full but $mismatches mismatch${mismatches == 1 ? '' : 'es'}! Fix to continue.';
     }
   }
 
@@ -735,7 +769,7 @@ class GameState extends ChangeNotifier {
 
   /// Handle placement in Regular Flow mode.
   void _handleRegularFlowPlacement() {
-    final target = _targetGridSize * _targetGridSize;
+    final target = _targetGridSize * _targetGridSize * _boards;
     final tilesPlaced = board.length;
     final tilesNeeded = target - tilesPlaced;
 
@@ -746,9 +780,11 @@ class GameState extends ChangeNotifier {
       _levelCompleted = false;
       final mismatches = _countMismatches();
       if (mismatches > 0) {
-        _message = '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
+        _message =
+            '$tilesNeeded to go - $mismatches mismatch${mismatches == 1 ? '' : 'es'}';
       } else {
-        _message = '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
+        _message =
+            '$tilesNeeded more tile${tilesNeeded == 1 ? '' : 's'} to go!';
       }
     }
   }
@@ -761,14 +797,15 @@ class GameState extends ChangeNotifier {
     // Check if target shape is completed
     bool targetShapeCompleted = false;
     for (final shape in _detectedShapes) {
-      if (shape.type == _currentTargetShape && !_completedShapeTypes.contains(shape.type)) {
+      if (shape.type == _currentTargetShape &&
+          !_completedShapeTypes.contains(shape.type)) {
         targetShapeCompleted = true;
         break;
       }
     }
 
     // Check if grid is full
-    final target = _targetGridSize * _targetGridSize;
+    final target = _targetGridSize * _targetGridSize * _boards;
     final tilesPlaced = board.length;
     final gridFull = tilesPlaced >= target;
 
@@ -790,18 +827,22 @@ class GameState extends ChangeNotifier {
         // Return tiles to hand and select next shape
         _returnTilesToHand();
         _selectNextTargetShape();
-        _message = '${_currentTargetShape?.displayName ?? "Shape"} complete! (${_completedShapeTypes.length}/7) - Now: Build a ${_currentTargetShape?.displayName}!';
+        _message =
+            '${_currentTargetShape?.displayName ?? "Shape"} complete! (${_completedShapeTypes.length}/7) - Now: Build a ${_currentTargetShape?.displayName}!';
       } else {
         // Grid full but target shape not completed
-        _message = 'Grid full but ${_currentTargetShape?.displayName} not found! $mismatches mismatch${mismatches == 1 ? '' : 'es'}. Try rearranging!';
+        _message =
+            'Grid full but ${_currentTargetShape?.displayName} not found! $mismatches mismatch${mismatches == 1 ? '' : 'es'}. Try rearranging!';
       }
     } else {
       // Grid not full yet
       final tilesNeeded = target - tilesPlaced;
       if (targetShapeCompleted) {
-        _message = '${_currentTargetShape?.displayName} found! Fill ${tilesNeeded} more tile${tilesNeeded == 1 ? '' : 's'}!';
+        _message =
+            '${_currentTargetShape?.displayName} found! Fill ${tilesNeeded} more tile${tilesNeeded == 1 ? '' : 's'}!';
       } else {
-        _message = 'Build ${_currentTargetShape?.displayName}! $tilesNeeded tile${tilesNeeded == 1 ? '' : 's'} to go.';
+        _message =
+            'Build ${_currentTargetShape?.displayName}! $tilesNeeded tile${tilesNeeded == 1 ? '' : 's'} to go.';
       }
     }
   }

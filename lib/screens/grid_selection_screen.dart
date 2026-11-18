@@ -368,10 +368,12 @@ class _ChallengeModeCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '$totalCompleted/$totalChallenges completed',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.outline,
-                                  ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
                         ),
                       ],
                     ),
@@ -381,7 +383,8 @@ class _ChallengeModeCard extends StatelessWidget {
               const SizedBox(height: 16),
               // Stars display
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -506,7 +509,8 @@ class ChallengeModeScreen extends StatelessWidget {
             children: [
               // Total stars
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -518,10 +522,11 @@ class ChallengeModeScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${progressionManager.totalStars} Total Stars',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade700,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber.shade700,
+                              ),
                     ),
                   ],
                 ),
@@ -538,13 +543,15 @@ class ChallengeModeScreen extends StatelessWidget {
               _ChallengeGridCard(
                 gridSize: GridSize.threeByThree,
                 progressionManager: progressionManager,
-                isUnlocked: progressionManager.isGridUnlocked(GridSize.threeByThree),
+                isUnlocked:
+                    progressionManager.isGridUnlocked(GridSize.threeByThree),
               ),
               const SizedBox(height: 16),
               _ChallengeGridCard(
                 gridSize: GridSize.fourByFour,
                 progressionManager: progressionManager,
-                isUnlocked: progressionManager.isGridUnlocked(GridSize.fourByFour),
+                isUnlocked:
+                    progressionManager.isGridUnlocked(GridSize.fourByFour),
               ),
             ],
           ),
@@ -567,7 +574,8 @@ class _ChallengeGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completedCount = progressionManager.getCompletedCountForGrid(gridSize);
+    final completedCount =
+        progressionManager.getCompletedCountForGrid(gridSize);
     final totalChallenges = ChallengeData.getChallengesForSize(gridSize).length;
     final stars = progressionManager.getTotalStarsForGrid(gridSize);
     final maxStars = totalChallenges * 3;
@@ -617,7 +625,8 @@ class _ChallengeGridCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: (isUnlocked ? gridColor : Colors.grey).withOpacity(0.15),
+                  color:
+                      (isUnlocked ? gridColor : Colors.grey).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
@@ -668,10 +677,11 @@ class _ChallengeGridCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             '$stars/$maxStars',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.amber.shade700,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.amber.shade700,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                           ),
                         ],
                       ),

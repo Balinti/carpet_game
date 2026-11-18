@@ -32,13 +32,11 @@ class _AppGateState extends State<AppGate> {
 
   bool _isAdmin = false;
 
-  Future<void> _afterOnboarding(UserProfile profile, QuestionnaireResult _) async {
+  Future<void> _afterOnboarding(
+      UserProfile profile, QuestionnaireResult _) async {
     Telemetry.log('session_start', {'ageGroup': profile.ageGroup.name});
-    FirebaseFirestore.instance
-        .collection('admins')
-        .doc(profile.uid)
-        .get()
-        .then((d) {
+    FirebaseFirestore.instance.collection('admins').doc(profile.uid).get().then(
+        (d) {
       if (mounted && d.exists) setState(() => _isAdmin = true);
     }, onError: (_) {});
     setState(() {

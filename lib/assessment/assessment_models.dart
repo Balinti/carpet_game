@@ -3,6 +3,9 @@
 /// All `*Ms` timestamps are milliseconds since the round started.
 class RoundMetrics {
   final int gridSize;
+
+  /// Grids of [gridSize] shown side by side in this round (sharing one tray).
+  final int boards;
   final DateTime startedAt;
 
   /// Round start → solved (null if the round was never solved).
@@ -39,6 +42,7 @@ class RoundMetrics {
 
   const RoundMetrics({
     required this.gridSize,
+    this.boards = 1,
     required this.startedAt,
     this.durationMs,
     this.firstInteractionMs,
@@ -59,13 +63,17 @@ class RoundMetrics {
   int get placements => placementTimestampsMs.length;
   bool get solved => durationMs != null;
 
+  /// e.g. "2×2" or "2×(3×3)".
+  String get label =>
+      boards > 1 ? '$boards×($gridSize×$gridSize)' : '$gridSize×$gridSize';
+
   /// Time from the first interaction to solved, if both are known.
-  int? get activeDurationMs => durationMs == null
-      ? null
-      : durationMs! - (firstInteractionMs ?? 0);
+  int? get activeDurationMs =>
+      durationMs == null ? null : durationMs! - (firstInteractionMs ?? 0);
 
   Map<String, dynamic> toJson() => {
         'gridSize': gridSize,
+        'boards': boards,
         'startedAt': startedAt.toUtc().toIso8601String(),
         'durationMs': durationMs,
         'firstInteractionMs': firstInteractionMs,
@@ -87,6 +95,7 @@ class RoundMetrics {
     int? optInt(String k) => (j[k] as num?)?.toInt();
     return RoundMetrics(
       gridSize: (j['gridSize'] as num).toInt(),
+      boards: (j['boards'] as num?)?.toInt() ?? 1,
       startedAt: DateTime.parse(j['startedAt'] as String),
       durationMs: optInt('durationMs'),
       firstInteractionMs: optInt('firstInteractionMs'),
@@ -148,7 +157,8 @@ class AssessmentResult {
             : DateTime.parse(j['completedAt'] as String),
         userId: j['userId'] as String?,
         rounds: ((j['rounds'] as List?) ?? const [])
-            .map((r) => RoundMetrics.fromJson(Map<String, dynamic>.from(r as Map)))
+            .map((r) =>
+                RoundMetrics.fromJson(Map<String, dynamic>.from(r as Map)))
             .toList(),
       );
 }

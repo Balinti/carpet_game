@@ -11,11 +11,14 @@ import '../widgets/visual_style.dart';
 import 'game_screen.dart';
 
 /// Runs the assessment: a fixed list of grids played in order (default
-/// 2×2, 3×3, 3×3, each with all 36 pieces freshly shuffled), recording
+/// 2×2, then two 3×3 side by side; all 36 pieces freshly shuffled), recording
 /// metrics, then shows the results. No text messages during play.
 class AssessmentScreen extends StatefulWidget {
   /// Grid size of each round, in order.
   final List<int> rounds;
+
+  /// Grids shown side by side per round (same length as [rounds]; default 1).
+  final List<int>? roundBoards;
 
   /// Where the finished result is saved (default: on-device).
   final AssessmentStore? store;
@@ -37,7 +40,8 @@ class AssessmentScreen extends StatefulWidget {
 
   const AssessmentScreen({
     super.key,
-    this.rounds = const [2, 3, 3],
+    this.rounds = const [2, 3],
+    this.roundBoards = const [1, 2],
     this.store,
     this.clock,
     this.userId,
@@ -67,9 +71,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   GameState _newRound(int index) {
     final size = widget.rounds[index];
-    _recorder.startRound(size);
-    Telemetry.log('assessment_round_start', {'grid': size});
-    return GameState.newPractice(size)..recorder = _recorder;
+    final boards =
+        (widget.roundBoards != null && index < widget.roundBoards!.length)
+            ? widget.roundBoards![index]
+            : 1;
+    _recorder.startRound(size, boards: boards);
+    Telemetry.log('assessment_round_start', {'grid': size, 'boards': boards});
+    return GameState.newPractice(size, boards: boards)..recorder = _recorder;
   }
 
   void _onSolved() {
@@ -260,7 +268,7 @@ class AssessmentResultsView extends StatelessWidget {
               Icon(Icons.grid_view_rounded, color: st.boardFrame, size: 26),
               const SizedBox(width: 8),
               Text(
-                '${r.gridSize}×${r.gridSize}',
+                r.label,
                 style: TextStyle(
                   color: st.boardFrame,
                   fontSize: 22,

@@ -34,7 +34,10 @@ void main() {
     Future<void> solveRound() async {
       final screen = tester.widget<GameScreen>(find.byType(GameScreen));
       final GameState gs = screen.gameState!;
-      gs.placeTileAt(gs.currentPlayer.hand.first, const BoardPosition(0, 0));
+      for (var c = 0; c < gs.gridCols; c++) {
+        if (gs.isGapCol(c)) continue;
+        gs.placeTileAt(gs.currentPlayer.hand.first, BoardPosition(0, c));
+      }
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1600));
       await tester.pump();
@@ -49,5 +52,6 @@ void main() {
     expect(store.saved, hasLength(1));
     expect(completed?.rounds, hasLength(2));
     expect(completed!.rounds.every((r) => r.solved), isTrue);
+    expect(completed!.rounds.map((r) => r.boards), [1, 2]);
   });
 }

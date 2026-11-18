@@ -29,7 +29,8 @@ window.__carpetChime = function () {
     });
     if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
   } catch (e) {}
-};'''.toJS);
+};'''
+          .toJS);
     }
     _chime?.callAsFunction();
   } catch (_) {}

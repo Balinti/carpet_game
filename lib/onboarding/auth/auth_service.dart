@@ -26,7 +26,8 @@ class AuthException implements Exception {
   const AuthException(this.code, [this.message]);
 
   @override
-  String toString() => 'AuthException($code${message == null ? '' : ': $message'})';
+  String toString() =>
+      'AuthException($code${message == null ? '' : ': $message'})';
 }
 
 /// Email + password auth with email verification.
@@ -168,9 +169,8 @@ class FakeAuthService implements AuthService {
   /// Simulates the user clicking the link in the verification email.
   /// Marks [email] (or the signed-in user) as verified.
   void debugMarkVerified([String? email]) {
-    final acc = email == null
-        ? _current
-        : _accounts[email.trim().toLowerCase()];
+    final acc =
+        email == null ? _current : _accounts[email.trim().toLowerCase()];
     acc?.verified = true;
   }
 

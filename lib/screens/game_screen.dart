@@ -107,7 +107,9 @@ class _GameScreenState extends State<GameScreen>
       playSuccess();
       Telemetry.log('grid_solved', {
         'grid': _gameState.targetGridSize,
-        'mode': widget.practiceGridSize != null ? 'practice' : (widget.gameState != null ? 'assessment' : widget.mode.name),
+        'mode': widget.practiceGridSize != null
+            ? 'practice'
+            : (widget.gameState != null ? 'assessment' : widget.mode.name),
       });
       widget.onSolved?.call();
     }
@@ -261,8 +263,9 @@ class _GameScreenState extends State<GameScreen>
             Theme.of(context).colorScheme.secondaryContainer,
           ]
         : st.boardBackground;
-    final iconColor =
-        st.isClassic ? Theme.of(context).colorScheme.onPrimaryContainer : st.onTray;
+    final iconColor = st.isClassic
+        ? Theme.of(context).colorScheme.onPrimaryContainer
+        : st.onTray;
 
     // Landscape, full screen: no app bar or info bar. Left: small
     // back/help/restart icons. Middle: the board and the big red buttons.
@@ -287,7 +290,8 @@ class _GameScreenState extends State<GameScreen>
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  smallIcon(Icons.arrow_back, () => Navigator.maybePop(context)),
+                  smallIcon(
+                      Icons.arrow_back, () => Navigator.maybePop(context)),
                   if (_gameState.canGoToPreviousLevel)
                     smallIcon(Icons.skip_previous, _goToPreviousLevel),
                   smallIcon(Icons.help_outline, _showRulesDialog),
@@ -379,7 +383,8 @@ class _GameScreenState extends State<GameScreen>
     return Container(
       padding: const EdgeInsets.all(4),
       child: vertical
-          ? Column(mainAxisAlignment: MainAxisAlignment.center, children: buttons)
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center, children: buttons)
           : Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
     );
   }

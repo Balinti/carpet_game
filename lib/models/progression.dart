@@ -45,7 +45,8 @@ class ProgressionManager {
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
 
       final completedChallenges = <String, ChallengeResult>{};
-      final challengesData = data['completedChallenges'] as Map<String, dynamic>?;
+      final challengesData =
+          data['completedChallenges'] as Map<String, dynamic>?;
       if (challengesData != null) {
         for (final entry in challengesData.entries) {
           final result = entry.value as Map<String, dynamic>;

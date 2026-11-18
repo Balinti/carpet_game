@@ -87,7 +87,8 @@ enum GeometricShapeType {
 /// Detects geometric shapes formed by matching edge colors across tiles.
 class ShapeDetector {
   /// Detect all shapes on the board.
-  static List<DetectedShape> detectAllShapes(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectAllShapes(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
 
     // Detect each shape type
@@ -105,7 +106,8 @@ class ShapeDetector {
   /// Detect small diamonds (2 tiles, horizontal or vertical).
   /// A small diamond is formed when 2 adjacent tiles have matching colors
   /// at their shared edge, creating a diamond shape at the seam.
-  static List<DetectedShape> detectSmallDiamonds(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectSmallDiamonds(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -155,7 +157,8 @@ class ShapeDetector {
 
   /// Detect large diamonds (4 tiles in 2x2 arrangement).
   /// A large diamond forms when all 4 tiles meet at the center with matching colors.
-  static List<DetectedShape> detectLargeDiamonds(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectLargeDiamonds(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -216,10 +219,14 @@ class ShapeDetector {
           // Check horizontal seam (topLeft.right == topRight.left) and
           // vertical seam (topLeft.bottom == bottomLeft.top)
           final color = entry.key;
-          final hasHorizontalTop = topLeftTile.right == color && topRightTile.left == color;
-          final hasHorizontalBottom = bottomLeftTile.right == color && bottomRightTile.left == color;
-          final hasVerticalLeft = topLeftTile.bottom == color && bottomLeftTile.top == color;
-          final hasVerticalRight = topRightTile.bottom == color && bottomRightTile.top == color;
+          final hasHorizontalTop =
+              topLeftTile.right == color && topRightTile.left == color;
+          final hasHorizontalBottom =
+              bottomLeftTile.right == color && bottomRightTile.left == color;
+          final hasVerticalLeft =
+              topLeftTile.bottom == color && bottomLeftTile.top == color;
+          final hasVerticalRight =
+              topRightTile.bottom == color && bottomRightTile.top == color;
 
           // Diamond pattern: either cross pattern or rotated pattern
           if ((hasHorizontalTop && hasHorizontalBottom) ||
@@ -245,7 +252,8 @@ class ShapeDetector {
   /// Detect small triangles (single tile with one distinct color in 1/4).
   /// A small triangle is when one section of a tile has a unique color
   /// that stands out from the other 3 sections.
-  static List<DetectedShape> detectSmallTriangles(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectSmallTriangles(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
 
     for (final entry in board.entries) {
@@ -293,7 +301,8 @@ class ShapeDetector {
 
   /// Detect large triangles (3 tiles in L-shape with matching colors).
   /// A large triangle forms across 3 tiles arranged in an L or corner pattern.
-  static List<DetectedShape> detectLargeTriangles(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectLargeTriangles(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -378,7 +387,8 @@ class ShapeDetector {
 
   /// Detect small rectangles (2 tiles with matching stripe).
   /// A small rectangle is an elongated color block across 2 tiles.
-  static List<DetectedShape> detectSmallRectangles(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectSmallRectangles(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -453,7 +463,8 @@ class ShapeDetector {
   }
 
   /// Detect large rectangles (3-4 tiles in a line with matching stripe).
-  static List<DetectedShape> detectLargeRectangles(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectLargeRectangles(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -513,7 +524,8 @@ class ShapeDetector {
             shapes.add(DetectedShape(
               type: GeometricShapeType.largeRectangle,
               positions: positions.toSet(),
-              description: '${checkTop ? "Top" : "Bottom"} ${length}-tile rectangle (${stripeColor.name})',
+              description:
+                  '${checkTop ? "Top" : "Bottom"} ${length}-tile rectangle (${stripeColor.name})',
             ));
           }
         }
@@ -571,7 +583,8 @@ class ShapeDetector {
             shapes.add(DetectedShape(
               type: GeometricShapeType.largeRectangle,
               positions: positions.toSet(),
-              description: '${checkLeft ? "Left" : "Right"} ${length}-tile rectangle (${stripeColor.name})',
+              description:
+                  '${checkLeft ? "Left" : "Right"} ${length}-tile rectangle (${stripeColor.name})',
             ));
           }
         }
@@ -583,7 +596,8 @@ class ShapeDetector {
 
   /// Detect arrows (3-5 tiles forming arrow shapes).
   /// Arrows have a pointed end and a wide base.
-  static List<DetectedShape> detectArrows(Map<BoardPosition, CarpetTile> board) {
+  static List<DetectedShape> detectArrows(
+      Map<BoardPosition, CarpetTile> board) {
     final shapes = <DetectedShape>[];
     final checked = <String>{};
 
@@ -702,8 +716,10 @@ class ShapeDetector {
       final shaft1Side1 = getSide1Edge(shaft1Tile);
       final shaft1Side2 = getSide2Edge(shaft1Tile);
 
-      if (wing1Edge == arrowColor && shaft1Side1 == arrowColor &&
-          wing2Edge == arrowColor && shaft1Side2 == arrowColor) {
+      if (wing1Edge == arrowColor &&
+          shaft1Side1 == arrowColor &&
+          wing2Edge == arrowColor &&
+          shaft1Side2 == arrowColor) {
         positions.add(wing1);
         positions.add(wing2);
         validArrow = true;
@@ -738,18 +754,21 @@ class ShapeDetector {
     final shaft2 = getNext(shaft1);
     if (board.containsKey(shaft2)) {
       final shaft2Tile = board[shaft2]!;
-      if (getBackEdge(shaft2Tile) == arrowColor && getTipEdge(shaft1Tile) == arrowColor) {
+      if (getBackEdge(shaft2Tile) == arrowColor &&
+          getTipEdge(shaft1Tile) == arrowColor) {
         positions.add(shaft2);
       }
     }
 
     if (positions.length < 3) return;
 
-    final sortedPos = positions.toList()..sort((a, b) {
-      if (a.row != b.row) return a.row.compareTo(b.row);
-      return a.col.compareTo(b.col);
-    });
-    final key = '$direction-${sortedPos.map((p) => '${p.row},${p.col}').join('-')}';
+    final sortedPos = positions.toList()
+      ..sort((a, b) {
+        if (a.row != b.row) return a.row.compareTo(b.row);
+        return a.col.compareTo(b.col);
+      });
+    final key =
+        '$direction-${sortedPos.map((p) => '${p.row},${p.col}').join('-')}';
     if (checked.contains(key)) return;
     checked.add(key);
 
@@ -761,7 +780,8 @@ class ShapeDetector {
   }
 
   /// Get the list of shapes still needed to complete the challenge.
-  static List<GeometricShapeType> getRemainingShapes(Set<GeometricShapeType> completed) {
+  static List<GeometricShapeType> getRemainingShapes(
+      Set<GeometricShapeType> completed) {
     return GeometricShapeType.values
         .where((type) => !completed.contains(type))
         .toList();

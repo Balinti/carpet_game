@@ -45,7 +45,16 @@ class OnboardingFlow extends StatefulWidget {
   State<OnboardingFlow> createState() => _OnboardingFlowState();
 }
 
-enum OnboardingStep { loading, welcome, signUp, signIn, verify, completeProfile, questionnaire, done }
+enum OnboardingStep {
+  loading,
+  welcome,
+  signUp,
+  signIn,
+  verify,
+  completeProfile,
+  questionnaire,
+  done
+}
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
   OnboardingStep _step = OnboardingStep.loading;

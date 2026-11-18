@@ -324,7 +324,7 @@ class _PuzzleScreenState extends State<PuzzleScreen>
       final topTile = _grid[topIndex];
       if (topTile != null) {
         status[0] = topTile.bottom == tile.top
-            ? EdgeMatchStatus.matching   // Same colors = good
+            ? EdgeMatchStatus.matching // Same colors = good
             : EdgeMatchStatus.mismatched; // Different colors = bad
       } else {
         status[0] = EdgeMatchStatus.noAdjacent;
@@ -524,7 +524,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. Place all ${widget.gridSize.tileCount} tiles on the ${widget.gridSize.displayName} grid.'),
+            Text(
+                '1. Place all ${widget.gridSize.tileCount} tiles on the ${widget.gridSize.displayName} grid.'),
             const SizedBox(height: 8),
             Text(l10n.rule2MatchColors),
             const SizedBox(height: 8),
@@ -546,7 +547,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final title = widget.challenge?.name ?? '${widget.gridSize.displayName} Puzzle';
+    final title =
+        widget.challenge?.name ?? '${widget.gridSize.displayName} Puzzle';
 
     return Scaffold(
       appBar: AppBar(
@@ -628,8 +630,8 @@ class _PuzzleScreenState extends State<PuzzleScreen>
                         Row(
                           children: [
                             IconButton.filled(
-                              onPressed: () =>
-                                  _rotateTile(_selectedIndex!, counterClockwise: true),
+                              onPressed: () => _rotateTile(_selectedIndex!,
+                                  counterClockwise: true),
                               icon: const Icon(Icons.rotate_left),
                               tooltip: 'Rotate left',
                               style: IconButton.styleFrom(
@@ -725,13 +727,16 @@ class _PuzzleScreenState extends State<PuzzleScreen>
           // Mistakes count
           Row(
             children: [
-              Icon(Icons.close, size: 24, color: _mistakesCount > 0 ? Colors.red : null),
+              Icon(Icons.close,
+                  size: 24, color: _mistakesCount > 0 ? Colors.red : null),
               const SizedBox(width: 8),
               Text(
                 '$_mistakesCount',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _mistakesCount > 0 ? Colors.red : Theme.of(context).colorScheme.primary,
+                      color: _mistakesCount > 0
+                          ? Colors.red
+                          : Theme.of(context).colorScheme.primary,
                     ),
               ),
             ],
@@ -923,104 +928,105 @@ class _PuzzleScreenState extends State<PuzzleScreen>
   Widget _buildTileWidget(int index, double tileSize) {
     // Get fresh reference to tile at this index
     final tile = _availableTiles[index];
-          final isSelected = _selectedTile?.id == tile.id;
-          // Create a unique key that changes with rotation
-          final tileKey = '${tile.id}_${tile.top.index}${tile.right.index}${tile.bottom.index}${tile.left.index}';
+    final isSelected = _selectedTile?.id == tile.id;
+    // Create a unique key that changes with rotation
+    final tileKey =
+        '${tile.id}_${tile.top.index}${tile.right.index}${tile.bottom.index}${tile.left.index}';
 
-          return RepaintBoundary(
-            key: ValueKey('boundary_$tileKey'),
-            child: GestureDetector(
-              key: ValueKey('gesture_$tileKey'),
-              onTapUp: (details) {
-                if (isSelected) {
-                  // If already selected, rotate based on which side was tapped
-                  final tapX = details.localPosition.dx;
-                  if (tapX < tileSize / 2) {
-                    // Tapped on left side - rotate counter-clockwise
-                    _rotateTile(index, counterClockwise: true);
-                  } else {
-                    // Tapped on right side - rotate clockwise
-                    _rotateTile(index);
-                  }
-                } else {
-                  // Select the tile
-                  _selectTile(tile, index);
-                }
-              },
-              child: Draggable<CarpetTile>(
-                key: ValueKey('drag_$tileKey'),
-                // Pass the tile directly - this is what gets dropped
-                data: tile,
-                feedback: RepaintBoundary(
-                  child: Material(
-                    color: Colors.transparent,
-                    elevation: 8,
-                    child: Opacity(
-                      opacity: 0.9,
-                      child: SizedBox(
-                        width: tileSize,
-                        height: tileSize,
-                        child: CustomPaint(
-                          key: ValueKey('feedback_$tileKey'),
-                          size: Size(tileSize, tileSize),
-                          painter: TilePainter(
-                            tile: tile,
-                            isSelected: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                childWhenDragging: Opacity(
-                  opacity: 0.3,
+    return RepaintBoundary(
+      key: ValueKey('boundary_$tileKey'),
+      child: GestureDetector(
+        key: ValueKey('gesture_$tileKey'),
+        onTapUp: (details) {
+          if (isSelected) {
+            // If already selected, rotate based on which side was tapped
+            final tapX = details.localPosition.dx;
+            if (tapX < tileSize / 2) {
+              // Tapped on left side - rotate counter-clockwise
+              _rotateTile(index, counterClockwise: true);
+            } else {
+              // Tapped on right side - rotate clockwise
+              _rotateTile(index);
+            }
+          } else {
+            // Select the tile
+            _selectTile(tile, index);
+          }
+        },
+        child: Draggable<CarpetTile>(
+          key: ValueKey('drag_$tileKey'),
+          // Pass the tile directly - this is what gets dropped
+          data: tile,
+          feedback: RepaintBoundary(
+            child: Material(
+              color: Colors.transparent,
+              elevation: 8,
+              child: Opacity(
+                opacity: 0.9,
+                child: SizedBox(
+                  width: tileSize,
+                  height: tileSize,
                   child: CustomPaint(
+                    key: ValueKey('feedback_$tileKey'),
                     size: Size(tileSize, tileSize),
-                    painter: TilePainter(tile: tile),
-                  ),
-                ),
-                child: AnimatedBuilder(
-                  animation: _rotationController,
-                  builder: (context, child) {
-                    // Apply rotation animation only to selected tile
-                    // Direction multiplier: clockwise = 1, counter-clockwise = -1
-                    final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
-                    final rotationValue = _selectedIndex == index
-                        ? _rotationAnimation.value * directionMultiplier
-                        : 0.0;
-                    return Transform.rotate(
-                      angle: rotationValue * 2 * 3.14159,
-                      child: child,
-                    );
-                  },
-                  child: Container(
-                    decoration: isSelected
-                        ? BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.4),
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          )
-                        : null,
-                    child: CustomPaint(
-                      key: ValueKey('paint_$tileKey'),
-                      size: Size(tileSize, tileSize),
-                      painter: TilePainter(
-                        tile: tile,
-                        isSelected: isSelected,
-                      ),
+                    painter: TilePainter(
+                      tile: tile,
+                      isSelected: true,
                     ),
                   ),
                 ),
               ),
             ),
-          );
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.3,
+            child: CustomPaint(
+              size: Size(tileSize, tileSize),
+              painter: TilePainter(tile: tile),
+            ),
+          ),
+          child: AnimatedBuilder(
+            animation: _rotationController,
+            builder: (context, child) {
+              // Apply rotation animation only to selected tile
+              // Direction multiplier: clockwise = 1, counter-clockwise = -1
+              final directionMultiplier = _lastRotationClockwise ? 1.0 : -1.0;
+              final rotationValue = _selectedIndex == index
+                  ? _rotationAnimation.value * directionMultiplier
+                  : 0.0;
+              return Transform.rotate(
+                angle: rotationValue * 2 * 3.14159,
+                child: child,
+              );
+            },
+            child: Container(
+              decoration: isSelected
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    )
+                  : null,
+              child: CustomPaint(
+                key: ValueKey('paint_$tileKey'),
+                size: Size(tileSize, tileSize),
+                painter: TilePainter(
+                  tile: tile,
+                  isSelected: isSelected,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

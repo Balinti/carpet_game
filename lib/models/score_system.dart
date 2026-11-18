@@ -80,7 +80,8 @@ class ScoreSystem {
       pointsEarned: earned,
       totalPoints: _points,
       matchingEdges: matchingEdges,
-      isPerfectMatch: totalAdjacentTiles > 0 && matchingEdges == totalAdjacentTiles,
+      isPerfectMatch:
+          totalAdjacentTiles > 0 && matchingEdges == totalAdjacentTiles,
       newAchievements: newAchievements,
       stars: _stars,
     );
@@ -127,9 +128,9 @@ class PlacementResult {
 
 /// Visual feedback for edge matching.
 enum EdgeMatchStatus {
-  noAdjacent,  // No tile adjacent - neutral
-  matching,    // Colors match - green/positive
-  mismatched;  // Colors don't match - gentle hint
+  noAdjacent, // No tile adjacent - neutral
+  matching, // Colors match - green/positive
+  mismatched; // Colors don't match - gentle hint
 
   Color get color {
     switch (this) {

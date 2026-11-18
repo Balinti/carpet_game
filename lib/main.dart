@@ -110,7 +110,8 @@ class LocaleProviderScope extends InheritedWidget {
   });
 
   static LocaleProvider of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<LocaleProviderScope>();
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<LocaleProviderScope>();
     return scope!.provider;
   }
 

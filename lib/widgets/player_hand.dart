@@ -90,8 +90,8 @@ class PlayerHand extends StatelessWidget {
             bestPerRow = perRow;
           }
         }
-        final size = (best < tileSize * 1.6 ? best : tileSize * 1.6)
-            .floorToDouble();
+        final size =
+            (best < tileSize * 1.6 ? best : tileSize * 1.6).floorToDouble();
         final rows = <Widget>[];
         for (var start = 0; start < hand.length; start += bestPerRow) {
           final end = start + bestPerRow < hand.length

@@ -76,20 +76,26 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         Text(
                           l10n.appTitle,
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineLarge
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
                               ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           l10n.appSubtitle,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer
-                                    .withOpacity(0.8),
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer
+                                        .withOpacity(0.8),
+                                  ),
                         ),
                         const SizedBox(height: 32),
 
@@ -117,7 +123,8 @@ class HomeScreen extends StatelessWidget {
                                 style: FilledButton.styleFrom(
                                   minimumSize: const Size(72, 56),
                                   textStyle: const TextStyle(
-                                      fontSize: 20, fontWeight: FontWeight.bold),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 child: Text('$n×$n'),
                               ),
@@ -136,17 +143,20 @@ class HomeScreen extends StatelessWidget {
                         // Regular Flow
                         _GameModeCard(
                           title: 'Regular Flow',
-                          subtitle: '12 levels of increasing challenge!\n2×2 → 3×3 → 4×4 → 5×5 → 6×6',
+                          subtitle:
+                              '12 levels of increasing challenge!\n2×2 → 3×3 → 4×4 → 5×5 → 6×6',
                           icon: Icons.trending_up,
                           iconColor: Colors.blue,
-                          onTap: () => _startGame(context, GameMode.regularFlow),
+                          onTap: () =>
+                              _startGame(context, GameMode.regularFlow),
                         ),
                         const SizedBox(height: 16),
 
                         // Shape Flow
                         _GameModeCard(
                           title: 'Shape Flow',
-                          subtitle: 'Build 7 shapes while completing the grid!\nDiamonds, triangles, rectangles & arrows',
+                          subtitle:
+                              'Build 7 shapes while completing the grid!\nDiamonds, triangles, rectangles & arrows',
                           icon: Icons.category,
                           iconColor: Colors.teal,
                           onTap: () => _startGame(context, GameMode.shapeFlow),
@@ -181,7 +191,8 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, size: 20, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.info_outline,
+                  size: 20, color: Theme.of(context).colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'Regular Flow Levels',
@@ -203,7 +214,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _levelRow(BuildContext context, String levels, String grid, String note) {
+  Widget _levelRow(
+      BuildContext context, String levels, String grid, String note) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

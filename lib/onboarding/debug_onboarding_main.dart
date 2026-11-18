@@ -23,8 +23,7 @@ class OnboardingDebugApp extends StatefulWidget {
 
 class _OnboardingDebugAppState extends State<OnboardingDebugApp> {
   final _auth = FakeAuthService(autoVerifyOnCheck: true);
-  final _lang =
-      AppLanguage.fromCode(Uri.base.queryParameters['lang'] ?? 'en');
+  final _lang = AppLanguage.fromCode(Uri.base.queryParameters['lang'] ?? 'en');
   UserProfile? _profile;
   QuestionnaireResult? _result;
 
@@ -63,7 +62,8 @@ class _OnboardingDebugAppState extends State<OnboardingDebugApp> {
                         '${e.key.labelIn(_lang)}: ${e.value.toStringAsFixed(2)}',
                         style: const TextStyle(fontSize: 18),
                       ),
-                    Text('Primary: ${_result!.primaryBottleneck.labelIn(_lang)}',
+                    Text(
+                        'Primary: ${_result!.primaryBottleneck.labelIn(_lang)}',
                         style: const TextStyle(fontSize: 18)),
                   ],
                 ),
