@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../widgets/visual_style.dart';
 import 'assessment_models.dart';
 
@@ -29,9 +30,36 @@ class AssessmentReport extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final st = _style();
+    final he = AppLocalizations.of(context).language == AppLanguage.hebrew;
+    String t(String h, String e) => he ? h : e;
+    final legend = <(IconData, String)>[
+      (Icons.timer_outlined, t('זמן לסיום', 'time to finish')),
+      (Icons.rotate_right, t('סיבובים', 'rotations')),
+      (Icons.undo, t('החזרות לבונה', 'back to Builder')),
+      (Icons.help_outline, t('פתיחות עזרה', 'help opened')),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // What each icon in the rows means.
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),
+          child: Wrap(
+            key: const ValueKey('report_legend'),
+            spacing: 14,
+            runSpacing: 4,
+            children: [
+              for (final (icon, label) in legend)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(icon, size: 16, color: st.onTray.withOpacity(0.7)),
+                  const SizedBox(width: 4),
+                  Text(label,
+                      style: TextStyle(
+                          color: st.onTray.withOpacity(0.75), fontSize: 13)),
+                ]),
+            ],
+          ),
+        ),
         for (var i = 0; i < result.rounds.length; i++)
           _metricsRow(st, i, result.rounds[i]),
         const SizedBox(height: 8),
@@ -44,6 +72,9 @@ class AssessmentReport extends StatelessWidget {
                 child: _panel(
                   st,
                   Icons.timer_outlined,
+                  t('זמן לכל שלב', 'Time per round'),
+                  t('כמה זמן לקח לפתור כל לוח. עמודה נמוכה = מהיר יותר.',
+                      'How long each board took. Lower bar = faster.'),
                   CustomPaint(
                     key: const ValueKey('report_round_bars'),
                     painter: _RoundBarsPainter(result.rounds, st),
@@ -57,6 +88,9 @@ class AssessmentReport extends StatelessWidget {
                 child: _panel(
                   st,
                   Icons.show_chart,
+                  t('זמן לפני כל חלק', 'Seconds before each piece'),
+                  t('כל נקודה = שניות עד הנחת החלק הבא, לפי הסדר. קו נמוך ויציב = קצב אחיד; קפיצה גבוהה = עצירה או היסוס. הקו האפור מפריד בין השלבים.',
+                      'Each dot = seconds until the next piece was placed, in order. Low, steady line = even pace; a spike = a pause or hesitation. The grey line separates rounds.'),
                   CustomPaint(
                     key: const ValueKey('report_piece_line'),
                     painter: _PieceTimesPainter(result.rounds, st),
@@ -74,7 +108,9 @@ class AssessmentReport extends StatelessWidget {
   static VisualStyle _style() =>
       VisualStyle.current.isClassic ? VisualStyle.soft3d : VisualStyle.current;
 
-  Widget _panel(VisualStyle st, IconData icon, Widget chart) => Container(
+  Widget _panel(VisualStyle st, IconData icon, String title, String explain,
+          Widget chart) =>
+      Container(
         padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
         decoration: BoxDecoration(
           color: st.trayCard,
@@ -84,7 +120,23 @@ class AssessmentReport extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: st.onTray.withOpacity(0.8), size: 20),
+            Row(children: [
+              Icon(icon, color: st.onTray.withOpacity(0.8), size: 18),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(title,
+                    style: TextStyle(
+                        color: st.onTray,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800)),
+              ),
+            ]),
+            const SizedBox(height: 2),
+            Text(explain,
+                style: TextStyle(
+                    color: st.onTray.withOpacity(0.7),
+                    fontSize: 11.5,
+                    height: 1.25)),
             const SizedBox(height: 4),
             Expanded(child: chart),
           ],
