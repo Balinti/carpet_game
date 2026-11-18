@@ -115,6 +115,9 @@ class GameState extends ChangeNotifier {
   /// Full grid with every touching edge matching.
   bool get isSolved => isGridFull && _countMismatches() == 0;
 
+  /// Touching edges whose colors differ.
+  int get mismatchCount => _countMismatches();
+
   /// When set, a single free-practice grid of this size (1-6) with all 36 pieces.
   int? _practiceGridSize;
   int? get practiceGridSize => _practiceGridSize;

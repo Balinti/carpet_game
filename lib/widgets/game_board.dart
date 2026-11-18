@@ -141,15 +141,19 @@ class GameBoard extends StatelessWidget {
                       border: Border.all(
                         color: solved
                             ? Colors.greenAccent
-                            : VisualStyle.current.isClassic
-                                ? Theme.of(context).colorScheme.primary
-                                : VisualStyle.current.boardFrame,
-                        width: solved ? 3 + 3 * pulse : 3,
+                            : full
+                                ? Colors.redAccent
+                                : VisualStyle.current.isClassic
+                                    ? Theme.of(context).colorScheme.primary
+                                    : VisualStyle.current.boardFrame,
+                        width: full ? 3 + 3 * pulse : 3,
                       ),
-                      boxShadow: solved
+                      boxShadow: full
                           ? [
                               BoxShadow(
-                                color: Colors.greenAccent
+                                color: (solved
+                                        ? Colors.greenAccent
+                                        : Colors.redAccent)
                                     .withOpacity(0.35 + 0.45 * pulse),
                                 blurRadius: 12 + 24 * pulse,
                                 spreadRadius: 2 + 6 * pulse,

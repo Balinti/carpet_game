@@ -97,6 +97,7 @@ class _GameScreenState extends State<GameScreen>
   }
 
   bool _wasSolved = false;
+  bool _wasFull = false;
 
   void _onGameStateChanged() {
     setState(() {});
@@ -114,6 +115,17 @@ class _GameScreenState extends State<GameScreen>
       widget.onSolved?.call();
     }
     _wasSolved = solved;
+
+    // Full but not matching: log how many edges are wrong (diagnostics).
+    final full = _gameState.isGridFull;
+    if (full && !solved && !_wasFull) {
+      Telemetry.log('grid_full_mismatch', {
+        'grid': _gameState.targetGridSize,
+        'boards': _gameState.boards,
+        'mismatches': _gameState.mismatchCount,
+      });
+    }
+    _wasFull = full;
 
     // Trigger celebration animation for achievements
     if (_gameState.lastPlacementResult?.hasAchievements == true) {
