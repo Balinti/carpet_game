@@ -19,7 +19,7 @@ class DfiEngine {
     final items = answers.where((a) => a.dimension == d).toList();
     if (items.isEmpty) return null;
     final sum = items.fold<double>(0, (acc, a) => acc + a.score * a.weight);
-    final max = items.fold<double>(0, (acc, a) => acc + maxScore * a.weight);
+    final max = items.fold<double>(0, (acc, a) => acc + a.maxScore * a.weight);
     return sum / max;
   }
 
@@ -33,7 +33,7 @@ class DfiEngine {
     );
     final max = items.fold<double>(
       0,
-      (acc, a) => acc + (maxScore - minScore) * a.weight,
+      (acc, a) => acc + (a.maxScore - minScore) * a.weight,
     );
     return max == 0 ? 0 : sum / max;
   }

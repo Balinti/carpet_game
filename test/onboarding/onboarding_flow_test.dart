@@ -22,7 +22,8 @@ class _MemResults implements QuestionnaireStore {
   Future<void> save(String uid, QuestionnaireResult r) async => data[uid] = r;
 }
 
-Widget _app(Widget home, {AppLanguage lang = AppLanguage.english}) => MaterialApp(
+Widget _app(Widget home, {AppLanguage lang = AppLanguage.english}) =>
+    MaterialApp(
       locale: lang.locale,
       supportedLocales: AppLanguage.values.map((l) => l.locale),
       localizationsDelegates: [
@@ -106,7 +107,8 @@ void main() {
     expect(auth.currentUser!.displayName, 'Dana');
 
     await _tap(tester, const ValueKey('verify_confirmed'));
-    expect(find.textContaining("can't see the confirmation yet"), findsOneWidget);
+    expect(
+        find.textContaining("can't see the confirmation yet"), findsOneWidget);
 
     await _tap(tester, const ValueKey('verify_resend'));
     expect(auth.verificationEmailsSent, 2);
@@ -126,12 +128,12 @@ void main() {
     expect(find.byKey(ValueKey('q_${kidQuestions[1].id}')), findsOneWidget);
     await _tap(tester, const ValueKey('q_back'));
     expect(find.byKey(ValueKey('q_${first.id}')), findsOneWidget);
-    expect(find.text('Question 1 of 12'), findsOneWidget);
+    expect(find.text('Question 1 of 6'), findsOneWidget);
 
-    // Answer all: option index 0 (score 1) except the inhibition core (score 3).
+    // Answer all with option 0 except the inhibition item ("always", score 3).
     for (final q in kidQuestions) {
       expect(find.byKey(ValueKey('q_${q.id}')), findsOneWidget);
-      final opt = q.id == 'kid_inh_core' ? 2 : 0;
+      final opt = q.id == 'kid_3' ? 2 : 0;
       await _tap(tester, ValueKey('opt_${q.id}_$opt'));
     }
 
@@ -141,9 +143,8 @@ void main() {
     expect(doneProfile!.ageGroup, AgeGroup.kid);
     expect(doneProfile!.createdAt, DateTime.utc(2026, 11, 17));
     expect(doneResult!.ageGroup, AgeGroup.kid);
-    expect(doneResult!.answers, hasLength(12));
-    // inhibition: (2*1.5 + 0 + 0) / 7
-    expect(doneResult!.scores[Dimension.inhibition], closeTo(3 / 7, 1e-12));
+    expect(doneResult!.answers, hasLength(6));
+    expect(doneResult!.scores[Dimension.inhibition], closeTo(1, 1e-12));
     expect(doneResult!.scores[Dimension.workingMemory], 0);
     expect(doneResult!.primaryBottleneck, Dimension.inhibition);
     expect(results.data[doneProfile!.uid], same(doneResult));
@@ -246,7 +247,11 @@ void main() {
     final profiles = _MemProfiles();
     final results = _MemResults();
     final p = UserProfile(
-        uid: u.uid, name: 'R', email: u.email, age: 8, createdAt: DateTime(2026));
+        uid: u.uid,
+        name: 'R',
+        email: u.email,
+        age: 8,
+        createdAt: DateTime(2026));
     await profiles.save(p);
     final r = QuestionnaireResult.evaluate(AgeGroup.kid, const []);
     await results.save(u.uid, r);

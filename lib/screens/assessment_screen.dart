@@ -8,6 +8,7 @@ import '../assessment/assessment.dart';
 import '../game/game_state.dart';
 import '../models/models.dart';
 import '../widgets/visual_style.dart';
+import 'assessment_intro.dart';
 import 'game_screen.dart';
 
 /// Runs the assessment: a fixed list of grids played in order (default
@@ -56,7 +57,9 @@ class AssessmentScreen extends StatefulWidget {
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
   late final AssessmentRecorder _recorder;
-  late GameState _gameState;
+  GameState? _game;
+  GameState get _gameState => _game!;
+  set _gameState(GameState g) => _game = g;
   int _round = 0;
   bool _transitioning = false;
   Timer? _timer;
@@ -66,8 +69,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   void initState() {
     super.initState();
     _recorder = AssessmentRecorder(clock: widget.clock);
-    _gameState = _newRound(0);
   }
+
+  /// Instructions are done: the first round (and its clock) starts now.
+  void _start() => setState(() => _gameState = _newRound(0));
 
   GameState _newRound(int index) {
     final size = widget.rounds[index];
@@ -122,7 +127,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    if (_result == null) _gameState.dispose();
+    if (_result == null) _game?.dispose();
     super.dispose();
   }
 
@@ -135,6 +140,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         onDone: widget.onDone ?? () => Navigator.maybePop(context),
       );
     }
+    if (_game == null) return AssessmentIntro(onStart: _start);
     return AbsorbPointer(
       absorbing: _transitioning,
       child: GameScreen(

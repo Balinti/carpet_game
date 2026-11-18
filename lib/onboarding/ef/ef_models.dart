@@ -43,25 +43,30 @@ extension DimensionLabels on Dimension {
       };
 }
 
-/// One answer to one item. [score] is 1 (optimal) .. 3 (high friction).
+/// One answer to one item. [score] is 1 (optimal) .. [maxScore] (high friction).
 class AssessmentAnswer {
   final String questionId;
   final Dimension dimension;
   final int score;
   final double weight;
 
+  /// Highest possible score of the item (3 for kids, 5 for adults).
+  final int maxScore;
+
   const AssessmentAnswer({
     required this.questionId,
     required this.dimension,
     required this.score,
     this.weight = 1.0,
-  }) : assert(score >= 1 && score <= 3);
+    this.maxScore = 3,
+  }) : assert(score >= 1 && score <= maxScore);
 
   Map<String, dynamic> toJson() => {
         'q': questionId,
         'd': dimension.name,
         's': score,
         'w': weight,
+        'm': maxScore,
       };
 
   factory AssessmentAnswer.fromJson(Map<String, dynamic> j) => AssessmentAnswer(
@@ -69,6 +74,7 @@ class AssessmentAnswer {
         dimension: Dimension.values.byName(j['d'] as String),
         score: j['s'] as int,
         weight: (j['w'] as num).toDouble(),
+        maxScore: (j['m'] as num?)?.toInt() ?? 3,
       );
 
   @override
@@ -77,8 +83,10 @@ class AssessmentAnswer {
       other.questionId == questionId &&
       other.dimension == dimension &&
       other.score == score &&
-      other.weight == weight;
+      other.weight == weight &&
+      other.maxScore == maxScore;
 
   @override
-  int get hashCode => Object.hash(questionId, dimension, score, weight);
+  int get hashCode =>
+      Object.hash(questionId, dimension, score, weight, maxScore);
 }

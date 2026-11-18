@@ -141,25 +141,21 @@ class TilePainter extends CustomPainter {
             Color.lerp(base, Colors.black, 0.06)!
           ];
       }
+      final shader = LinearGradient(colors: colors)
+          .createShader(Rect.fromPoints(edgeMid, c));
+      canvas.drawPath(path, Paint()..shader = shader);
+      // Thin same-color outline closes the anti-aliasing hairline between
+      // triangles, so one-color areas show no X.
       canvas.drawPath(
         path,
         Paint()
-          ..shader = LinearGradient(colors: colors)
-              .createShader(Rect.fromPoints(edgeMid, c)),
+          ..shader = shader
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = w * 0.012,
       );
     }
 
-    // Seams between the four triangles.
-    final seam = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = w * (st.id == 3 ? 0.035 : 0.015)
-      ..color = switch (st.id) {
-        2 => Colors.white.withOpacity(0.55),
-        3 => Colors.white.withOpacity(0.85),
-        _ => Colors.black.withOpacity(0.25),
-      };
-    canvas.drawLine(tl, br, seam);
-    canvas.drawLine(tr, bl, seam);
+    // No seams: Shemer asked for pieces without the dividing X.
 
     // Gloss on the upper half (soft 3D and neon).
     if (st.id != 3) {

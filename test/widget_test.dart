@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:carpet_game/main.dart';
 
 void main() {
-  testWidgets('App loads home screen with all game modes', (WidgetTester tester) async {
+  testWidgets('App loads home screen with all game modes',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const CarpetGameApp());
 
     // Verify the home screen loads with the app title

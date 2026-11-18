@@ -17,7 +17,15 @@ void main() {
     test('email format', () {
       expect(validateEmail('a@b.co'), isNull);
       expect(validateEmail('  dana@example.com '), isNull);
-      for (final bad in ['', 'dana', 'dana@', '@x.com', 'a@b', 'a b@c.com', 'a@b.c']) {
+      for (final bad in [
+        '',
+        'dana',
+        'dana@',
+        '@x.com',
+        'a@b',
+        'a b@c.com',
+        'a@b.c'
+      ]) {
         expect(validateEmail(bad), FieldError.emailInvalid, reason: bad);
       }
       expect(validateEmail(null), FieldError.emailInvalid);
@@ -53,51 +61,57 @@ void main() {
       expect(ageGroupForAge(4), AgeGroup.kid);
       expect(ageGroupForAge(99), AgeGroup.adult);
       UserProfile p(int age) => UserProfile(
-          uid: 'u', name: 'n', email: 'e@x.com', age: age, createdAt: DateTime(2026));
+          uid: 'u',
+          name: 'n',
+          email: 'e@x.com',
+          age: age,
+          createdAt: DateTime(2026));
       expect(p(12).ageGroup, AgeGroup.kid);
       expect(p(13).ageGroup, AgeGroup.adult);
     });
 
     test('question sets follow the age group', () {
-      expect(questionsFor(AgeGroup.kid), hasLength(12));
-      expect(questionsFor(AgeGroup.adult), hasLength(12));
-      expect(questionsFor(AgeGroup.kid).every((q) => q.ageGroup == AgeGroup.kid), isTrue);
-      expect(questionsFor(AgeGroup.adult).every((q) => q.ageGroup == AgeGroup.adult), isTrue);
-      for (final group in AgeGroup.values) {
-        for (final d in Dimension.values) {
-          final qs = questionsFor(group).where((q) => q.dimension == d).toList();
-          expect(qs, hasLength(3));
-          expect(qs.where((q) => q.isCore), hasLength(1));
-        }
-        for (final q in questionsFor(group)) {
-          expect(q.options.map((o) => o.score).toList(), [1, 2, 3], reason: q.id);
-        }
+      expect(questionsFor(AgeGroup.kid), hasLength(6));
+      expect(questionsFor(AgeGroup.adult), hasLength(6));
+      expect(
+          questionsFor(AgeGroup.kid).every((q) => q.ageGroup == AgeGroup.kid),
+          isTrue);
+      expect(
+          questionsFor(AgeGroup.adult)
+              .every((q) => q.ageGroup == AgeGroup.adult),
+          isTrue);
+      for (final q in kidQuestions) {
+        expect(q.options.map((o) => o.score).toSet(), {1, 2, 3}, reason: q.id);
       }
+      for (final q in adultQuestions) {
+        expect(q.options.map((o) => o.score).toSet(), {1, 2, 3, 4, 5},
+            reason: q.id);
+      }
+      // Positively worded items are reverse-scored ("always" = optimal).
+      expect(kidQuestions.first.options.last.score, 1);
+      expect(adultQuestions.first.options.last.score, 1);
+      expect(adultQuestions[1].options.last.score, 5);
     });
   });
 
   group('scoring parity with EF Trainer DfiEngine', () {
     // Hand-computed with EF Trainer's formula:
     //   DFI_d = sum((score-1)*w) / sum(2*w), core w=1.5, extra w=1.0
-    test('fixed adult answer set', () {
+    test('fixed adult answer set (1-5 items)', () {
       final answers = answerByScore(adultQuestions, {
-        'adult_inh_core': 3, 'adult_inh_2': 1, 'adult_inh_3': 2, // (3+0+1)/7
-        'adult_wm_core': 1, 'adult_wm_2': 1, 'adult_wm_3': 1, // 0
-        'adult_flex_core': 3, 'adult_flex_2': 3, 'adult_flex_3': 3, // 1
-        'adult_init_core': 2, 'adult_init_2': 3, 'adult_init_3': 1, // (1.5+2+0)/7
+        'adult_1': 1, 'adult_6': 3, // initiation (0 + 2) / 8
+        'adult_2': 1, // workingMemory 0
+        'adult_3': 5, // inhibition 1
+        'adult_4': 3, 'adult_5': 2, // flexibility (2 + 1) / 8
       });
       final r = QuestionnaireResult.evaluate(AgeGroup.adult, answers,
           at: DateTime.utc(2026, 11, 17));
-      expect(r.scores[Dimension.inhibition], closeTo(4 / 7, 1e-12));
+      expect(r.scores[Dimension.initiation], closeTo(2 / 8, 1e-12));
       expect(r.scores[Dimension.workingMemory], 0);
-      expect(r.scores[Dimension.flexibility], 1);
-      expect(r.scores[Dimension.initiation], closeTo(0.5, 1e-12));
-      expect(r.primaryBottleneck, Dimension.flexibility);
-      // Raw spec formula, also from EF Trainer.
-      expect(const DfiEngine().rawDfi(Dimension.inhibition, answers),
-          closeTo((4.5 + 1 + 2) / 10.5, 1e-12));
-      expect(answers.firstWhere((a) => a.questionId == 'adult_inh_core').weight, 1.5);
-      expect(answers.firstWhere((a) => a.questionId == 'adult_inh_2').weight, 1.0);
+      expect(r.scores[Dimension.inhibition], 1);
+      expect(r.scores[Dimension.flexibility], closeTo(3 / 8, 1e-12));
+      expect(r.primaryBottleneck, Dimension.inhibition);
+      expect(answers.every((a) => a.maxScore == 5), isTrue);
     });
 
     test('fixed kid answer set + tie-break by dimension order', () {
@@ -115,7 +129,8 @@ void main() {
   group('JSON round-trips', () {
     test('QuestionnaireResult', () {
       final answers = answerByScore(kidQuestions, {
-        for (var i = 0; i < kidQuestions.length; i++) kidQuestions[i].id: i % 3 + 1,
+        for (var i = 0; i < kidQuestions.length; i++)
+          kidQuestions[i].id: i % 3 + 1,
       });
       final r = QuestionnaireResult.evaluate(AgeGroup.kid, answers,
           at: DateTime.utc(2026, 11, 17, 9, 30));
@@ -131,7 +146,10 @@ void main() {
 
     test('UserProfile', () {
       final p = UserProfile(
-          uid: 'u1', name: 'Dana', email: 'd@x.com', age: 12,
+          uid: 'u1',
+          name: 'Dana',
+          email: 'd@x.com',
+          age: 12,
           createdAt: DateTime.utc(2026, 11, 17));
       final j = p.toJson();
       expect(j['ageGroup'], 'kid');
@@ -145,12 +163,17 @@ void main() {
       expect(await ps.load('u1'), isNull);
       expect(await qs.load('u1'), isNull);
       final p = UserProfile(
-          uid: 'u1', name: 'Dana', email: 'd@x.com', age: 30,
+          uid: 'u1',
+          name: 'Dana',
+          email: 'd@x.com',
+          age: 30,
           createdAt: DateTime.utc(2026, 1, 2));
       await ps.save(p);
       expect(await ps.load('u1'), p);
-      final r = QuestionnaireResult.evaluate(AgeGroup.adult,
-          answerByScore(adultQuestions, {for (final q in adultQuestions) q.id: 3}));
+      final r = QuestionnaireResult.evaluate(
+          AgeGroup.adult,
+          answerByScore(
+              adultQuestions, {for (final q in adultQuestions) q.id: 3}));
       await qs.save('u1', r);
       final back = await qs.load('u1');
       expect(back!.scores, r.scores);
@@ -170,12 +193,16 @@ void main() {
       expect(await auth.reloadAndCheckVerified(), isFalse);
       auth.debugMarkVerified();
       expect(await auth.reloadAndCheckVerified(), isTrue);
-      await expectLater(auth.signUp('dana@x.com', 'secret1'),
-          throwsA(isA<AuthException>().having((e) => e.code, 'code', 'email-already-in-use')));
+      await expectLater(
+          auth.signUp('dana@x.com', 'secret1'),
+          throwsA(isA<AuthException>()
+              .having((e) => e.code, 'code', 'email-already-in-use')));
       await auth.signOut();
       expect(auth.currentUser, isNull);
-      await expectLater(auth.signIn('dana@x.com', 'nope'),
-          throwsA(isA<AuthException>().having((e) => e.code, 'code', 'invalid-credential')));
+      await expectLater(
+          auth.signIn('dana@x.com', 'nope'),
+          throwsA(isA<AuthException>()
+              .having((e) => e.code, 'code', 'invalid-credential')));
       final again = await auth.signIn('dana@x.com', 'secret1');
       expect(again.uid, u.uid);
       expect(again.emailVerified, isTrue);
