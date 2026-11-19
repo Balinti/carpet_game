@@ -148,11 +148,61 @@ void main() {
       clock.advanceMs(600);
       gs.placeTile(const BoardPosition(0, 0));
       expect(gs.isSolved, isTrue);
+      // Not judged until "I finished".
+      expect(gs.awaitingFinishCheck, isTrue);
+      expect(gs.confirmedSolved, isFalse);
+      expect(rec.currentRound!.durationMs, isNull);
+      clock.advanceMs(500);
+      gs.confirmFinished();
+      expect(gs.confirmedSolved, isTrue);
       final m = rec.currentRound!;
       expect(m.placementTimestampsMs, [1000]);
       expect(m.pickToPlaceMs, [600]);
-      expect(m.durationMs, 1000);
+      expect(m.durationMs, 1500);
       expect(m.mismatchesWhenFirstFull, 0);
+      expect(m.minRotations, 0);
+      expect(m.wrongFinishChecks, 0);
+    });
+
+    test('placed piece is selected; fewest rotations; change un-checks', () {
+      final gs = GameState.newPractice(1)..recorder = rec;
+      rec.startRound(1);
+      final tile = gs.currentPlayer.hand.first;
+      gs.rotateHandTile(tile);
+      gs.rotateHandTile(gs.currentPlayer.hand.first);
+      gs.rotateHandTile(gs.currentPlayer.hand.first);
+      gs.placeTileAt(
+          gs.currentPlayer.hand.first, const BoardPosition(0, 0));
+      // The piece just placed is the one the rotate buttons act on.
+      expect(gs.selectedBoardPosition, const BoardPosition(0, 0));
+      gs.confirmFinished();
+      expect(gs.confirmedSolved, isTrue);
+      final m = rec.currentRound!;
+      expect(m.rotations, 3);
+      // 3 clockwise turns = 1 counter-clockwise turn, unless symmetric.
+      expect(m.minRotations, lessThanOrEqualTo(1));
+    });
+
+    test('wrong "I finished" is counted and a change needs a new check', () {
+      final gs = GameState.newPractice(2)..recorder = rec;
+      rec.startRound(2);
+      // Fill with pieces until some edge mismatches.
+      for (final p in const [
+        BoardPosition(0, 0),
+        BoardPosition(0, 1),
+        BoardPosition(1, 0),
+        BoardPosition(1, 1),
+      ]) {
+        gs.placeTileAt(gs.currentPlayer.hand.first, p);
+      }
+      if (gs.isSolved) return; // random deal happened to match
+      gs.confirmFinished();
+      expect(gs.showResult, isTrue);
+      expect(gs.confirmedSolved, isFalse);
+      expect(rec.currentRound!.wrongFinishChecks, 1);
+      gs.rotatePlacedTile(const BoardPosition(0, 0));
+      expect(gs.showResult, isFalse);
+      expect(gs.awaitingFinishCheck, isTrue);
     });
 
     test('rotations, swaps and returns in a 2×2', () {

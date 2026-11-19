@@ -64,7 +64,7 @@ class _GameScreenState extends State<GameScreen>
       _gameState.removeListener(_onGameStateChanged);
       if (oldWidget.gameState == null) _gameState.dispose();
       _gameState = widget.gameState!;
-      _wasSolved = _gameState.isSolved;
+      _wasSolved = _gameState.confirmedSolved;
       _gameState.addListener(_onGameStateChanged);
     }
   }
@@ -104,7 +104,7 @@ class _GameScreenState extends State<GameScreen>
     setState(() {});
 
     // Success: chime + buzz once when the grid becomes full and all-matching.
-    final solved = _gameState.isSolved;
+    final solved = _gameState.confirmedSolved;
     if (solved && !_wasSolved) {
       playSuccess();
       Telemetry.log('grid_solved', {
@@ -118,7 +118,7 @@ class _GameScreenState extends State<GameScreen>
     _wasSolved = solved;
 
     // Full but not matching: log how many edges are wrong (diagnostics).
-    final full = _gameState.isGridFull;
+    final full = _gameState.showResult;
     if (full && !solved && !_wasFull) {
       Telemetry.log('grid_full_mismatch', {
         'grid': _gameState.targetGridSize,
@@ -381,7 +381,8 @@ class _GameScreenState extends State<GameScreen>
     // Biggest round buttons that fit 3 high (max 72px).
     final screenH = MediaQuery.sizeOf(context).height -
         MediaQuery.paddingOf(context).vertical;
-    final size = ((screenH - 8) / 3 - 12).clamp(36.0, 72.0);
+    final finish = _gameState.needsFinishCheck;
+    final size = ((screenH - 8) / (finish ? 4 : 3) - 12).clamp(36.0, 72.0);
     Widget button(IconData icon, VoidCallback onTap) => Padding(
           padding: const EdgeInsets.all(6),
           child: Material(
@@ -404,6 +405,7 @@ class _GameScreenState extends State<GameScreen>
           () => _gameState.rotatePlacedTile(pos!, counterClockwise: true)),
       button(Icons.rotate_right, () => _gameState.rotatePlacedTile(pos!)),
       button(Icons.undo, () => _gameState.returnTileToHand(pos!)),
+      if (finish) _finishButton(size),
     ];
     return Container(
       padding: const EdgeInsets.all(4),
@@ -411,6 +413,59 @@ class _GameScreenState extends State<GameScreen>
           ? Column(
               mainAxisAlignment: MainAxisAlignment.center, children: buttons)
           : Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
+    );
+  }
+
+  /// "I finished": grey until the board is full, then a pulsing green
+  /// button; pressing it checks the board (green frame or red mistakes).
+  Widget _finishButton(double size) {
+    final ready = _gameState.awaitingFinishCheck;
+    return Pulse(
+      active: ready,
+      builder: (pulse) => Padding(
+        padding: const EdgeInsets.all(6),
+        child: Container(
+          decoration: ready
+              ? BoxDecoration(shape: BoxShape.circle, boxShadow: [
+                  BoxShadow(
+                    color: Colors.greenAccent.withOpacity(0.4 + 0.5 * pulse),
+                    blurRadius: 10 + 20 * pulse,
+                    spreadRadius: 2 + 6 * pulse,
+                  ),
+                ])
+              : null,
+          child: Transform.scale(
+            scale: 1 + 0.12 * pulse,
+            child: Material(
+              key: const ValueKey('finish_check'),
+              color: ready
+                  ? const Color(0xFF12B83A)
+                  : Colors.grey.withOpacity(0.35),
+              shape: const CircleBorder(),
+              elevation: ready ? 6 : 0,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: ready
+                    ? () {
+                        Telemetry.log('finish_check', {
+                          'grid': _gameState.targetGridSize,
+                          'boards': _gameState.boards,
+                          'mismatches': _gameState.mismatchCount,
+                        });
+                        _gameState.confirmFinished();
+                      }
+                    : null,
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: Icon(Icons.check_rounded,
+                      size: size * 0.66, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

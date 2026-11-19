@@ -124,9 +124,10 @@ class GameBoard extends StatelessWidget {
       final calculatedTileSize =
           (byWidth < byHeight ? byWidth : byHeight).clamp(24.0, 160.0);
 
-      final solved = gameState.isSolved;
-      final full = gameState.isGridFull;
-      return _Pulse(
+      // Green / red only after "I finished" (practice and assessment).
+      final solved = gameState.confirmedSolved;
+      final full = gameState.showResult;
+      return Pulse(
         active: full,
         builder: (pulse) => Center(
           child: Row(
@@ -462,16 +463,16 @@ class _MismatchPainter extends CustomPainter {
 }
 
 /// Rebuilds with a 0..1..0 value while [active]; 0 otherwise.
-class _Pulse extends StatefulWidget {
+class Pulse extends StatefulWidget {
   final bool active;
   final Widget Function(double pulse) builder;
-  const _Pulse({required this.active, required this.builder});
+  const Pulse({super.key, required this.active, required this.builder});
 
   @override
-  State<_Pulse> createState() => _PulseState();
+  State<Pulse> createState() => _PulseState();
 }
 
-class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
+class _PulseState extends State<Pulse> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 700),
@@ -484,7 +485,7 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   }
 
   @override
-  void didUpdateWidget(_Pulse old) {
+  void didUpdateWidget(Pulse old) {
     super.didUpdateWidget(old);
     if (widget.active && !_c.isAnimating) _c.repeat(reverse: true);
     if (!widget.active && _c.isAnimating) _c.stop();

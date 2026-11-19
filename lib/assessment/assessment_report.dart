@@ -34,75 +34,101 @@ class AssessmentReport extends StatelessWidget {
     String t(String h, String e) => he ? h : e;
     final legend = <(IconData, String)>[
       (Icons.timer_outlined, t('זמן לסיום', 'time to finish')),
-      (Icons.rotate_right, t('סיבובים', 'rotations')),
+      (
+        Icons.rotate_right,
+        t('סיבובים (שלך / מינימום)', 'rotations (yours / fewest)')
+      ),
       (Icons.undo, t('החזרות לבונה', 'back to Builder')),
       (Icons.help_outline, t('פתיחות עזרה', 'help opened')),
     ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // What each icon in the rows means.
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),
-          child: Wrap(
-            key: const ValueKey('report_legend'),
-            spacing: 14,
-            runSpacing: 4,
-            children: [
-              for (final (icon, label) in legend)
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(icon, size: 16, color: st.onTray.withOpacity(0.7)),
-                  const SizedBox(width: 4),
-                  Text(label,
-                      style: TextStyle(
-                          color: st.onTray.withOpacity(0.75), fontSize: 13)),
-                ]),
-            ],
+    // Short screens (phones): scroll, charts keep a fixed height.
+    return LayoutBuilder(builder: (context, box) {
+      final tight = box.maxHeight < 300 + 48.0 * result.rounds.length;
+      Widget charts(Widget c) =>
+          tight ? SizedBox(height: 230, child: c) : Expanded(child: c);
+      final col = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // What each icon in the rows means.
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6, left: 4, right: 4),
+            child: Wrap(
+              key: const ValueKey('report_legend'),
+              spacing: 14,
+              runSpacing: 4,
+              children: [
+                for (final (icon, label) in legend)
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(icon, size: 16, color: st.onTray.withOpacity(0.7)),
+                    const SizedBox(width: 4),
+                    Text(label,
+                        style: TextStyle(
+                            color: st.onTray.withOpacity(0.75), fontSize: 13)),
+                  ]),
+              ],
+            ),
           ),
-        ),
-        for (var i = 0; i < result.rounds.length; i++)
-          _metricsRow(st, i, result.rounds[i]),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 2,
-                child: _panel(
-                  st,
-                  Icons.timer_outlined,
-                  t('זמן לכל שלב', 'Time per round'),
-                  t('כמה זמן לקח לפתור כל לוח. עמודה נמוכה = מהיר יותר.',
-                      'How long each board took. Lower bar = faster.'),
-                  CustomPaint(
-                    key: const ValueKey('report_round_bars'),
-                    painter: _RoundBarsPainter(result.rounds, st),
-                    size: Size.infinite,
+          for (var i = 0; i < result.rounds.length; i++)
+            _metricsRow(st, i, result.rounds[i]),
+          const SizedBox(height: 8),
+          charts(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _panel(
+                    st,
+                    Icons.timer_outlined,
+                    t('זמן לכל שלב', 'Time per round'),
+                    t('כמה זמן לקח לפתור כל לוח. עמודה נמוכה = מהיר יותר.',
+                        'How long each board took. Lower bar = faster.'),
+                    CustomPaint(
+                      key: const ValueKey('report_round_bars'),
+                      painter: _RoundBarsPainter(result.rounds, st),
+                      size: Size.infinite,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 5,
-                child: _panel(
-                  st,
-                  Icons.show_chart,
-                  t('זמן לפני כל חלק', 'Seconds before each piece'),
-                  t('כל נקודה = שניות עד הנחת החלק הבא, לפי הסדר. קו נמוך ויציב = קצב אחיד; קפיצה גבוהה = עצירה או היסוס. הקו האפור מפריד בין השלבים.',
-                      'Each dot = seconds until the next piece was placed, in order. Low, steady line = even pace; a spike = a pause or hesitation. The grey line separates rounds.'),
-                  CustomPaint(
-                    key: const ValueKey('report_piece_line'),
-                    painter: _PieceTimesPainter(result.rounds, st),
-                    size: Size.infinite,
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: _panel(
+                    st,
+                    Icons.rotate_right,
+                    t('סיבובים מול מינימום', 'Rotations vs fewest'),
+                    t('עמודה מלאה = הסיבובים שעשית. עמודה שקופה = המינימום שהיה צריך כדי להגיע ללוח שבנית. ככל שהן קרובות, התכנון טוב יותר.',
+                        'Solid bar = rotations you made. Faint bar = the fewest needed to reach the board you built. Closer = better planning.'),
+                    CustomPaint(
+                      key: const ValueKey('report_rotation_bars'),
+                      painter: _RotationBarsPainter(result.rounds, st),
+                      size: Size.infinite,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 4,
+                  child: _panel(
+                    st,
+                    Icons.show_chart,
+                    t('זמן לפני כל חלק', 'Seconds before each piece'),
+                    t('כל נקודה = שניות עד הנחת החלק הבא, לפי הסדר. קו נמוך ויציב = קצב אחיד; קפיצה גבוהה = עצירה או היסוס. הקו האפור מפריד בין השלבים.',
+                        'Each dot = seconds until the next piece was placed, in order. Low, steady line = even pace; a spike = a pause or hesitation. The grey line separates rounds.'),
+                    CustomPaint(
+                      key: const ValueKey('report_piece_line'),
+                      painter: _PieceTimesPainter(result.rounds, st),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+      return tight ? SingleChildScrollView(child: col) : col;
+    });
   }
 
   static VisualStyle _style() =>
@@ -187,7 +213,11 @@ class AssessmentReport extends StatelessWidget {
             ),
           ),
           cell(Icons.timer_outlined, formatDuration(r.durationMs)),
-          cell(Icons.rotate_right, '${r.rotations}'),
+          cell(
+              Icons.rotate_right,
+              r.minRotations == null
+                  ? '${r.rotations}'
+                  : '${r.rotations} / ${r.minRotations}'),
           cell(Icons.undo, '${r.backToBuilder}'),
           cell(Icons.help_outline, '${r.helpOpens}'),
         ],
@@ -251,6 +281,64 @@ class _RoundBarsPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RoundBarsPainter old) => old.rounds != rounds;
+}
+
+/// Per round: rotations made (solid) next to the fewest needed (faint).
+class _RotationBarsPainter extends CustomPainter {
+  final List<RoundMetrics> rounds;
+  final VisualStyle st;
+  _RotationBarsPainter(this.rounds, this.st);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (rounds.isEmpty) return;
+    const top = 18.0, bottom = 20.0;
+    final h = size.height - top - bottom;
+    final maxV = rounds
+        .map((r) => math.max(r.rotations, r.minRotations ?? 0))
+        .fold<int>(1, (a, b) => math.max(a, b));
+    final slot = size.width / rounds.length;
+    final barW = math.min(slot * 0.32, 26.0);
+    void bar(double x, int v, Color c, String text) {
+      final bh = h * v / maxV;
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(x, top + h - bh, barW, bh),
+          topLeft: const Radius.circular(6),
+          topRight: const Radius.circular(6),
+        ),
+        Paint()..color = c,
+      );
+      final l = _label(text, st.onTray, 11);
+      l.paint(canvas,
+          Offset(x + barW / 2 - l.width / 2, top + h - bh - l.height - 2));
+    }
+
+    for (var i = 0; i < rounds.length; i++) {
+      final r = rounds[i];
+      final c = AssessmentReport.roundColor(st, i);
+      final x0 = slot * i + slot / 2 - barW - 2;
+      bar(x0, r.rotations, c, '${r.rotations}');
+      if (r.minRotations != null) {
+        bar(x0 + barW + 4, r.minRotations!, c.withOpacity(0.35),
+            '${r.minRotations}');
+      }
+      final l = _label(r.label, st.onTray.withOpacity(0.8), 11);
+      l.paint(canvas,
+          Offset(slot * i + slot / 2 - l.width / 2, size.height - l.height));
+    }
+    canvas.drawLine(
+      Offset(0, top + h),
+      Offset(size.width, top + h),
+      Paint()
+        ..color = st.onTray.withOpacity(0.3)
+        ..strokeWidth = 1,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _RotationBarsPainter old) =>
+      old.rounds != rounds;
 }
 
 /// Seconds before each placed piece, all rounds in a row (pace and drift).

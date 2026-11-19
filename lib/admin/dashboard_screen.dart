@@ -108,7 +108,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'uid,name,age,group,assessment_started_utc,round,grid,duration_s,'
         'active_s,rotations,rot_cw,rot_ccw,placements,avg_gap_s,'
         'avg_pick_to_place_s,back_to_builder,help_opens,board_moves,'
-        'mismatches_first_full\n');
+        'mismatches_first_full,min_rotations,wrong_finish_checks\n');
     for (final r in _rows) {
       for (var i = 0; i < r.result.rounds.length; i++) {
         final m = r.result.rounds[i];
@@ -134,6 +134,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           m.helpOpens,
           m.boardMoves,
           m.mismatchesWhenFirstFull ?? '',
+          m.minRotations ?? '',
+          m.wrongFinishChecks,
         ].join(','));
       }
     }
@@ -196,7 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return a == null ? '—' : a.toStringAsFixed(1);
     }
 
-    final roundLabels = ['2×2', '2×(3×3)'];
+    final roundLabels = ['2×2', '2×(3×3)', '6×6'];
     final textStyle = TextStyle(color: on);
     final head = TextStyle(color: on, fontWeight: FontWeight.w800);
 

@@ -12,7 +12,7 @@ import 'assessment_intro.dart';
 import 'game_screen.dart';
 
 /// Runs the assessment: a fixed list of grids played in order (default
-/// 2×2, then two 3×3 side by side; all 36 pieces freshly shuffled), recording
+/// 2×2, two 3×3 side by side, then 6×6; all 36 pieces freshly shuffled), recording
 /// metrics, then shows the results. No text messages during play.
 class AssessmentScreen extends StatefulWidget {
   /// Grid size of each round, in order.
@@ -41,8 +41,8 @@ class AssessmentScreen extends StatefulWidget {
 
   const AssessmentScreen({
     super.key,
-    this.rounds = const [2, 3],
-    this.roundBoards = const [1, 2],
+    this.rounds = const [2, 3, 6],
+    this.roundBoards = const [1, 2, 1],
     this.store,
     this.clock,
     this.userId,

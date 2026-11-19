@@ -106,10 +106,18 @@ class AssessmentRecorder {
   }
 
   /// Grid is full and every edge matches; only the first time is kept.
-  void onSolved() {
+  void onSolved({int? minRotations}) {
     final r = _round;
-    if (r == null) return;
-    r.solvedMs ??= _ms();
+    if (r == null || r.solvedMs != null) return;
+    r.solvedMs = _ms();
+    r.minRotations = minRotations;
+  }
+
+  /// "I finished" was pressed on a full board; [correct] = no mistakes.
+  void onFinishCheck({required bool correct}) {
+    final r = _round;
+    if (r == null || r.solvedMs != null) return;
+    if (!correct) r.wrongFinishChecks++;
   }
 
   /// Snapshot of the current round so far (null when no round is running).
@@ -143,6 +151,8 @@ class _RoundBuilder {
   int moves = 0;
   int replacements = 0;
   int? mismatchesWhenFirstFull;
+  int? minRotations;
+  int wrongFinishChecks = 0;
   final List<int> placements = [];
   final List<int> intervals = [];
   final List<int> pickToPlace = [];
@@ -168,5 +178,7 @@ class _RoundBuilder {
         boardMoves: moves,
         replacements: replacements,
         mismatchesWhenFirstFull: mismatchesWhenFirstFull,
+        minRotations: minRotations,
+        wrongFinishChecks: wrongFinishChecks,
       );
 }

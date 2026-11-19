@@ -46,6 +46,11 @@ void main() {
         gs.placeTileAt(gs.currentPlayer.hand.first, BoardPosition(0, c));
       }
       await tester.pump();
+      // Nothing is judged until "I finished" is pressed.
+      expect(gs.confirmedSolved, isFalse);
+      await tester.tap(find.byKey(const ValueKey('finish_check')));
+      await tester.pump();
+      expect(gs.confirmedSolved, isTrue);
       await tester.pump(const Duration(milliseconds: 1600));
       await tester.pump();
     }

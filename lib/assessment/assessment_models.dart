@@ -40,6 +40,13 @@ class RoundMetrics {
   /// Mismatched edges when the grid first became full (null = never full).
   final int? mismatchesWhenFirstFull;
 
+  /// Fewest rotations that would have turned the pieces of the finished
+  /// board from how they were dealt into place (null = unknown / unsolved).
+  final int? minRotations;
+
+  /// "I finished" pressed while the board still had mistakes.
+  final int wrongFinishChecks;
+
   const RoundMetrics({
     required this.gridSize,
     this.boards = 1,
@@ -56,6 +63,8 @@ class RoundMetrics {
     this.boardMoves = 0,
     this.replacements = 0,
     this.mismatchesWhenFirstFull,
+    this.minRotations,
+    this.wrongFinishChecks = 0,
   });
 
   int get rotations => rotationsCw + rotationsCcw;
@@ -87,6 +96,8 @@ class RoundMetrics {
         'boardMoves': boardMoves,
         'replacements': replacements,
         'mismatchesWhenFirstFull': mismatchesWhenFirstFull,
+        'minRotations': minRotations,
+        'wrongFinishChecks': wrongFinishChecks,
       };
 
   factory RoundMetrics.fromJson(Map<String, dynamic> j) {
@@ -109,6 +120,8 @@ class RoundMetrics {
       boardMoves: optInt('boardMoves') ?? 0,
       replacements: optInt('replacements') ?? 0,
       mismatchesWhenFirstFull: optInt('mismatchesWhenFirstFull'),
+      minRotations: optInt('minRotations'),
+      wrongFinishChecks: optInt('wrongFinishChecks') ?? 0,
     );
   }
 }

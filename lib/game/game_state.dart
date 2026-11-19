@@ -50,10 +50,63 @@ class GameState extends ChangeNotifier {
       _recordedFull = true;
       r.onGridFull(_countMismatches());
     }
-    if (isSolved && !_recordedSolved) {
+    if (checked && isSolved && !_recordedSolved) {
       _recordedSolved = true;
-      r.onSolved();
+      r.onSolved(minRotations: minRotations());
     }
+  }
+
+  /// Practice/assessment boards are only judged after the player presses
+  /// the "I finished" button (Shemer: no automatic check).
+  bool get needsFinishCheck => _practiceGridSize != null;
+  bool _checked = false;
+
+  /// The player confirmed the full board (or no confirmation is needed).
+  bool get checked => !needsFinishCheck || _checked;
+
+  /// Full board waiting for the "I finished" button.
+  bool get awaitingFinishCheck => needsFinishCheck && isGridFull && !_checked;
+
+  /// Full board that was checked: show green (solved) or red (mistakes).
+  bool get showResult => isGridFull && checked;
+
+  /// Solved and confirmed by the player.
+  bool get confirmedSolved => checked && isSolved;
+
+  /// "I finished" pressed: judge the board now.
+  void confirmFinished() {
+    if (!isGridFull || _checked) return;
+    _checked = true;
+    recorder?.onFinishCheck(correct: isSolved);
+    _recordBoardState();
+    notifyListeners();
+  }
+
+  /// Orientation each piece was dealt in (for the fewest-rotations count).
+  final Map<String, CarpetTile> _dealt = {};
+
+  /// Fewest rotations (either direction) that turn each piece on the board
+  /// from how it was dealt into how it lies now.
+  int minRotations() {
+    var total = 0;
+    for (final t in board.values) {
+      final d = _dealt[t.id];
+      if (d == null) continue;
+      var best = 0;
+      var cur = d;
+      for (var k = 0; k < 4; k++) {
+        if (cur.top == t.top &&
+            cur.right == t.right &&
+            cur.bottom == t.bottom &&
+            cur.left == t.left) {
+          best = k <= 2 ? k : 4 - k;
+          break;
+        }
+        cur = cur.rotateClockwise();
+      }
+      total += best;
+    }
+    return total;
   }
 
   /// A tray piece started being dragged (for pick-to-place timing).
@@ -220,6 +273,7 @@ class GameState extends ChangeNotifier {
     _levelCompleted = false;
     _gameOver = false;
     _selectedTile = null;
+    _checked = false;
     _availablePieces = CarpetTile.getBuildTiles()
         .map((t) => t.copyWithId('tile_${_nextTileId++}'))
         .toList();
@@ -227,6 +281,9 @@ class GameState extends ChangeNotifier {
     _history.clear();
     _recalculateBoundaries();
     currentPlayer.hand.clear();
+    _dealt
+      ..clear()
+      ..addEntries(_availablePieces.map((t) => MapEntry(t.id, t)));
     final pieces = List<CarpetTile>.from(_availablePieces)..shuffle();
     for (final tile in pieces) {
       currentPlayer.addTile(tile);
@@ -617,6 +674,9 @@ class GameState extends ChangeNotifier {
     }
 
     _selectedTile = null;
+    _checked = false;
+    // The piece just placed becomes the one the rotate buttons act on.
+    _selectedBoardTileId = tile.id;
     _updatePositions();
     recorder?.onPlace(tile.id);
     _recordBoardState();
@@ -634,6 +694,7 @@ class GameState extends ChangeNotifier {
         ? tile.rotateCounterClockwise()
         : tile.rotateClockwise();
     recorder?.onRotate(counterClockwise: counterClockwise);
+    _checked = false;
 
     // Update message with current status
     _updateStatusMessage();
@@ -661,6 +722,7 @@ class GameState extends ChangeNotifier {
       board[to] = fromTile;
     }
     recorder?.onBoardMove();
+    _checked = false;
 
     _updateStatusMessage();
     _recordBoardState();
@@ -677,6 +739,7 @@ class GameState extends ChangeNotifier {
     _history.removeWhere((a) => a.tile.id == tile.id);
     _levelCompleted = false;
     _selectedTile = null;
+    _checked = false;
     _lastPlacementResult = null;
     _recalculateBoundaries();
     _updateStatusMessage();
@@ -699,6 +762,8 @@ class GameState extends ChangeNotifier {
 
     // Clear selection
     _selectedTile = null;
+    _checked = false;
+    _selectedBoardTileId = handTile.id;
     recorder?.onPlace(handTile.id, replacement: true);
 
     _updateStatusMessage();
@@ -910,6 +975,7 @@ class GameState extends ChangeNotifier {
     board.clear();
     _currentPlayerIndex = 0;
     _selectedTile = null;
+    _checked = false;
     _winner = null;
     _gameOver = false;
     _message = null;
