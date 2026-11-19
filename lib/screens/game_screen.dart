@@ -313,6 +313,40 @@ class _GameScreenState extends State<GameScreen>
           onPressed: onTap,
         );
 
+    final portrait = _portrait;
+    final icons = <Widget>[
+      smallIcon(Icons.arrow_back, () => Navigator.maybePop(context)),
+      if (_gameState.canGoToPreviousLevel)
+        smallIcon(Icons.skip_previous, _goToPreviousLevel),
+      smallIcon(Icons.help_outline, _showInstructions),
+      if (widget.showRestart) smallIcon(Icons.refresh, _restartGame),
+    ];
+    final board = GameBoard(
+      gameState: _gameState,
+      onPositionTap: _placeTile,
+      onTileDrop: _dropTile,
+      onTileRotate: _rotatePlacedTile,
+      onTileSelect: _gameState.selectBoardTile,
+      onSelectedReturn: _gameState.returnTileToHand,
+      onSelectedRotate: (pos, ccw) =>
+          _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
+      onTileSwap: _swapTiles,
+      onTileReplace: _replaceTile,
+      showMatchFeedback: widget.mode.showMatchFeedback,
+    );
+    final hand = Padding(
+      padding: const EdgeInsets.all(6),
+      child: PlayerHand(
+        player: _gameState.currentPlayer,
+        isCurrentPlayer: true,
+        onTileTap: _selectHandTile,
+        selectedTileId: _gameState.selectedTile?.id,
+        onReturnFromBoard: _gameState.returnTileToHand,
+        onTileDragStart: _gameState.pickUpTile,
+        onTileDragCancel: _gameState.dropCancelled,
+      ),
+    );
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -323,54 +357,31 @@ class _GameScreenState extends State<GameScreen>
           ),
         ),
         child: SafeArea(
-          child: Row(
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  smallIcon(
-                      Icons.arrow_back, () => Navigator.maybePop(context)),
-                  if (_gameState.canGoToPreviousLevel)
-                    smallIcon(Icons.skip_previous, _goToPreviousLevel),
-                  smallIcon(Icons.help_outline, _showInstructions),
-                  if (widget.showRestart)
-                    smallIcon(Icons.refresh, _restartGame),
-                ],
-              ),
-              Expanded(
-                flex: 3,
-                child: GameBoard(
-                  gameState: _gameState,
-                  onPositionTap: _placeTile,
-                  onTileDrop: _dropTile,
-                  onTileRotate: _rotatePlacedTile,
-                  onTileSelect: _gameState.selectBoardTile,
-                  onSelectedReturn: _gameState.returnTileToHand,
-                  onSelectedRotate: (pos, ccw) =>
-                      _gameState.rotatePlacedTile(pos, counterClockwise: ccw),
-                  onTileSwap: _swapTiles,
-                  onTileReplace: _replaceTile,
-                  showMatchFeedback: widget.mode.showMatchFeedback,
+          child: portrait
+              // Phone held upright: icons on top, board, big buttons in a
+              // row, the Builder below.
+              ? Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: icons,
+                    ),
+                    Expanded(flex: 5, child: board),
+                    _buildControlStrip(vertical: false),
+                    Expanded(flex: 4, child: hand),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: icons,
+                    ),
+                    Expanded(flex: 3, child: board),
+                    _buildControlStrip(vertical: true),
+                    Expanded(flex: 2, child: hand),
+                  ],
                 ),
-              ),
-              _buildControlStrip(vertical: true),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: PlayerHand(
-                    player: _gameState.currentPlayer,
-                    isCurrentPlayer: true,
-                    onTileTap: _selectHandTile,
-                    selectedTileId: _gameState.selectedTile?.id,
-                    onReturnFromBoard: _gameState.returnTileToHand,
-                    onTileDragStart: _gameState.pickUpTile,
-                    onTileDragCancel: _gameState.dropCancelled,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
       floatingActionButton: _gameState.gameOver
@@ -380,6 +391,11 @@ class _GameScreenState extends State<GameScreen>
             )
           : null,
     );
+  }
+
+  bool get _portrait {
+    final size = MediaQuery.sizeOf(context);
+    return size.height > size.width;
   }
 
   /// Big finger-size buttons acting on the red (selected) board piece:
@@ -395,7 +411,10 @@ class _GameScreenState extends State<GameScreen>
     final screenH = MediaQuery.sizeOf(context).height -
         MediaQuery.paddingOf(context).vertical;
     final finish = _gameState.needsFinishCheck;
-    final size = ((screenH - 8) / (finish ? 4 : 3) - 12).clamp(36.0, 72.0);
+    final screenW = MediaQuery.sizeOf(context).width;
+    final count = finish ? 4 : 3;
+    final size = (((vertical ? screenH : screenW) - 8) / count - 12)
+        .clamp(36.0, vertical ? 72.0 : 64.0);
     Widget button(IconData icon, VoidCallback onTap) => Padding(
           padding: const EdgeInsets.all(6),
           child: Material(

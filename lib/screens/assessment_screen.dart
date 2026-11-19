@@ -183,11 +183,15 @@ class AssessmentResultsView extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: Row(
+          child: Flex(
+            direction: MediaQuery.sizeOf(context).height >
+                    MediaQuery.sizeOf(context).width
+                ? Axis.vertical
+                : Axis.horizontal,
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                   child: AssessmentReport(result: result),
                 ),
               ),

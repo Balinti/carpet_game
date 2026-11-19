@@ -129,7 +129,7 @@ class LocaleProviderScope extends InheritedWidget {
 /// phone sideways.
 /// When false (sign-up and questionnaire), portrait stays portrait so typing
 /// is comfortable; the game screens turn it back on.
-final ValueNotifier<bool> forceLandscape = ValueNotifier<bool>(true);
+final ValueNotifier<bool> forceLandscape = ValueNotifier<bool>(false);
 
 class _RotatePhoneGate extends StatelessWidget {
   final Widget child;

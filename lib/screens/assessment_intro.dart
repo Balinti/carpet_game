@@ -81,6 +81,8 @@ class _AssessmentIntroState extends State<AssessmentIntro>
         ? VisualStyle.soft3d
         : VisualStyle.current;
     final he = AppLocalizations.of(context).language == AppLanguage.hebrew;
+    final size = MediaQuery.sizeOf(context);
+    final portrait = size.height > size.width;
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -93,7 +95,9 @@ class _AssessmentIntroState extends State<AssessmentIntro>
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Flex(
+              // Upright phone: text, examples and button stacked.
+              direction: portrait ? Axis.vertical : Axis.horizontal,
               children: [
                 Expanded(
                   flex: 5,
@@ -117,7 +121,7 @@ class _AssessmentIntroState extends State<AssessmentIntro>
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 16, height: 16),
                 Expanded(
                   flex: 4,
                   child: LayoutBuilder(
@@ -136,7 +140,9 @@ class _AssessmentIntroState extends State<AssessmentIntro>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: portrait
+                      ? const EdgeInsets.only(top: 12)
+                      : const EdgeInsets.only(left: 12),
                   child: Material(
                     key: const ValueKey('intro_start'),
                     color: st.palette[1],

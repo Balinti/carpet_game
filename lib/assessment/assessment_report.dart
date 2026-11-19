@@ -43,9 +43,12 @@ class AssessmentReport extends StatelessWidget {
     ];
     // Short screens (phones): scroll, charts keep a fixed height.
     return LayoutBuilder(builder: (context, box) {
-      final tight = box.maxHeight < 300 + 48.0 * result.rounds.length;
-      Widget charts(Widget c) =>
-          tight ? SizedBox(height: 230, child: c) : Expanded(child: c);
+      // Upright phone: the three charts go under each other.
+      final narrow = box.maxWidth < 600;
+      final tight = narrow || box.maxHeight < 300 + 48.0 * result.rounds.length;
+      Widget charts(Widget c) => tight
+          ? SizedBox(height: narrow ? 3 * 220 + 20 : 230, child: c)
+          : Expanded(child: c);
       final col = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -58,21 +61,28 @@ class AssessmentReport extends StatelessWidget {
               runSpacing: 4,
               children: [
                 for (final (icon, label) in legend)
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(icon, size: 16, color: st.onTray.withOpacity(0.7)),
-                    const SizedBox(width: 4),
-                    Text(label,
-                        style: TextStyle(
-                            color: st.onTray.withOpacity(0.75), fontSize: 13)),
-                  ]),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: box.maxWidth - 8),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(icon, size: 16, color: st.onTray.withOpacity(0.7)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(label,
+                            style: TextStyle(
+                                color: st.onTray.withOpacity(0.75),
+                                fontSize: 13)),
+                      ),
+                    ]),
+                  ),
               ],
             ),
           ),
           for (var i = 0; i < result.rounds.length; i++)
-            _metricsRow(st, i, result.rounds[i]),
+            _metricsRow(st, i, result.rounds[i], narrow),
           const SizedBox(height: 8),
           charts(
-            Row(
+            Flex(
+              direction: narrow ? Axis.vertical : Axis.horizontal,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
@@ -90,7 +100,7 @@ class AssessmentReport extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 10, height: 10),
                 Expanded(
                   flex: 2,
                   child: _panel(
@@ -106,7 +116,7 @@ class AssessmentReport extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 10, height: 10),
                 Expanded(
                   flex: 4,
                   child: _panel(
@@ -169,19 +179,20 @@ class AssessmentReport extends StatelessWidget {
         ),
       );
 
-  Widget _metricsRow(VisualStyle st, int i, RoundMetrics r) {
+  Widget _metricsRow(VisualStyle st, int i, RoundMetrics r, bool narrow) {
     Widget cell(IconData icon, String value) => Expanded(
           child: Row(
             children: [
-              Icon(icon, color: st.onTray.withOpacity(0.75), size: 20),
-              const SizedBox(width: 6),
+              Icon(icon,
+                  color: st.onTray.withOpacity(0.75), size: narrow ? 15 : 20),
+              SizedBox(width: narrow ? 2 : 6),
               Flexible(
                 child: Text(
                   value,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: st.onTray,
-                    fontSize: 17,
+                    fontSize: narrow ? 13 : 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -191,7 +202,7 @@ class AssessmentReport extends StatelessWidget {
         );
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: narrow ? 6 : 12, vertical: 6),
       decoration: BoxDecoration(
         color: st.trayCard,
         borderRadius: BorderRadius.circular(14),
@@ -202,12 +213,12 @@ class AssessmentReport extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 110,
+            width: narrow ? 64 : 110,
             child: Text(
               r.label,
               style: TextStyle(
                 color: roundColor(st, i),
-                fontSize: 18,
+                fontSize: narrow ? 13 : 18,
                 fontWeight: FontWeight.w900,
               ),
             ),

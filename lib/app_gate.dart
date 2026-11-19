@@ -54,9 +54,9 @@ class _AppGateState extends State<AppGate> {
 
   @override
   Widget build(BuildContext context) {
-    // Landscape from the very first screen (Shemer: switching from
-    // portrait sign-up to a landscape game was confusing).
-    const landscape = true;
+    // Never turn the app ourselves: it follows how the phone is held, the
+    // same on every screen (Shemer: switching orientation was confusing).
+    const landscape = false;
     if (forceLandscape.value != landscape) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => forceLandscape.value = landscape);
