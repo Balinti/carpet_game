@@ -3,3 +3,4 @@ export 'assessment_recorder.dart';
 export 'assessment_store.dart';
 export 'clock.dart';
 export 'assessment_report.dart';
+export 'assessment_summary.dart';

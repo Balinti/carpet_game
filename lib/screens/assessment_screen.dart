@@ -250,7 +250,7 @@ class AssessmentResultsView extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                  child: AssessmentReport(result: result),
+                  child: AssessmentSummary(result: result),
                 ),
               ),
               Padding(
