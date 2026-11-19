@@ -154,8 +154,13 @@ class _RotatePhoneGate extends StatelessWidget {
           // Clockwise turn: old left edge becomes the top, and so on.
           padding: EdgeInsets.fromLTRB(p.bottom, p.left, p.top, p.right),
           viewPadding: EdgeInsets.zero,
+          // The on-screen keyboard sits on the turned app's left side.
+          viewInsets: EdgeInsets.zero,
         ),
-        child: child,
+        child: Padding(
+          padding: EdgeInsets.only(left: mq.viewInsets.bottom),
+          child: child,
+        ),
       ),
     );
   }

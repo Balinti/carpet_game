@@ -54,8 +54,9 @@ class _AppGateState extends State<AppGate> {
 
   @override
   Widget build(BuildContext context) {
-    // Forms are typed upright; the game is landscape.
-    final landscape = _stage != _Stage.onboarding;
+    // Landscape from the very first screen (Shemer: switching from
+    // portrait sign-up to a landscape game was confusing).
+    const landscape = true;
     if (forceLandscape.value != landscape) {
       WidgetsBinding.instance
           .addPostFrameCallback((_) => forceLandscape.value = landscape);
