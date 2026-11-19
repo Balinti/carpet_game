@@ -25,6 +25,31 @@ class AssessmentRecorder {
 
   int _ms() => clock.now().difference(_round!.startedAt).inMilliseconds;
 
+  /// Time since the current round started (0 when none is running).
+  int get elapsedMs => _round == null ? 0 : _ms();
+
+  /// Continue a round saved earlier: its counts and timestamps are kept and
+  /// the clock goes on from [elapsedMs] (time away is not counted).
+  void resumeRound(RoundMetrics m, int elapsedMs) {
+    final r = _RoundBuilder(
+        m.gridSize, clock.now().subtract(Duration(milliseconds: elapsedMs)),
+        boards: m.boards)
+      ..firstInteractionMs = m.firstInteractionMs
+      ..cw = m.rotationsCw
+      ..ccw = m.rotationsCcw
+      ..help = m.helpOpens
+      ..moves = m.boardMoves
+      ..replacements = m.replacements
+      ..mismatchesWhenFirstFull = m.mismatchesWhenFirstFull
+      ..wrongFinishChecks = m.wrongFinishChecks
+      ..resumes = m.resumes + 1;
+    r.placements.addAll(m.placementTimestampsMs);
+    r.intervals.addAll(m.placementIntervalsMs);
+    r.pickToPlace.addAll(m.pickToPlaceMs);
+    r.backToBuilder.addAll(m.backToBuilderTimestampsMs);
+    _round = r;
+  }
+
   void _touch() {
     final r = _round!;
     r.firstInteractionMs ??= _ms();
@@ -153,6 +178,7 @@ class _RoundBuilder {
   int? mismatchesWhenFirstFull;
   int? minRotations;
   int wrongFinishChecks = 0;
+  int resumes = 0;
   final List<int> placements = [];
   final List<int> intervals = [];
   final List<int> pickToPlace = [];
@@ -180,5 +206,6 @@ class _RoundBuilder {
         mismatchesWhenFirstFull: mismatchesWhenFirstFull,
         minRotations: minRotations,
         wrongFinishChecks: wrongFinishChecks,
+        resumes: resumes,
       );
 }

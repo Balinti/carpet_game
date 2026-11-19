@@ -413,8 +413,10 @@ class GameBoard extends StatelessWidget {
 }
 
 extension _MismatchMarks on GameBoard {
-  /// On a full grid that isn't solved, mark edges that don't match in red
-  /// (blinking with [pulse]).
+  /// On a checked grid that isn't solved, show where the mistakes are:
+  /// correct pieces fade, wrong pieces stay bright with a blinking red frame
+  /// and a red bar on the edge that doesn't match (Shemer: "I can't find
+  /// the mistake").
   Widget _withMismatchMarks(BoardPosition position, CarpetTile tile,
       double size, double? pulse, Widget child) {
     if (pulse == null) return child;
@@ -423,10 +425,29 @@ extension _MismatchMarks on GameBoard {
       for (final e in status.entries)
         if (e.value == EdgeMatchStatus.mismatched) e.key
     };
-    if (bad.isEmpty) return child;
+    if (bad.isEmpty) return Opacity(opacity: 0.3, child: child);
     return Stack(
       children: [
         child,
+        IgnorePointer(
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(size * 0.12),
+              border: Border.all(
+                color: Colors.red.withOpacity(0.5 + 0.5 * pulse),
+                width: size * 0.06,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.redAccent.withOpacity(0.3 + 0.5 * pulse),
+                  blurRadius: 6 + 10 * pulse,
+                ),
+              ],
+            ),
+          ),
+        ),
         IgnorePointer(
           child: CustomPaint(
             size: Size(size, size),
@@ -445,7 +466,7 @@ class _MismatchPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final w = size.width * 0.09;
+    final w = size.width * 0.14;
     final p = Paint()
       ..color = Colors.red.withOpacity(opacity)
       ..strokeWidth = w

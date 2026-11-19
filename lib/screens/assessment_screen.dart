@@ -8,7 +8,9 @@ import '../assessment/assessment.dart';
 import '../game/game_state.dart';
 import '../models/models.dart';
 import '../widgets/visual_style.dart';
+import '../game/practice_save.dart';
 import 'assessment_intro.dart';
+import 'assessment_progress.dart';
 import 'game_screen.dart';
 
 /// Runs the assessment: a fixed list of grids played in order (default
@@ -59,7 +61,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   late final AssessmentRecorder _recorder;
   GameState? _game;
   GameState get _gameState => _game!;
-  set _gameState(GameState g) => _game = g;
+  set _gameState(GameState g) {
+    _game = g;
+    g.addListener(_saveProgress);
+  }
+
+  /// Unfinished assessment saved earlier on this device (continue it).
+  AssessmentProgress? _resume;
   int _round = 0;
   bool _transitioning = false;
   Timer? _timer;
@@ -69,10 +77,58 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   void initState() {
     super.initState();
     _recorder = AssessmentRecorder(clock: widget.clock);
+    AssessmentProgress.load(widget.userId).then((p) {
+      if (p != null &&
+          _game == null &&
+          _listEq(p.rounds, widget.rounds) &&
+          p.round < widget.rounds.length) {
+        _resume = p;
+      }
+    });
   }
 
-  /// Instructions are done: the first round (and its clock) starts now.
-  void _start() => setState(() => _gameState = _newRound(0));
+  static bool _listEq(List<int> a, List<int> b) =>
+      a.length == b.length &&
+      [for (var i = 0; i < a.length; i++) a[i] == b[i]].every((x) => x);
+
+  /// Instructions are done: the first round (and its clock) starts now,
+  /// or the saved assessment continues where it stopped.
+  void _start() {
+    final p = _resume;
+    _resume = null;
+    if (p == null) {
+      setState(() => _gameState = _newRound(0));
+      return;
+    }
+    _recorder.rounds.addAll(p.completed);
+    _round = p.round;
+    final restored = (p.partial != null && p.board != null)
+        ? PracticeSave.restore(p.board!)
+        : null;
+    Telemetry.log(
+        'assessment_resume', {'round': _round, 'withBoard': restored != null});
+    if (restored == null) {
+      setState(() => _gameState = _newRound(_round));
+      return;
+    }
+    _recorder.resumeRound(p.partial!, p.elapsedMs);
+    restored.recorder = _recorder;
+    setState(() => _gameState = restored);
+  }
+
+  /// Keep the unfinished assessment on this device after every change.
+  void _saveProgress() {
+    final g = _game;
+    if (g == null || _result != null) return;
+    AssessmentProgress(
+      rounds: widget.rounds,
+      completed: List.of(_recorder.rounds),
+      round: _round,
+      partial: _recorder.currentRound,
+      elapsedMs: _recorder.elapsedMs,
+      board: PracticeSave.snapshot(g),
+    ).save(widget.userId);
+  }
 
   GameState _newRound(int index) {
     final size = widget.rounds[index];
@@ -102,11 +158,13 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         _gameState = _newRound(_round);
         _transitioning = false;
       });
+      _saveProgress();
       // The old GameScreen detaches at the end of this frame.
       WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
       return;
     }
     final result = _recorder.buildResult(userId: widget.userId);
+    AssessmentProgress.clear(widget.userId);
     setState(() {
       _result = result;
       _transitioning = false;

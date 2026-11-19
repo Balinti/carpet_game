@@ -47,6 +47,9 @@ class RoundMetrics {
   /// "I finished" pressed while the board still had mistakes.
   final int wrongFinishChecks;
 
+  /// Times this round was left and continued later.
+  final int resumes;
+
   const RoundMetrics({
     required this.gridSize,
     this.boards = 1,
@@ -65,6 +68,7 @@ class RoundMetrics {
     this.mismatchesWhenFirstFull,
     this.minRotations,
     this.wrongFinishChecks = 0,
+    this.resumes = 0,
   });
 
   int get rotations => rotationsCw + rotationsCcw;
@@ -98,6 +102,7 @@ class RoundMetrics {
         'mismatchesWhenFirstFull': mismatchesWhenFirstFull,
         'minRotations': minRotations,
         'wrongFinishChecks': wrongFinishChecks,
+        'resumes': resumes,
       };
 
   factory RoundMetrics.fromJson(Map<String, dynamic> j) {
@@ -122,6 +127,7 @@ class RoundMetrics {
       mismatchesWhenFirstFull: optInt('mismatchesWhenFirstFull'),
       minRotations: optInt('minRotations'),
       wrongFinishChecks: optInt('wrongFinishChecks') ?? 0,
+      resumes: optInt('resumes') ?? 0,
     );
   }
 }
