@@ -425,7 +425,10 @@ extension _MismatchMarks on GameBoard {
       for (final e in status.entries)
         if (e.value == EdgeMatchStatus.mismatched) e.key
     };
-    if (bad.isEmpty) return Opacity(opacity: 0.3, child: child);
+    // Only the pieces about to go back to the Builder are framed in red.
+    if (!gameState.rejectedIds.contains(tile.id)) {
+      return Opacity(opacity: 0.3, child: child);
+    }
     return Stack(
       children: [
         child,

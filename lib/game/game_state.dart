@@ -78,7 +78,69 @@ class GameState extends ChangeNotifier {
     if (!isGridFull || _checked) return;
     _checked = true;
     recorder?.onFinishCheck(correct: isSolved);
+    _rejected = isSolved ? {} : _wrongPieceIds();
     _recordBoardState();
+    notifyListeners();
+  }
+
+  /// Pieces shown in red after a wrong "I finished"; they then go back to
+  /// the Builder (Edoe: throw the wrong piece down instead of blinking).
+  Set<String> _rejected = {};
+  Set<String> get rejectedIds => _rejected;
+
+  /// Fewest pieces whose removal leaves no mismatched edge: repeatedly take
+  /// the piece with the most bad edges (tie: the one placed last).
+  Set<String> _wrongPieceIds() {
+    final bad = <(BoardPosition, BoardPosition)>[];
+    for (final e in board.entries) {
+      final p = e.key, t = e.value;
+      final r = board[BoardPosition(p.row, p.col + 1)];
+      if (r != null && r.left != t.right) {
+        bad.add((p, BoardPosition(p.row, p.col + 1)));
+      }
+      final d = board[BoardPosition(p.row + 1, p.col)];
+      if (d != null && d.top != t.bottom) {
+        bad.add((p, BoardPosition(p.row + 1, p.col)));
+      }
+    }
+    int recency(BoardPosition p) =>
+        _history.lastIndexWhere((a) => a.tile.id == board[p]!.id);
+    final out = <String>{};
+    while (bad.isNotEmpty) {
+      final deg = <BoardPosition, int>{};
+      for (final (a, b) in bad) {
+        deg[a] = (deg[a] ?? 0) + 1;
+        deg[b] = (deg[b] ?? 0) + 1;
+      }
+      final pick = deg.keys.reduce((x, y) {
+        if (deg[x] != deg[y]) return deg[x]! > deg[y]! ? x : y;
+        return recency(x) >= recency(y) ? x : y;
+      });
+      out.add(board[pick]!.id);
+      bad.removeWhere((e) => e.$1 == pick || e.$2 == pick);
+    }
+    return out;
+  }
+
+  /// Send the red pieces back to the Builder (after a short look).
+  void throwBackRejected() {
+    final ids = _rejected;
+    _rejected = {};
+    if (ids.isEmpty || !_checked) {
+      notifyListeners();
+      return;
+    }
+    board.removeWhere((pos, t) {
+      if (!ids.contains(t.id)) return false;
+      currentPlayer.addTile(t);
+      return true;
+    });
+    _history.removeWhere((a) => ids.contains(a.tile.id));
+    if (ids.contains(_selectedBoardTileId)) _selectedBoardTileId = null;
+    _checked = false;
+    _recalculateBoundaries();
+    _updateStatusMessage();
+    _updatePositions();
     notifyListeners();
   }
 

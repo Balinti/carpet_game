@@ -200,9 +200,14 @@ void main() {
       expect(gs.showResult, isTrue);
       expect(gs.confirmedSolved, isFalse);
       expect(rec.currentRound!.wrongFinishChecks, 1);
-      gs.rotatePlacedTile(const BoardPosition(0, 0));
+      // The wrong pieces go back to the Builder; what stays all matches.
+      final wrong = gs.rejectedIds;
+      expect(wrong, isNotEmpty);
+      gs.throwBackRejected();
+      expect(gs.board.length, 4 - wrong.length);
+      expect(gs.mismatchCount, 0);
+      expect(gs.currentPlayer.hand.map((t) => t.id), containsAll(wrong));
       expect(gs.showResult, isFalse);
-      expect(gs.awaitingFinishCheck, isTrue);
     });
 
     test('rotations, swaps and returns in a 2×2', () {

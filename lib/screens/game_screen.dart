@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'assessment_intro.dart';
 import '../game/game_state.dart';
@@ -103,14 +105,25 @@ class _GameScreenState extends State<GameScreen>
     _gameState.removeListener(_onGameStateChanged);
     if (widget.gameState == null) _gameState.dispose();
     _celebrationController.dispose();
+    _throwBackTimer?.cancel();
     super.dispose();
   }
 
   bool _wasSolved = false;
   bool _wasFull = false;
 
+  Timer? _throwBackTimer;
+
   void _onGameStateChanged() {
     setState(() {});
+    // Wrong "I finished": show the red pieces briefly, then they drop back
+    // into the Builder.
+    if (_gameState.rejectedIds.isNotEmpty && _throwBackTimer == null) {
+      _throwBackTimer = Timer(const Duration(milliseconds: 1400), () {
+        _throwBackTimer = null;
+        if (mounted) _gameState.throwBackRejected();
+      });
+    }
     // Free practice: keep the board so the player can come back later.
     if (widget.gameState == null && widget.practiceGridSize != null) {
       PracticeSave.save(_gameState);
