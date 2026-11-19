@@ -293,6 +293,23 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Put a saved practice board back (see PracticeSave).
+  void loadPracticeBoard(
+      Map<BoardPosition, CarpetTile> saved, List<CarpetTile> hand) {
+    board
+      ..clear()
+      ..addAll(saved);
+    currentPlayer.hand
+      ..clear()
+      ..addAll(hand);
+    _selectedTile = null;
+    _checked = false;
+    _recalculateBoundaries();
+    _updateStatusMessage();
+    _updatePositions();
+    notifyListeners();
+  }
+
   /// Initialize a new Shape Flow game.
   static GameState newShapeFlow() {
     final players = [Player(id: 'player_0', name: 'Builder')];

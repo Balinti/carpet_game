@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'assessment_intro.dart';
+import '../game/practice_save.dart';
 import '../l10n/l10n.dart';
 import '../main.dart';
 import '../models/game_mode.dart';
@@ -112,23 +113,43 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             for (var n = 2; n <= 6; n++)
                               FilledButton(
-                                // Instructions first, then the board.
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (ctx) => AssessmentIntro(
-                                      onStart: () => Navigator.pushReplacement(
-                                        ctx,
-                                        MaterialPageRoute(
-                                          builder: (_) => GameScreen(
-                                            mode: GameMode.regularFlow,
-                                            practiceGridSize: n,
+                                // A saved unfinished board continues
+                                // straight away; otherwise instructions
+                                // first, then the board.
+                                onPressed: () async {
+                                  final saved = await PracticeSave.load(n);
+                                  if (!context.mounted) return;
+                                  if (saved != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => GameScreen(
+                                          mode: GameMode.regularFlow,
+                                          practiceGridSize: n,
+                                          resumeFrom: saved,
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (ctx) => AssessmentIntro(
+                                        onStart: () =>
+                                            Navigator.pushReplacement(
+                                          ctx,
+                                          MaterialPageRoute(
+                                            builder: (_) => GameScreen(
+                                              mode: GameMode.regularFlow,
+                                              practiceGridSize: n,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
+                                  );
+                                },
                                 style: FilledButton.styleFrom(
                                   minimumSize: const Size(72, 56),
                                   textStyle: const TextStyle(

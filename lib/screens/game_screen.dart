@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'assessment_intro.dart';
 import '../game/game_state.dart';
+import '../game/practice_save.dart';
 import '../l10n/l10n.dart';
 import '../models/models.dart';
 import '../widgets/game_board.dart';
@@ -27,6 +28,9 @@ class GameScreen extends StatefulWidget {
   /// Show the restart icon (hidden in assessment so rounds can't be reset).
   final bool showRestart;
 
+  /// Saved practice board to continue (see PracticeSave).
+  final Map<String, dynamic>? resumeFrom;
+
   const GameScreen({
     super.key,
     required this.mode,
@@ -34,6 +38,7 @@ class GameScreen extends StatefulWidget {
     this.gameState,
     this.onSolved,
     this.showRestart = true,
+    this.resumeFrom,
   });
 
   @override
@@ -75,8 +80,12 @@ class _GameScreenState extends State<GameScreen>
       return;
     }
     if (widget.practiceGridSize != null) {
-      Telemetry.log('practice_start', {'grid': widget.practiceGridSize});
-      _gameState = GameState.newPractice(widget.practiceGridSize!);
+      final resumed = widget.resumeFrom == null
+          ? null
+          : PracticeSave.restore(widget.resumeFrom!);
+      Telemetry.log('practice_start',
+          {'grid': widget.practiceGridSize, 'resumed': resumed != null});
+      _gameState = resumed ?? GameState.newPractice(widget.practiceGridSize!);
       return;
     }
     switch (widget.mode) {
@@ -102,6 +111,10 @@ class _GameScreenState extends State<GameScreen>
 
   void _onGameStateChanged() {
     setState(() {});
+    // Free practice: keep the board so the player can come back later.
+    if (widget.gameState == null && widget.practiceGridSize != null) {
+      PracticeSave.save(_gameState);
+    }
 
     // Success: chime + buzz once when the grid becomes full and all-matching.
     final solved = _gameState.confirmedSolved;
