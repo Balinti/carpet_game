@@ -415,7 +415,10 @@ class _GameScreenState extends State<GameScreen>
   /// rotate left, rotate right, back to the Builder.
   Widget _buildControlStrip({required bool vertical}) {
     final pos = _gameState.selectedBoardPosition;
-    final enabled = pos != null;
+    // The rotate buttons act on whichever piece was chosen last: a piece
+    // on the board, or a piece picked in the Builder (Shemer).
+    final trayTile = _gameState.selectedTile;
+    final enabled = pos != null || trayTile != null;
     final style = VisualStyle.current;
     final bg = style.isClassic
         ? Theme.of(context).colorScheme.surfaceContainerHigh
@@ -428,28 +431,41 @@ class _GameScreenState extends State<GameScreen>
     final count = finish ? 4 : 3;
     final size = (((vertical ? screenH : screenW) - 8) / count - 12)
         .clamp(36.0, vertical ? 72.0 : 64.0);
-    Widget button(IconData icon, VoidCallback onTap) => Padding(
-          padding: const EdgeInsets.all(6),
-          child: Material(
-            color: enabled ? Colors.red : Colors.grey.withOpacity(0.35),
-            shape: const CircleBorder(),
-            elevation: enabled ? 4 : 0,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: enabled ? onTap : null,
-              child: SizedBox(
-                width: size,
-                height: size,
-                child: Icon(icon, size: size * 0.58, color: Colors.white),
-              ),
+    Widget button(IconData icon, VoidCallback onTap, {bool on = true}) {
+      final active = enabled && on;
+      return Padding(
+        padding: const EdgeInsets.all(6),
+        child: Material(
+          color: active ? Colors.red : Colors.grey.withOpacity(0.35),
+          shape: const CircleBorder(),
+          elevation: active ? 4 : 0,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: active ? onTap : null,
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Icon(icon, size: size * 0.58, color: Colors.white),
             ),
           ),
-        );
+        ),
+      );
+    }
+
     final buttons = [
-      button(Icons.rotate_left,
-          () => _gameState.rotatePlacedTile(pos!, counterClockwise: true)),
-      button(Icons.rotate_right, () => _gameState.rotatePlacedTile(pos!)),
-      button(Icons.undo, () => _gameState.returnTileToHand(pos!)),
+      button(
+          Icons.rotate_left,
+          () => pos != null
+              ? _gameState.rotatePlacedTile(pos, counterClockwise: true)
+              : _gameState.rotateSelectedTileCounterClockwise()),
+      button(
+          Icons.rotate_right,
+          () => pos != null
+              ? _gameState.rotatePlacedTile(pos)
+              : _gameState.rotateSelectedTile()),
+      // Back to the Builder only makes sense for a piece on the board.
+      button(Icons.undo, () => _gameState.returnTileToHand(pos!),
+          on: pos != null),
       if (finish) _finishButton(size),
     ];
     return Container(

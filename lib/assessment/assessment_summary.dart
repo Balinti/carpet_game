@@ -12,6 +12,32 @@ class AssessmentSummary extends StatelessWidget {
   final AssessmentResult result;
   const AssessmentSummary({super.key, required this.result});
 
+  static Widget _bar(String label, double f, Color c, VisualStyle st) => Row(
+        children: [
+          SizedBox(
+            width: 44,
+            child: Text(label,
+                style:
+                    TextStyle(color: st.onTray.withOpacity(0.8), fontSize: 13)),
+          ),
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: FractionallySizedBox(
+                widthFactor: f.clamp(0.04, 1.0),
+                child: Container(
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: c,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     final st = VisualStyle.current.isClassic
@@ -45,9 +71,7 @@ class AssessmentSummary extends StatelessWidget {
                   fit: BoxFit.scaleDown,
                   child: Text(r.label,
                       style: TextStyle(
-                          color: c,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900)),
+                          color: c, fontSize: 24, fontWeight: FontWeight.w900)),
                 ),
               ),
             ]),
@@ -64,6 +88,15 @@ class AssessmentSummary extends StatelessWidget {
                 style:
                     TextStyle(color: st.onTray.withOpacity(0.7), fontSize: 14)),
             const SizedBox(height: 10),
+            // You vs needed, as two bars (Shemer: show my result next to
+            // the desired one).
+            if (min != null && r.rotations > 0) ...[
+              _bar(t('שלך', 'you'), 1.0, c, st),
+              const SizedBox(height: 4),
+              _bar(t('נדרש', 'needed'), min / r.rotations, Colors.greenAccent,
+                  st),
+              const SizedBox(height: 8),
+            ],
             Text(
               min == null
                   ? t('${r.rotations} סיבובים', '${r.rotations} rotations')
