@@ -84,7 +84,7 @@ class AssessmentSummary extends StatelessWidget {
                       fontSize: 40,
                       fontWeight: FontWeight.w900)),
             ),
-            Text(t('זמן', 'time'),
+            Text(r.gaveUp ? t('נעצר באמצע', 'stopped') : t('זמן', 'time'),
                 style:
                     TextStyle(color: st.onTray.withOpacity(0.7), fontSize: 14)),
             const SizedBox(height: 10),

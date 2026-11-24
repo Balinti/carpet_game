@@ -11,6 +11,7 @@ import 'screens/sign_in_screen.dart';
 import 'screens/sign_up_screen.dart';
 import 'screens/verify_email_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'welcome/language_toggle.dart';
 
 /// Sign up (or sign in) -> verify email -> EF questionnaire, then [onDone].
 ///
@@ -66,6 +67,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   @override
   void initState() {
     super.initState();
+    // First start: switch the app to Hebrew. The whole app rebuilds right
+    // after, so this instance just waits.
+    if (applyDefaultLanguageOnce(context)) return;
     final user = _auth.currentUser;
     if (user == null) {
       _step = OnboardingStep.welcome;
@@ -210,12 +214,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           onSubmit: _onSignUp,
           onGoogle: _onGoogle,
           onSignInInstead: () => _go(OnboardingStep.signIn),
+          onBack: () => _go(OnboardingStep.welcome),
         );
       case OnboardingStep.signIn:
         return SignInScreen(
           key: const ValueKey('step_signin'),
           initialErrorCode: _error,
           onGoogle: _onGoogle,
+          onBack: () {
+            _error = null;
+            _go(OnboardingStep.welcome);
+          },
           onSubmit: (e, p) {
             _error = null;
             return _onSignIn(e, p);

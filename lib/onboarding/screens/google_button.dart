@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
 import '../onboarding_strings.dart';
+import 'onboarding_ui.dart';
 
 /// Big white "Continue with Google" button + "or use email" divider.
 /// Shows its own inline error code via [onError].
@@ -52,16 +53,21 @@ class _GoogleSignInBlockState extends State<GoogleSignInBlock> {
       children: [
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 280),
+            constraints: const BoxConstraints(minWidth: 240),
             child: ElevatedButton(
               key: const ValueKey('google_sign_in'),
               onPressed: _busy || widget.disabled ? null : _tap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1F1F1F),
-                minimumSize: const Size(280, 52),
+                elevation: look.brightness == Brightness.light ? 0 : 2,
+                side: look.brightness == Brightness.light
+                    ? BorderSide(color: look.border, width: 1.5)
+                    : null,
+                minimumSize: const Size(240, 52),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(26)),
+                    borderRadius: BorderRadius.circular(
+                        look.radius > 26 ? 26 : look.radius)),
                 textStyle:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
@@ -79,7 +85,10 @@ class _GoogleSignInBlockState extends State<GoogleSignInBlock> {
                               fontWeight: FontWeight.w900,
                               color: Color(0xFF4285F4))),
                   const SizedBox(width: 12),
-                  Text(s.continueWithGoogle),
+                  Flexible(
+                    child: Text(s.continueWithGoogle,
+                        overflow: TextOverflow.ellipsis),
+                  ),
                 ],
               ),
             ),
@@ -88,13 +97,13 @@ class _GoogleSignInBlockState extends State<GoogleSignInBlock> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(children: [
-            const Expanded(child: Divider(color: Colors.white24)),
+            Expanded(child: Divider(color: look.border)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(s.orUseEmail,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                  style: TextStyle(color: look.muted, fontSize: 14)),
             ),
-            const Expanded(child: Divider(color: Colors.white24)),
+            Expanded(child: Divider(color: look.border)),
           ]),
         ),
       ],

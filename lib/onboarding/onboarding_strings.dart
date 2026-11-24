@@ -82,6 +82,42 @@ class OnboardingStrings {
   String get adultIntroHeading =>
       _t('A few quick questions', 'Unas preguntas rápidas', 'כמה שאלות קצרות');
 
+  // Welcome + goal (the three design models share these texts)
+  String get welcomeHello => _t('Welcome to the Carpet Game',
+      'Bienvenidos al Juego de Alfombra', 'ברוכים הבאים למשחק השטיח');
+  String get welcomeForWho => _t(
+      'A color tile game for kids (with a parent) and for adults.',
+      'Un juego de fichas de colores para niños (con un adulto) y adultos.',
+      'משחק אריחים צבעוני לילדים (יחד עם הורה) ולמבוגרים.');
+  String get howTitle =>
+      _t('How do you play?', '¿Cómo se juega?', 'איך משחקים?');
+  String get howBody => _t(
+      'Build a carpet: put each piece where its colors match the pieces next to it.',
+      'Arma una alfombra: pon cada pieza donde sus colores coincidan con las de al lado.',
+      'בונים שטיח: מניחים כל אריח במקום שבו הצבעים שלו מתאימים לאריחים שלידו.');
+  String get goalTitle => _t('Why play?', '¿Para qué?', 'בשביל מה?');
+  String get goalBody => _t(
+      'The game shows how you plan, remember and focus, and helps you get better at it.',
+      'El juego muestra cómo planeas, recuerdas y te concentras, y te ayuda a mejorar.',
+      'המשחק מראה איך אתם מתכננים, זוכרים ומתרכזים, ועוזר להשתפר בזה.');
+  String get goalPlan => _t('Plan', 'Planear', 'לתכנן');
+  String get goalRemember => _t('Remember', 'Recordar', 'לזכור');
+  String get goalFocus => _t('Focus', 'Concentrarse', 'להתרכז');
+  String get stepsTitle =>
+      _t('What happens now?', '¿Qué sigue?', 'מה עושים עכשיו?');
+  String get stepAccount =>
+      _t('Create an account', 'Crea una cuenta', 'פותחים חשבון');
+  String stepQuestions(int n) => _t('Answer $n short questions',
+      'Responde $n preguntas cortas', 'עונים על $n שאלות קצרות');
+  String get stepPlay => _t('Play your first boards',
+      'Juega tus primeros tableros', 'משחקים את הלוחות הראשונים');
+  String get next => _t('Next', 'Siguiente', 'הבא');
+  String get letsStart => _t("Let's start", 'Empecemos', 'מתחילים');
+  String get minimalGoal => _t(
+      'A tile game that shows how you plan, remember and focus, and trains it.',
+      'Un juego de fichas que muestra cómo planeas, recuerdas y te concentras, y lo entrena.',
+      'משחק אריחים שמראה איך מתכננים, זוכרים ומתרכזים, ומאמן את זה.');
+
   // Validation
   String fieldError(FieldError e) => switch (e) {
         FieldError.nameRequired =>

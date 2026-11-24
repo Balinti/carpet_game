@@ -210,6 +210,26 @@ void main() {
       expect(gs.showResult, isFalse);
     });
 
+    test('move log records every action and survives JSON', () {
+      rec.startRound(2);
+      final gs = GameState.newPractice(2)..recorder = rec;
+      expect(rec.currentRound!.deal, hasLength(36));
+      gs.rotateHandTile(gs.currentPlayer.hand.first);
+      gs.placeTileAt(gs.currentPlayer.hand.first, const BoardPosition(0, 0));
+      gs.rotatePlacedTile(const BoardPosition(0, 0));
+      gs.swapTiles(const BoardPosition(0, 0), const BoardPosition(1, 1));
+      gs.returnTileToHand(const BoardPosition(1, 1));
+      gs.giveUp();
+      final m = rec.currentRound!;
+      expect(m.moves.map((e) => e['k']),
+          ['rot', 'place', 'rot', 'move', 'back', 'giveup']);
+      expect(m.moves[1]['o'], hasLength(4));
+      expect(m.gaveUp, isTrue);
+      final back = RoundMetrics.fromJson(m.toJson());
+      expect(back.moves.map((e) => e['k']), m.moves.map((e) => e['k']));
+      expect(back.deal, m.deal);
+    });
+
     test('rotations, swaps and returns in a 2×2', () {
       final gs = GameState.newPractice(2)..recorder = rec;
       final hand = gs.currentPlayer.hand;

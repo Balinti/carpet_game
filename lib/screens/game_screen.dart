@@ -33,6 +33,10 @@ class GameScreen extends StatefulWidget {
   /// Saved practice board to continue (see PracticeSave).
   final Map<String, dynamic>? resumeFrom;
 
+  /// "I'm stuck" in the assessment: the round ends unsolved. When null
+  /// (free practice) the board stays saved and the screen closes.
+  final VoidCallback? onGiveUp;
+
   const GameScreen({
     super.key,
     required this.mode,
@@ -41,6 +45,7 @@ class GameScreen extends StatefulWidget {
     this.onSolved,
     this.showRestart = true,
     this.resumeFrom,
+    this.onGiveUp,
   });
 
   @override
@@ -332,6 +337,12 @@ class _GameScreenState extends State<GameScreen>
       if (_gameState.canGoToPreviousLevel)
         smallIcon(Icons.skip_previous, _goToPreviousLevel),
       smallIcon(Icons.help_outline, _showInstructions),
+      IconButton(
+        key: const ValueKey('give_up'),
+        tooltip: 'נתקעתי',
+        icon: Icon(Icons.sentiment_dissatisfied_outlined, color: iconColor),
+        onPressed: _confirmGiveUp,
+      ),
       if (widget.showRestart) smallIcon(Icons.refresh, _restartGame),
     ];
     final board = GameBoard(
@@ -428,7 +439,7 @@ class _GameScreenState extends State<GameScreen>
         MediaQuery.paddingOf(context).vertical;
     final finish = _gameState.needsFinishCheck;
     final screenW = MediaQuery.sizeOf(context).width;
-    final count = finish ? 4 : 3;
+    final count = finish ? 3 : 2;
     final size = (((vertical ? screenH : screenW) - 8) / count - 12)
         .clamp(36.0, vertical ? 72.0 : 64.0);
     Widget button(IconData icon, VoidCallback onTap, {bool on = true}) {
@@ -463,9 +474,6 @@ class _GameScreenState extends State<GameScreen>
           () => pos != null
               ? _gameState.rotatePlacedTile(pos)
               : _gameState.rotateSelectedTile()),
-      // Back to the Builder only makes sense for a piece on the board.
-      button(Icons.undo, () => _gameState.returnTileToHand(pos!),
-          on: pos != null),
       if (finish) _finishButton(size),
     ];
     return Container(
@@ -528,6 +536,47 @@ class _GameScreenState extends State<GameScreen>
         ),
       ),
     );
+  }
+
+  /// "I'm stuck / no more strength": stop here; what was done is kept.
+  Future<void> _confirmGiveUp() async {
+    final he = AppLocalizations.of(context).language == AppLanguage.hebrew;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Directionality(
+        textDirection: he ? TextDirection.rtl : TextDirection.ltr,
+        child: AlertDialog(
+          title: Text(he ? 'נתקעת?' : 'Stuck?'),
+          content: Text(he
+              ? 'אפשר לעצור כאן. כל מה שעשית נשמר.'
+              : 'You can stop here. Everything you did is saved.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(he ? 'אמשיך לנסות' : 'Keep trying'),
+            ),
+            FilledButton(
+              key: const ValueKey('give_up_confirm'),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(he ? 'לעצור' : 'Stop'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    Telemetry.log('give_up', {
+      'grid': _gameState.targetGridSize,
+      'boards': _gameState.boards,
+      'placed': _gameState.board.length,
+      'mismatches': _gameState.mismatchCount,
+    });
+    _gameState.giveUp();
+    if (widget.onGiveUp != null) {
+      widget.onGiveUp!();
+    } else {
+      Navigator.maybePop(context);
+    }
   }
 
   Widget _buildInfoBar(AppLocalizations l10n) {

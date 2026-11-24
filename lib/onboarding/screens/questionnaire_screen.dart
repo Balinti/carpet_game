@@ -4,7 +4,9 @@ import '../../l10n/app_localizations.dart';
 import '../ef/ef_models.dart';
 import '../ef/ef_questions.dart';
 import '../ef/questionnaire_result.dart';
+import '../../models/tile_color.dart';
 import '../onboarding_strings.dart';
+import '../welcome/tile_art.dart';
 import 'onboarding_ui.dart';
 
 /// EF questionnaire: an intro page (kids: "answer with a parent"), then one
@@ -116,46 +118,49 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
       child: SingleChildScrollView(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  if (widget.onExit != null) ...[
-                    _backButton(s),
-                    const SizedBox(width: 12),
-                  ],
-                  if (_isKid)
-                    const Padding(
-                      padding: EdgeInsetsDirectional.only(end: 10),
-                      child: Text('👨‍👧', style: TextStyle(fontSize: 36)),
+          child: OnboardingPanel(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    if (widget.onExit != null) ...[
+                      _backButton(s),
+                      const SizedBox(width: 12),
+                    ],
+                    if (_isKid)
+                      const Padding(
+                        padding: EdgeInsetsDirectional.only(end: 10),
+                        child: Text('👨‍👧', style: TextStyle(fontSize: 36)),
+                      ),
+                    Expanded(
+                      child: OnboardingTitle(
+                          _isKid ? s.kidIntroHeading : s.adultIntroHeading),
                     ),
-                  Expanded(
-                    child: OnboardingTitle(
-                        _isKid ? s.kidIntroHeading : s.adultIntroHeading),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                introFor(lang, widget.ageGroup),
-                key: const ValueKey('q_intro_text'),
-                style: TextStyle(color: st.onTray, fontSize: 18, height: 1.35),
-              ),
-              const SizedBox(height: 18),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 260),
-                  child: BigButton(
-                    key: const ValueKey('q_start'),
-                    label: s.start,
-                    icon: Icons.play_arrow_rounded,
-                    onPressed: () => setState(() => _index = 0),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  introFor(lang, widget.ageGroup),
+                  key: const ValueKey('q_intro_text'),
+                  style:
+                      TextStyle(color: st.onTray, fontSize: 18, height: 1.35),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 260),
+                    child: BigButton(
+                      key: const ValueKey('q_start'),
+                      label: s.start,
+                      icon: Icons.play_arrow_rounded,
+                      onPressed: () => setState(() => _index = 0),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -184,16 +189,33 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                     fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
+              if (look.model == WelcomeModel.playful)
+                // One game piece per question; answered ones light up.
+                Row(
                   key: const ValueKey('q_progress'),
-                  value: progress,
-                  minHeight: 10,
-                  color: accent,
-                  backgroundColor: st.onTray.withOpacity(0.15),
+                  children: [
+                    for (var i = 0; i < _questions.length; i++)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Opacity(
+                          opacity: i <= _index ? 1 : 0.25,
+                          child:
+                              TileArt.solid(TileColor.values[i % 4], size: 18),
+                        ),
+                      ),
+                  ],
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    key: const ValueKey('q_progress'),
+                    value: progress,
+                    minHeight: look.model == WelcomeModel.minimal ? 4 : 10,
+                    color: accent,
+                    backgroundColor: st.onTray.withOpacity(0.12),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -220,6 +242,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             padding: const EdgeInsets.only(bottom: 10),
             child: _OptionButton(
               key: ValueKey('opt_${q.id}_$i'),
+              index: i,
               label: q.options[i].labelIn(lang),
               selected: identical(_picked[_index], q.options[i]),
               accent: accent,
@@ -281,12 +304,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
     super.key,
+    required this.index,
     required this.label,
     required this.selected,
     required this.accent,
     required this.onTap,
   });
 
+  final int index;
   final String label;
   final bool selected;
   final Color accent;
@@ -295,15 +320,42 @@ class _OptionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final st = onboardingStyle;
-    final radius = BorderRadius.circular(18);
+    final l = look;
+    final radius =
+        BorderRadius.circular(l.model == WelcomeModel.minimal ? 12 : 18);
+    // Small mark at the start of each answer, different per design model.
+    final Widget? marker = switch (l.model) {
+      WelcomeModel.calm => Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: selected ? accent : Colors.transparent,
+            border: Border.all(color: accent, width: 2.5),
+          ),
+          child: selected
+              ? const Icon(Icons.check, size: 16, color: Colors.white)
+              : null,
+        ),
+      WelcomeModel.playful =>
+        TileArt.solid(TileColor.values[index % 4], size: 30),
+      WelcomeModel.minimal => null,
+    };
     return Material(
-      color: selected ? accent.withOpacity(0.35) : st.trayCard.withOpacity(0.9),
-      elevation: 3,
+      color: selected
+          ? accent.withOpacity(0.25)
+          : st.trayCard.withOpacity(l.model == WelcomeModel.playful ? 0.9 : 1),
+      elevation: l.model == WelcomeModel.calm ? 1.5 : (l.chunky ? 3 : 0),
+      shadowColor: Colors.black26,
       shape: RoundedRectangleBorder(
         borderRadius: radius,
         side: BorderSide(
-          color: selected ? accent : accent.withOpacity(0.45),
-          width: 2.5,
+          color: selected
+              ? accent
+              : (l.model == WelcomeModel.playful
+                  ? accent.withOpacity(0.45)
+                  : l.border),
+          width: l.model == WelcomeModel.minimal ? 1.5 : 2,
         ),
       ),
       child: InkWell(
@@ -313,16 +365,20 @@ class _OptionButton extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 60),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: st.onTray,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+            child: Row(
+              children: [
+                if (marker != null) ...[marker, const SizedBox(width: 14)],
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: st.onTray,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

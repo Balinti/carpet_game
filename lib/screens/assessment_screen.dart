@@ -207,6 +207,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         practiceGridSize: widget.rounds[_round],
         gameState: _gameState,
         onSolved: _onSolved,
+        onGiveUp: _onSolved,
         showRestart: false,
       ),
     );

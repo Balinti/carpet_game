@@ -50,6 +50,18 @@ class RoundMetrics {
   /// Times this round was left and continued later.
   final int resumes;
 
+  /// When "I'm stuck" was pressed (null = didn't give up).
+  final int? gaveUpMs;
+  bool get gaveUp => gaveUpMs != null;
+
+  /// Pieces dealt at round start, "id:TRBL" with color letters r/g/b/y.
+  final List<String> deal;
+
+  /// Every action in order, replayable: {t: ms, k: kind, ...}. Kinds:
+  /// place {id,r,c,o[,out]}, rot {id,o[,r,c]}, move {r,c,r2,c2},
+  /// back {id,r,c}, check {ok}, throw {ids}, giveup, solved.
+  final List<Map<String, dynamic>> moves;
+
   const RoundMetrics({
     required this.gridSize,
     this.boards = 1,
@@ -69,6 +81,9 @@ class RoundMetrics {
     this.minRotations,
     this.wrongFinishChecks = 0,
     this.resumes = 0,
+    this.gaveUpMs,
+    this.deal = const [],
+    this.moves = const [],
   });
 
   int get rotations => rotationsCw + rotationsCcw;
@@ -103,6 +118,9 @@ class RoundMetrics {
         'minRotations': minRotations,
         'wrongFinishChecks': wrongFinishChecks,
         'resumes': resumes,
+        'gaveUpMs': gaveUpMs,
+        'deal': deal,
+        'moves': moves,
       };
 
   factory RoundMetrics.fromJson(Map<String, dynamic> j) {
@@ -128,6 +146,11 @@ class RoundMetrics {
       minRotations: optInt('minRotations'),
       wrongFinishChecks: optInt('wrongFinishChecks') ?? 0,
       resumes: optInt('resumes') ?? 0,
+      gaveUpMs: optInt('gaveUpMs'),
+      deal: ((j['deal'] as List?) ?? const []).map((e) => '$e').toList(),
+      moves: ((j['moves'] as List?) ?? const [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
     );
   }
 }

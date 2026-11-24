@@ -1,6 +1,7 @@
 import 'package:carpet_game/l10n/app_localizations.dart';
 import 'package:carpet_game/onboarding/ef/ef_questions.dart';
 import 'package:carpet_game/onboarding/onboarding.dart';
+import 'package:carpet_game/onboarding/welcome/onboarding_look.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,6 +51,14 @@ Future<void> _tap(WidgetTester tester, Key key) async {
   await tester.pumpAndSettle();
 }
 
+/// Pages through the welcome screens, then taps "Let's start".
+Future<void> _startSignUp(WidgetTester tester) async {
+  while (find.byKey(const ValueKey('welcome_next')).evaluate().isNotEmpty) {
+    await _tap(tester, const ValueKey('welcome_next'));
+  }
+  await _tap(tester, const ValueKey('welcome_create'));
+}
+
 Future<void> _enter(WidgetTester tester, Key key, String text) async {
   final f = find.byKey(key);
   await tester.ensureVisible(f);
@@ -82,7 +91,7 @@ void main() {
       },
     )));
     await tester.pumpAndSettle();
-    await _tap(tester, const ValueKey('welcome_create'));
+    await _startSignUp(tester);
     expect(find.text('Create your account'), findsOneWidget);
 
     // Empty submit shows inline validation errors.
@@ -165,7 +174,7 @@ void main() {
       lang: AppLanguage.hebrew,
     ));
     await tester.pumpAndSettle();
-    await _tap(tester, const ValueKey('welcome_create'));
+    await _startSignUp(tester);
     await _enter(tester, const ValueKey('signup_name'), 'נועה');
     await _enter(tester, const ValueKey('signup_age'), '13');
     await _enter(tester, const ValueKey('signup_email'), 'noa@example.com');
@@ -229,7 +238,7 @@ void main() {
       onDone: (_, __) {},
     )));
     await tester.pumpAndSettle();
-    await _tap(tester, const ValueKey('welcome_create'));
+    await _startSignUp(tester);
     await _enter(tester, const ValueKey('signup_name'), 'X');
     await _enter(tester, const ValueKey('signup_age'), '30');
     await _enter(tester, const ValueKey('signup_email'), 'taken@example.com');
@@ -265,4 +274,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(got, p);
   });
+
+  for (final m in WelcomeModel.values) {
+    for (final size in const [Size(390, 844), Size(844, 390)]) {
+      testWidgets('welcome model ${m.index + 1} at $size reaches sign-up',
+          (tester) async {
+        OnboardingLook.debugModel = m;
+        addTearDown(() => OnboardingLook.debugModel = null);
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(_app(
+          OnboardingFlow(auth: FakeAuthService(), onDone: (_, __) {}),
+          lang: AppLanguage.hebrew,
+        ));
+        await tester.pumpAndSettle();
+        await _startSignUp(tester);
+        expect(find.byKey(const ValueKey('step_signup')), findsOneWidget);
+        await _tap(tester, const ValueKey('signup_back'));
+        expect(find.byKey(const ValueKey('step_welcome')), findsOneWidget);
+        await _tap(tester, const ValueKey('welcome_signin'));
+        expect(find.byKey(const ValueKey('step_signin')), findsOneWidget);
+      });
+    }
+  }
 }

@@ -14,7 +14,11 @@ class SignInScreen extends StatefulWidget {
     this.onCreateAccount,
     this.onGoogle,
     this.initialErrorCode,
+    this.onBack,
   });
+
+  /// Back to the welcome screen. When null, no back button.
+  final VoidCallback? onBack;
 
   /// Throws [AuthException] on failure.
   final Future<void> Function(String email, String password) onSubmit;
@@ -100,60 +104,77 @@ class _SignInScreenState extends State<SignInScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
-              child: AutofillGroup(
-                child: Form(
-                  key: _formKey,
-                  autovalidateMode: _submitted
-                      ? AutovalidateMode.onUserInteraction
-                      : AutovalidateMode.disabled,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      OnboardingTitle(s.signInTitle),
-                      const SizedBox(height: 12),
-                      if (widget.onGoogle != null)
-                        GoogleSignInBlock(
-                          onGoogle: widget.onGoogle!,
-                          disabled: _busy,
-                          onError: (c) => setState(() => _error = c),
+              child: OnboardingPanel(
+                compact: c.maxHeight < 500,
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            if (widget.onBack != null) ...[
+                              OnboardingBackButton(
+                                key: const ValueKey('signin_back'),
+                                tooltip: s.back,
+                                onPressed: _busy ? null : widget.onBack,
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            Expanded(child: OnboardingTitle(s.signInTitle)),
+                          ],
                         ),
-                      wide
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(child: emailField),
-                                gap,
-                                Expanded(child: passwordField),
-                              ],
-                            )
-                          : Column(children: [emailField, gap, passwordField]),
-                      if (_error != null) InlineMessage(s.authError(_error!)),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 16,
-                        runSpacing: 10,
-                        children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 240),
-                            child: BigButton(
-                              key: const ValueKey('signin_submit'),
-                              label: s.signIn,
-                              busy: _busy,
-                              onPressed: _submit,
-                            ),
+                        const SizedBox(height: 12),
+                        if (widget.onGoogle != null)
+                          GoogleSignInBlock(
+                            onGoogle: widget.onGoogle!,
+                            disabled: _busy,
+                            onError: (c) => setState(() => _error = c),
                           ),
-                          if (widget.onCreateAccount != null)
-                            BigButton(
-                              key: const ValueKey('signin_go_signup'),
-                              label: s.newAccount,
-                              primary: false,
-                              onPressed: _busy ? null : widget.onCreateAccount,
+                        wide
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: emailField),
+                                  gap,
+                                  Expanded(child: passwordField),
+                                ],
+                              )
+                            : Column(
+                                children: [emailField, gap, passwordField]),
+                        if (_error != null) InlineMessage(s.authError(_error!)),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 16,
+                          runSpacing: 10,
+                          children: [
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(minWidth: 240),
+                              child: BigButton(
+                                key: const ValueKey('signin_submit'),
+                                label: s.signIn,
+                                busy: _busy,
+                                onPressed: _submit,
+                              ),
                             ),
-                        ],
-                      ),
-                    ],
+                            if (widget.onCreateAccount != null)
+                              BigButton(
+                                key: const ValueKey('signin_go_signup'),
+                                label: s.newAccount,
+                                primary: false,
+                                onPressed:
+                                    _busy ? null : widget.onCreateAccount,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

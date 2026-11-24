@@ -42,7 +42,10 @@ class AssessmentRecorder {
       ..replacements = m.replacements
       ..mismatchesWhenFirstFull = m.mismatchesWhenFirstFull
       ..wrongFinishChecks = m.wrongFinishChecks
-      ..resumes = m.resumes + 1;
+      ..resumes = m.resumes + 1
+      ..gaveUpMs = m.gaveUpMs;
+    r.deal.addAll(m.deal);
+    r.moveLog.addAll(m.moves);
     r.placements.addAll(m.placementTimestampsMs);
     r.intervals.addAll(m.placementIntervalsMs);
     r.pickToPlace.addAll(m.pickToPlaceMs);
@@ -138,6 +141,27 @@ class AssessmentRecorder {
     r.minRotations = minRotations;
   }
 
+  /// Pieces dealt for this round, "id:TRBL" (only the first deal counts).
+  void onDeal(List<String> codes) {
+    final r = _round;
+    if (r == null || r.deal.isNotEmpty) return;
+    r.deal.addAll(codes);
+  }
+
+  /// One entry of the move log (replayable). [kind] see RoundMetrics.moves.
+  void log(String kind, Map<String, Object?> data) {
+    final r = _round;
+    if (r == null || (r.solvedMs != null && kind != 'solved')) return;
+    r.moveLog.add({'t': _ms(), 'k': kind, ...data});
+  }
+
+  /// "I'm stuck": the round ends without a solution.
+  void onGiveUp() {
+    final r = _round;
+    if (r == null || r.solvedMs != null) return;
+    r.gaveUpMs ??= _ms();
+  }
+
   /// "I finished" was pressed on a full board; [correct] = no mistakes.
   void onFinishCheck({required bool correct}) {
     final r = _round;
@@ -179,6 +203,9 @@ class _RoundBuilder {
   int? minRotations;
   int wrongFinishChecks = 0;
   int resumes = 0;
+  int? gaveUpMs;
+  final List<String> deal = [];
+  final List<Map<String, dynamic>> moveLog = [];
   final List<int> placements = [];
   final List<int> intervals = [];
   final List<int> pickToPlace = [];
@@ -207,5 +234,8 @@ class _RoundBuilder {
         minRotations: minRotations,
         wrongFinishChecks: wrongFinishChecks,
         resumes: resumes,
+        gaveUpMs: gaveUpMs,
+        deal: List.unmodifiable(deal),
+        moves: List.unmodifiable(moveLog),
       );
 }

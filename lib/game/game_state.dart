@@ -37,7 +37,28 @@ class GameState extends ChangeNotifier {
   int _currentLevel = 1;
 
   /// Optional metrics recorder (assessment mode). Null in normal play.
-  AssessmentRecorder? recorder;
+  /// Attaching it records the dealt pieces (start of the move log).
+  AssessmentRecorder? _recorder;
+  AssessmentRecorder? get recorder => _recorder;
+  set recorder(AssessmentRecorder? r) {
+    _recorder = r;
+    r?.onDeal([for (final t in currentPlayer.hand) tileCode(t)]);
+  }
+
+  /// "TRBL" color letters, e.g. "rgby" (move log / replay).
+  static String orient(CarpetTile t) =>
+      [t.top, t.right, t.bottom, t.left].map((c) => c.name[0]).join();
+  static String tileCode(CarpetTile t) => '${t.id}:${orient(t)}';
+
+  void _log(String kind, [Map<String, Object?> data = const {}]) =>
+      _recorder?.log(kind, data);
+
+  /// "I'm stuck": the player stops this board (kept for analysis).
+  void giveUp() {
+    _log('giveup');
+    _recorder?.onGiveUp();
+    notifyListeners();
+  }
 
   bool _recordedFull = false;
   bool _recordedSolved = false;
@@ -52,6 +73,7 @@ class GameState extends ChangeNotifier {
     }
     if (checked && isSolved && !_recordedSolved) {
       _recordedSolved = true;
+      _log('solved');
       r.onSolved(minRotations: minRotations());
     }
   }
@@ -78,6 +100,7 @@ class GameState extends ChangeNotifier {
     if (!isGridFull || _checked) return;
     _checked = true;
     recorder?.onFinishCheck(correct: isSolved);
+    _log('check', {'ok': isSolved});
     _rejected = isSolved ? {} : _wrongPieceIds();
     _recordBoardState();
     notifyListeners();
@@ -136,6 +159,7 @@ class GameState extends ChangeNotifier {
       return true;
     });
     _history.removeWhere((a) => ids.contains(a.tile.id));
+    _log('throw', {'ids': ids.toList()});
     if (ids.contains(_selectedBoardTileId)) _selectedBoardTileId = null;
     _checked = false;
     _recalculateBoundaries();
@@ -172,7 +196,12 @@ class GameState extends ChangeNotifier {
   }
 
   /// A tray piece started being dragged (for pick-to-place timing).
-  void pickUpTile(CarpetTile tile) => recorder?.onPick(tile.id);
+  /// Picking a new piece makes it the current one (Shemer: the rotate
+  /// buttons must not stay on the previous piece).
+  void pickUpTile(CarpetTile tile) {
+    _selectedBoardTileId = null;
+    recorder?.onPick(tile.id);
+  }
 
   /// A drag of a tray piece ended without a drop.
   void dropCancelled(CarpetTile tile) {
@@ -198,7 +227,8 @@ class GameState extends ChangeNotifier {
   void selectBoardTile(BoardPosition position) {
     final tile = board[position];
     if (tile == null) return;
-    _selectedBoardTileId = _selectedBoardTileId == tile.id ? null : tile.id;
+    // Tapping always makes this piece the current one (no toggling off).
+    _selectedBoardTileId = tile.id;
     _selectedTile = null;
     _updatePositions();
     notifyListeners();
@@ -537,6 +567,7 @@ class GameState extends ChangeNotifier {
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
       recorder?.onRotate();
+      _log('rot', {'id': rotated.id, 'o': orient(rotated)});
       _updatePositions();
       notifyListeners();
     }
@@ -553,6 +584,7 @@ class GameState extends ChangeNotifier {
       currentPlayer.hand[index] = rotated;
       _selectedTile = rotated;
       recorder?.onRotate(counterClockwise: true);
+      _log('rot', {'id': rotated.id, 'o': orient(rotated)});
       _updatePositions();
       notifyListeners();
     }
@@ -565,6 +597,7 @@ class GameState extends ChangeNotifier {
       final rotated = tile.rotateClockwise();
       currentPlayer.hand[index] = rotated;
       recorder?.onRotate();
+      _log('rot', {'id': rotated.id, 'o': orient(rotated)});
       notifyListeners();
     }
   }
@@ -758,6 +791,12 @@ class GameState extends ChangeNotifier {
     _selectedBoardTileId = tile.id;
     _updatePositions();
     recorder?.onPlace(tile.id);
+    _log('place', {
+      'id': tile.id,
+      'r': position.row,
+      'c': position.col,
+      'o': orient(tile),
+    });
     _recordBoardState();
     notifyListeners();
     return true;
@@ -773,6 +812,12 @@ class GameState extends ChangeNotifier {
         ? tile.rotateCounterClockwise()
         : tile.rotateClockwise();
     recorder?.onRotate(counterClockwise: counterClockwise);
+    _log('rot', {
+      'id': board[position]!.id,
+      'o': orient(board[position]!),
+      'r': position.row,
+      'c': position.col,
+    });
     _checked = false;
 
     // Update message with current status
@@ -801,6 +846,7 @@ class GameState extends ChangeNotifier {
       board[to] = fromTile;
     }
     recorder?.onBoardMove();
+    _log('move', {'r': from.row, 'c': from.col, 'r2': to.row, 'c2': to.col});
     _checked = false;
 
     _updateStatusMessage();
@@ -814,6 +860,7 @@ class GameState extends ChangeNotifier {
     final tile = board.remove(position);
     if (tile == null) return;
     recorder?.onBackToBuilder();
+    _log('back', {'id': tile.id, 'r': position.row, 'c': position.col});
     currentPlayer.addTile(tile);
     _history.removeWhere((a) => a.tile.id == tile.id);
     _levelCompleted = false;
@@ -844,6 +891,13 @@ class GameState extends ChangeNotifier {
     _checked = false;
     _selectedBoardTileId = handTile.id;
     recorder?.onPlace(handTile.id, replacement: true);
+    _log('place', {
+      'id': handTile.id,
+      'r': position.row,
+      'c': position.col,
+      'o': orient(handTile),
+      'out': boardTile.id,
+    });
 
     _updateStatusMessage();
     _updatePositions();

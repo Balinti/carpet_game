@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../widgets/visual_style.dart';
+import '../admin/replay_screen.dart';
 import 'assessment_models.dart';
 
 /// Performance report for one finished assessment: a metrics row per round
@@ -471,14 +472,38 @@ class AssessmentReportScreen extends StatelessWidget {
                     onPressed: () => Navigator.maybePop(context),
                   ),
                   if (title != null)
-                    Text(
-                      title!,
-                      style: TextStyle(
-                        color: st.onTray,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                    Flexible(
+                      child: Text(
+                        title!,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: st.onTray,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
+                  // Watch each round again, move by move.
+                  for (final r in result.rounds)
+                    if (r.moves.isNotEmpty)
+                      TextButton.icon(
+                        key: ValueKey('replay_${r.label}'),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RoundReplayScreen(
+                              deal: r.deal,
+                              moves: r.moves,
+                              gridSize: r.gridSize,
+                              boards: r.boards,
+                              title: r.label,
+                            ),
+                          ),
+                        ),
+                        icon: Icon(Icons.play_circle_outline, color: st.onTray),
+                        label:
+                            Text(r.label, style: TextStyle(color: st.onTray)),
+                      ),
                 ]),
                 Expanded(child: AssessmentReport(result: result)),
               ],

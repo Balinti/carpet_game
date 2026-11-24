@@ -2,7 +2,7 @@
 // untouched):
 //
 //   flutter run -d chrome -t lib/onboarding/debug_onboarding_main.dart
-//   (add ?lang=he or ?lang=es to the URL for Hebrew / Spanish)
+//   (Hebrew by default; add ?lang=en or ?lang=es, and ?welcome=1/2/3)
 //
 // Uses FakeAuthService with auto-verify, so "I confirmed" always succeeds.
 import 'package:flutter/material.dart';
@@ -23,7 +23,7 @@ class OnboardingDebugApp extends StatefulWidget {
 
 class _OnboardingDebugAppState extends State<OnboardingDebugApp> {
   final _auth = FakeAuthService(autoVerifyOnCheck: true);
-  final _lang = AppLanguage.fromCode(Uri.base.queryParameters['lang'] ?? 'en');
+  final _lang = AppLanguage.fromCode(Uri.base.queryParameters['lang'] ?? 'he');
   UserProfile? _profile;
   QuestionnaireResult? _result;
 

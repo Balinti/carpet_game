@@ -84,72 +84,76 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.mark_email_unread_outlined,
-                        size: 40, color: st.boardFrame),
-                    const SizedBox(width: 12),
-                    Expanded(child: OnboardingTitle(s.verifyTitle)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  s.verifyBody(widget.email),
-                  style: TextStyle(color: st.onTray, fontSize: 17, height: 1.3),
-                ),
-                if (_status == _Status.notYet) InlineMessage(s.notVerifiedYet),
-                if (_status == _Status.resent)
-                  InlineMessage(s.resent, isError: false),
-                if (_status == _Status.error)
-                  InlineMessage(s.authError(_errorCode)),
-                const SizedBox(height: 14),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 16,
-                  runSpacing: 10,
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 240),
-                      child: BigButton(
-                        key: const ValueKey('verify_confirmed'),
-                        label: s.iConfirmed,
-                        icon: Icons.check_rounded,
-                        busy: _checking,
-                        onPressed: busy ? null : _check,
-                      ),
-                    ),
-                    BigButton(
-                      key: const ValueKey('verify_resend'),
-                      label: s.resend,
-                      icon: Icons.refresh_rounded,
-                      primary: false,
-                      busy: _resending,
-                      onPressed: busy ? null : _resend,
-                    ),
-                  ],
-                ),
-                if (widget.onUseDifferentEmail != null) ...[
-                  const SizedBox(height: 6),
-                  Center(
-                    child: TextButton(
-                      key: const ValueKey('verify_different_email'),
-                      onPressed: busy ? null : widget.onUseDifferentEmail,
-                      style: TextButton.styleFrom(
-                        foregroundColor: st.onTray.withOpacity(0.8),
-                        minimumSize: const Size(48, 48),
-                      ),
-                      child: Text(s.differentEmail,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              decoration: TextDecoration.underline)),
-                    ),
+            child: OnboardingPanel(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.mark_email_unread_outlined,
+                          size: 40, color: st.boardFrame),
+                      const SizedBox(width: 12),
+                      Expanded(child: OnboardingTitle(s.verifyTitle)),
+                    ],
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    s.verifyBody(widget.email),
+                    style:
+                        TextStyle(color: st.onTray, fontSize: 17, height: 1.3),
+                  ),
+                  if (_status == _Status.notYet)
+                    InlineMessage(s.notVerifiedYet),
+                  if (_status == _Status.resent)
+                    InlineMessage(s.resent, isError: false),
+                  if (_status == _Status.error)
+                    InlineMessage(s.authError(_errorCode)),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 16,
+                    runSpacing: 10,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 240),
+                        child: BigButton(
+                          key: const ValueKey('verify_confirmed'),
+                          label: s.iConfirmed,
+                          icon: Icons.check_rounded,
+                          busy: _checking,
+                          onPressed: busy ? null : _check,
+                        ),
+                      ),
+                      BigButton(
+                        key: const ValueKey('verify_resend'),
+                        label: s.resend,
+                        icon: Icons.refresh_rounded,
+                        primary: false,
+                        busy: _resending,
+                        onPressed: busy ? null : _resend,
+                      ),
+                    ],
+                  ),
+                  if (widget.onUseDifferentEmail != null) ...[
+                    const SizedBox(height: 6),
+                    Center(
+                      child: TextButton(
+                        key: const ValueKey('verify_different_email'),
+                        onPressed: busy ? null : widget.onUseDifferentEmail,
+                        style: TextButton.styleFrom(
+                          foregroundColor: look.muted,
+                          minimumSize: const Size(48, 48),
+                        ),
+                        child: Text(s.differentEmail,
+                            style: const TextStyle(
+                                fontSize: 15,
+                                decoration: TextDecoration.underline)),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

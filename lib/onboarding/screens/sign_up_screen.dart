@@ -33,6 +33,7 @@ class SignUpScreen extends StatefulWidget {
     super.key,
     required this.onSubmit,
     this.onSignInInstead,
+    this.onBack,
     this.onGoogle,
     this.initialName,
     this.completeProfileEmail,
@@ -40,6 +41,9 @@ class SignUpScreen extends StatefulWidget {
 
   final Future<void> Function(SignUpData data) onSubmit;
   final VoidCallback? onSignInInstead;
+
+  /// Back to the welcome screen. When null, no back button.
+  final VoidCallback? onBack;
 
   /// Shows "Continue with Google" above the form when set.
   final Future<void> Function()? onGoogle;
@@ -188,75 +192,80 @@ class _SignUpScreenState extends State<SignUpScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
-              child: AutofillGroup(
-                child: Form(
-                  key: _formKey,
-                  autovalidateMode: _submitted
-                      ? AutovalidateMode.onUserInteraction
-                      : AutovalidateMode.disabled,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OnboardingTitle(_profileOnly
-                                ? s.completeProfileTitle
-                                : s.signUpTitle),
-                          ),
-                          if (!_profileOnly && widget.onSignInInstead != null)
-                            TextButton(
-                              key: const ValueKey('signup_go_signin'),
-                              onPressed: _busy ? null : widget.onSignInInstead,
-                              style: TextButton.styleFrom(
-                                foregroundColor: onboardingStyle.onTray,
-                                minimumSize: const Size(48, 48),
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  decoration: TextDecoration.underline,
+              child: OnboardingPanel(
+                compact: c.maxHeight < 500,
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: _submitted
+                        ? AutovalidateMode.onUserInteraction
+                        : AutovalidateMode.disabled,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            if (widget.onBack != null) ...[
+                              OnboardingBackButton(
+                                key: const ValueKey('signup_back'),
+                                tooltip: s.back,
+                                onPressed: _busy ? null : widget.onBack,
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            Expanded(
+                              child: OnboardingTitle(_profileOnly
+                                  ? s.completeProfileTitle
+                                  : s.signUpTitle),
+                            ),
+                            if (!_profileOnly && widget.onSignInInstead != null)
+                              Flexible(
+                                child: OnboardingLink(
+                                  key: const ValueKey('signup_go_signin'),
+                                  label: s.haveAccount,
+                                  onPressed:
+                                      _busy ? null : widget.onSignInInstead,
                                 ),
                               ),
-                              child: Text(s.haveAccount),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      if (!_profileOnly && widget.onGoogle != null)
-                        GoogleSignInBlock(
-                          onGoogle: widget.onGoogle!,
-                          disabled: _busy,
-                          onError: (c) => setState(() => _error = c),
+                          ],
                         ),
-                      fields,
-                      if (_error != null)
-                        InlineMessage(s.authError(_error!))
-                      else
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Text(
-                            s.kidHint,
-                            style: TextStyle(
-                              color: onboardingStyle.onTray.withOpacity(0.7),
-                              fontSize: 14,
+                        const SizedBox(height: 10),
+                        if (!_profileOnly && widget.onGoogle != null)
+                          GoogleSignInBlock(
+                            onGoogle: widget.onGoogle!,
+                            disabled: _busy,
+                            onError: (c) => setState(() => _error = c),
+                          ),
+                        fields,
+                        if (_error != null)
+                          InlineMessage(s.authError(_error!))
+                        else
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              s.kidHint,
+                              style: TextStyle(
+                                color: look.muted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 280),
+                            child: BigButton(
+                              key: const ValueKey('signup_submit'),
+                              label: _profileOnly
+                                  ? s.continueLabel
+                                  : s.createAccount,
+                              busy: _busy,
+                              onPressed: _submit,
                             ),
                           ),
                         ),
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 280),
-                          child: BigButton(
-                            key: const ValueKey('signup_submit'),
-                            label: _profileOnly
-                                ? s.continueLabel
-                                : s.createAccount,
-                            busy: _busy,
-                            onPressed: _submit,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
