@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/auth_service.dart';
 import '../onboarding_strings.dart';
+import '../privacy_link.dart';
 import 'google_button.dart';
 import '../validators.dart';
 import 'onboarding_ui.dart';
@@ -264,6 +265,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 6),
+                        _PrivacyAgreement(
+                          prefix: s.agreePrefix,
+                          link: s.agreeLink,
+                        ),
                       ],
                     ),
                   ),
@@ -273,6 +279,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
         );
       }),
+    );
+  }
+}
+
+/// "By signing up you agree to the [privacy policy]" in small text.
+class _PrivacyAgreement extends StatelessWidget {
+  const _PrivacyAgreement({required this.prefix, required this.link});
+  final String prefix;
+  final String link;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 13.0;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(prefix, style: TextStyle(color: look.muted, fontSize: size)),
+        InkWell(
+          key: const ValueKey('signup_privacy'),
+          onTap: openPrivacyPolicy,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+            child: Text(
+              link,
+              style: TextStyle(
+                color:
+                    look.model == WelcomeModel.calm ? look.accent : look.text,
+                fontSize: size,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

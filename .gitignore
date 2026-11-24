@@ -56,3 +56,4 @@ app.*.map.json
 /version.json
 /assets/
 /canvaskit/
+android/.kotlin/

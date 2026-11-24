@@ -155,6 +155,43 @@ class OnboardingStrings {
             'Algo salió mal. Inténtalo de nuevo.', 'משהו השתבש. נסו שוב.'),
       };
 
+  // Privacy policy + account
+  String get privacyPolicy =>
+      _t('Privacy policy', 'Política de privacidad', 'מדיניות פרטיות');
+  String get agreePrefix => _t('By signing up you agree to the ',
+      'Al registrarte aceptas la ', 'בהרשמה את/ה מסכים/ה ל');
+  String get agreeLink =>
+      _t('privacy policy', 'política de privacidad', 'מדיניות הפרטיות');
+  String get account => _t('Account', 'Cuenta', 'חשבון');
+  String get deleteAccount =>
+      _t('Delete account', 'Eliminar cuenta', 'מחיקת חשבון');
+  String get deleteConfirmTitle =>
+      _t('Delete your account?', '¿Eliminar tu cuenta?', 'למחוק את החשבון?');
+  String get deleteConfirmBody => _t(
+      'Everything will be deleted permanently: your account, profile, '
+          'questionnaire, assessment results and saved games. '
+          'This cannot be undone.',
+      'Todo se eliminará para siempre: tu cuenta, perfil, cuestionario, '
+          'resultados de evaluaciones y partidas guardadas. '
+          'No se puede deshacer.',
+      'הכל יימחק לצמיתות: החשבון, הפרופיל, השאלון, תוצאות ההערכות '
+          'והמשחקים השמורים. אי אפשר לבטל את זה.');
+  String get deleteForever =>
+      _t('Delete forever', 'Eliminar para siempre', 'מחיקה לצמיתות');
+  String get cancel => _t('Cancel', 'Cancelar', 'ביטול');
+  String get confirm => _t('Confirm', 'Confirmar', 'אישור');
+  String get reenterPasswordTitle => _t('Enter your password again',
+      'Escribe tu contraseña otra vez', 'הזינו שוב את הסיסמה');
+  String get deleting => _t('Deleting…', 'Eliminando…', 'מוחק…');
+  String deleteError(String code) => switch (code) {
+        'reauth-cancelled' ||
+        'popup-closed-by-user' ||
+        'cancelled-popup-request' ||
+        'web-context-canceled' =>
+          _t('Deletion cancelled', 'Eliminación cancelada', 'המחיקה בוטלה'),
+        _ => authError(code),
+      };
+
   String _t(String en, String es, String he) {
     switch (language) {
       case AppLanguage.english:

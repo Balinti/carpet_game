@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'assessment/assessment.dart';
 import 'firestore_stores.dart';
+import 'onboarding/account_deletion_firebase.dart';
 import 'onboarding/auth/firebase_auth_service.dart';
 import 'onboarding/onboarding.dart';
 import 'screens/assessment_screen.dart';
@@ -88,6 +89,16 @@ class _AppGateState extends State<AppGate> {
           onSignOut: () async {
             await AppGate.auth.signOut();
             if (mounted) setState(() => _stage = _Stage.onboarding);
+          },
+          accountDeletion: firebaseAccountDeletion(),
+          onAccountDeleted: () {
+            if (!mounted) return;
+            Navigator.of(context).popUntil((r) => r.isFirst);
+            setState(() {
+              _uid = null;
+              _isAdmin = false;
+              _stage = _Stage.onboarding;
+            });
           },
         );
     }

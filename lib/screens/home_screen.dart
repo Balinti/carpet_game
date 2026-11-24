@@ -4,7 +4,10 @@ import '../game/practice_save.dart';
 import '../l10n/l10n.dart';
 import '../main.dart';
 import '../models/game_mode.dart';
+import '../onboarding/account_deletion.dart';
+import '../onboarding/onboarding_strings.dart';
 import '../widgets/visual_style.dart';
+import 'account_sheet.dart';
 import 'assessment_screen.dart';
 import 'game_screen.dart';
 
@@ -16,7 +19,19 @@ class HomeScreen extends StatelessWidget {
   /// Shown as a small chart icon (admins only).
   final VoidCallback? onOpenDashboard;
 
-  const HomeScreen({super.key, this.onSignOut, this.onOpenDashboard});
+  /// Shown as a small account icon (privacy policy, delete account) when set.
+  final AccountDeletionService? accountDeletion;
+
+  /// Called after the account was deleted (go back to the start).
+  final VoidCallback? onAccountDeleted;
+
+  const HomeScreen({
+    super.key,
+    this.onSignOut,
+    this.onOpenDashboard,
+    this.accountDeletion,
+    this.onAccountDeleted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,30 +52,6 @@ class HomeScreen extends StatelessWidget {
         child: SafeArea(
           child: Stack(
             children: [
-              // Language selector button
-              Positioned(
-                top: 8,
-                right: 8,
-                child: _LanguageButton(),
-              ),
-              if (onSignOut != null)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: onSignOut,
-                  ),
-                ),
-              if (onOpenDashboard != null)
-                Positioned(
-                  top: 8,
-                  left: 56,
-                  child: IconButton(
-                    icon: const Icon(Icons.insights),
-                    onPressed: onOpenDashboard,
-                  ),
-                ),
               // Main content
               SingleChildScrollView(
                 child: Center(
@@ -199,6 +190,45 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
+              ),
+              // Top buttons last so they sit above the scroll view and
+              // receive taps.
+              // Language selector button
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _LanguageButton(),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  textDirection: TextDirection.ltr,
+                  children: [
+                    if (onSignOut != null)
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: onSignOut,
+                      ),
+                    if (onOpenDashboard != null)
+                      IconButton(
+                        icon: const Icon(Icons.insights),
+                        onPressed: onOpenDashboard,
+                      ),
+                    if (accountDeletion != null)
+                      IconButton(
+                        key: const ValueKey('account_button'),
+                        icon: const Icon(Icons.manage_accounts),
+                        tooltip: OnboardingStrings.of(context).account,
+                        onPressed: () => showAccountSheet(
+                          context,
+                          deletion: accountDeletion!,
+                          onDeleted: onAccountDeleted ?? () {},
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
