@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 import 'auth/auth_service.dart';
 import 'ef/questionnaire_result.dart';
@@ -221,6 +222,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           key: const ValueKey('step_signin'),
           initialErrorCode: _error,
           onGoogle: _onGoogle,
+          onForgotPassword: (email) => _auth.sendPasswordReset(email,
+              languageCode: AppLocalizations.of(context).language.code),
           onBack: () {
             _error = null;
             _go(OnboardingStep.welcome);

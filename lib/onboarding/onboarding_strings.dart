@@ -155,6 +155,18 @@ class OnboardingStrings {
             'Algo salió mal. Inténtalo de nuevo.', 'משהו השתבש. נסו שוב.'),
       };
 
+  // Forgot password
+  String get forgotPassword =>
+      _t('Forgot password?', '¿Olvidaste tu contraseña?', 'שכחתי סיסמה');
+  String get forgotNeedEmail => _t(
+      'Type your email above, then tap "Forgot password?" again.',
+      'Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".',
+      'כתבו את האימייל למעלה ולחצו שוב על "שכחתי סיסמה".');
+  String resetSent(String email) => _t(
+      'We sent a link to $email to choose a new password. Check spam too.',
+      'Enviamos un enlace a $email para elegir una nueva contraseña. Revisa también el spam.',
+      'שלחנו קישור ל-$email לבחירת סיסמה חדשה. כדאי לבדוק גם בספאם.');
+
   // Privacy policy + account
   String get privacyPolicy =>
       _t('Privacy policy', 'Política de privacidad', 'מדיניות פרטיות');

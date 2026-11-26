@@ -15,6 +15,7 @@ class SignInScreen extends StatefulWidget {
     this.onGoogle,
     this.initialErrorCode,
     this.onBack,
+    this.onForgotPassword,
   });
 
   /// Back to the welcome screen. When null, no back button.
@@ -30,6 +31,9 @@ class SignInScreen extends StatefulWidget {
   /// Auth error code to show when the screen opens (e.g. a failed resume).
   final String? initialErrorCode;
 
+  /// "Forgot password": email a reset link. Throws [AuthException].
+  final Future<void> Function(String email)? onForgotPassword;
+
   @override
   State<SignInScreen> createState() => _SignInScreenState();
 }
@@ -41,6 +45,32 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _busy = false;
   bool _submitted = false;
   late String? _error = widget.initialErrorCode;
+  String? _info;
+
+  Future<void> _forgot() async {
+    final s = OnboardingStrings.of(context);
+    final email = _email.text.trim();
+    setState(() {
+      _error = null;
+      _info = null;
+    });
+    if (validateEmail(email) != null) {
+      setState(() => _info = null);
+      setState(() => _error = 'need-email');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await widget.onForgotPassword!(email);
+      if (mounted) setState(() => _info = s.resetSent(email));
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = e.code);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'unknown');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -147,7 +177,21 @@ class _SignInScreenState extends State<SignInScreen> {
                               )
                             : Column(
                                 children: [emailField, gap, passwordField]),
-                        if (_error != null) InlineMessage(s.authError(_error!)),
+                        if (widget.onForgotPassword != null)
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: OnboardingLink(
+                              key: const ValueKey('signin_forgot'),
+                              label: s.forgotPassword,
+                              onPressed: _busy ? null : _forgot,
+                            ),
+                          ),
+                        if (_error != null)
+                          InlineMessage(_error == 'need-email'
+                              ? s.forgotNeedEmail
+                              : s.authError(_error!)),
+                        if (_info != null)
+                          InlineMessage(_info!, isError: false),
                         const SizedBox(height: 12),
                         Wrap(
                           alignment: WrapAlignment.center,

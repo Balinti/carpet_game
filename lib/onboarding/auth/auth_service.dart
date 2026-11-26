@@ -61,6 +61,10 @@ abstract class AuthService {
   /// Sign in (or create the account) with Google. Google accounts come
   /// with a confirmed email, so no verification step is needed.
   Future<AuthUser> signInWithGoogle();
+
+  /// Emails a password-reset link ("forgot password"). [languageCode] sets
+  /// the email's language (e.g. 'he'). Throws [AuthException].
+  Future<void> sendPasswordReset(String email, {String? languageCode});
 }
 
 /// In-memory auth so the flow runs before Firebase exists.
@@ -114,6 +118,14 @@ class FakeAuthService implements AuthService {
     _current = acc;
     _emit();
     return acc.toUser();
+  }
+
+  /// Emails that were sent a reset link (tests).
+  final List<String> passwordResets = [];
+
+  @override
+  Future<void> sendPasswordReset(String email, {String? languageCode}) async {
+    passwordResets.add(email.trim().toLowerCase());
   }
 
   @override

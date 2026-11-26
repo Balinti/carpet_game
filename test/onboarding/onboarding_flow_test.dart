@@ -226,6 +226,27 @@ void main() {
     expect(profiles.data.values.single.email, 'old@example.com');
   });
 
+  testWidgets('forgot password: asks for email, then sends the link',
+      (tester) async {
+    _landscapePhone(tester);
+    final auth = FakeAuthService();
+    await tester.pumpWidget(_app(OnboardingFlow(
+      auth: auth,
+      profileStore: _MemProfiles(),
+      questionnaireStore: _MemResults(),
+      onDone: (_, __) {},
+    )));
+    await tester.pumpAndSettle();
+    await _tap(tester, const ValueKey('welcome_signin'));
+    await _tap(tester, const ValueKey('signin_forgot'));
+    expect(find.textContaining('Type your email above'), findsOneWidget);
+    expect(auth.passwordResets, isEmpty);
+    await _enter(tester, const ValueKey('signin_email'), 'Old@Example.com');
+    await _tap(tester, const ValueKey('signin_forgot'));
+    expect(auth.passwordResets, ['old@example.com']);
+    expect(find.textContaining('We sent a link'), findsOneWidget);
+  });
+
   testWidgets('already-registered email shows inline error', (tester) async {
     _landscapePhone(tester);
     final auth = FakeAuthService();

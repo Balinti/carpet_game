@@ -90,6 +90,13 @@ class FirebaseAuthService implements AuthService {
   Future<void> signOut() => _auth.signOut();
 
   @override
+  Future<void> sendPasswordReset(String email, {String? languageCode}) =>
+      _wrap(() async {
+        if (languageCode != null) await _auth.setLanguageCode(languageCode);
+        await _auth.sendPasswordResetEmail(email: email.trim());
+      });
+
+  @override
   Future<AuthUser> signInWithGoogle() => _wrap(() async {
         final provider = fb.GoogleAuthProvider()
           ..setCustomParameters({'prompt': 'select_account'});
