@@ -42,6 +42,16 @@ class GameBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The board is a map: column 0 is always on the left. Without this,
+    // Hebrew (RTL) mirrors the columns on screen while the edge check does
+    // not, so a board that looks right is judged wrong (Shemer's bug).
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Builder(builder: _buildBoard),
+    );
+  }
+
+  Widget _buildBoard(BuildContext context) {
     // For square modes with fixed grid, show only the target grid
     final gridSize = gameState.targetGridSize;
     if (gridSize > 0) {
@@ -178,6 +188,7 @@ class GameBoard extends StatelessWidget {
                             if (tile != null) {
                               // Show placed tile - tap to rotate, drag to swap
                               return Padding(
+                                key: ValueKey('board_tile_${tile.id}'),
                                 padding: const EdgeInsets.all(2),
                                 child: _withMismatchMarks(
                                   position,
