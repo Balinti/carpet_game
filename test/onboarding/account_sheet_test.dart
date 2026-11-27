@@ -63,6 +63,7 @@ void main() {
         onError?.call(d);
       };
       addTearDown(() => FlutterError.onError = onError);
+      HomeScreen.debugAnimate = false;
       tester.view.physicalSize = const Size(1200, 2000);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
